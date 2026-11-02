@@ -275,6 +275,16 @@
               <button type="button" onclick="cancelMapPick()" class="text-xs text-red-400 font-bold underline ml-2">Cancelar</button>
             </div>
 
+            <!-- Route Loading Indicator -->
+            <div id="route-loading-indicator" class="route-loading-indicator" style="display: none;">
+              <div class="route-loading-bar-wrap">
+                <div class="route-loading-bar-fill"></div>
+              </div>
+              <div class="route-loading-text">
+                <span class="pulse-icon">📡</span> Calculando rota tática...
+              </div>
+            </div>
+
             <!-- Route Result Container -->
             <div id="route-result-container" class="route-result-container" style="display: none;">
               <!-- Metrics -->

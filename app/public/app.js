@@ -913,6 +913,17 @@ window.calculateRoute = async function() {
     return;
   }
 
+  const loadingIndicator = document.getElementById('route-loading-indicator');
+  const resultContainer = document.getElementById('route-result-container');
+
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'flex';
+  }
+  if (resultContainer) {
+    resultContainer.style.opacity = '0.35';
+    resultContainer.style.pointerEvents = 'none';
+  }
+
   try {
     const url = `/api/route?fromLat=${routeOrigin.lat}&fromLng=${routeOrigin.lng}&toLat=${routeDest.lat}&toLng=${routeDest.lng}&profile=${routeProfile}`;
     const res = await fetch(url);
@@ -924,6 +935,14 @@ window.calculateRoute = async function() {
 
   } catch (err) {
     console.error('Erro ao calcular rota:', err);
+  } finally {
+    if (loadingIndicator) {
+      loadingIndicator.style.display = 'none';
+    }
+    if (resultContainer) {
+      resultContainer.style.opacity = '1';
+      resultContainer.style.pointerEvents = 'auto';
+    }
   }
 };
 
@@ -1121,6 +1140,9 @@ window.clearCurrentRoute = function() {
 
   const resContainer = document.getElementById('route-result-container');
   if (resContainer) resContainer.style.display = 'none';
+
+  const loader = document.getElementById('route-loading-indicator');
+  if (loader) loader.style.display = 'none';
 
   routeMarkers.forEach(m => m.remove());
   routeMarkers = [];
