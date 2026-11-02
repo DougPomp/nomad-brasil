@@ -1,0 +1,82 @@
+[
+  {
+    "id": "agua-purificacao",
+    "title": "Tratamento e Potabilização de Água em Campo",
+    "category": "Recursos Vitais",
+    "icon": "droplet",
+    "sections": [
+      {
+        "heading": "1. Fervura (Método mais seguro contra patógenos)",
+        "content": "Aqueça a água até atingir fervura borbulhante e mantenha fervendo ativamente por pelo menos 3 a 5 minutos (em altitudes acima de 2.000m, mantenha por 5 a 10 min). A fervura mata 100% de bactérias, vírus, amebas e parasitas (Giardia, Cryptosporidium). Para melhorar o sabor da água após fervura, despeje-a várias vezes de um recipiente limpo para outro para oxigená-la."
+      },
+      {
+        "heading": "2. Cloração com Hipoclorito de Sódio (Água Sanitária)",
+        "content": "Utilize água sanitária comum COMERCIAL SEM ALVEJANTE, CORANTES OU PERFUMES (composição: hipoclorito de sódio entre 2,0% e 2,5%).\n\n• Água límpida/clara: Adicione 2 gotas para cada 1 litro de água (ou 1 colher de chá para 20 litros).\n• Água turva/barrenta: Pré-filtre em pano limpo e adicione 4 gotas para cada 1 litro de água.\n\nMisture bem e AGUARDE NO MÍNIMO 30 MINUTOS antes de beber. A água deve ter um leve cheiro característico de cloro."
+      },
+      {
+        "heading": "3. Filtro de Emergência em Camadas (Decantação e Areia)",
+        "content": "Corte o fundo de uma garrafa PET e use invertida. Camadas da base (bico) até o topo:\n1. Algodão limpo ou tecido de algodão bem dobrado no bico.\n2. Camada de 5 cm de Carvão vegetal ativado ou moído (absorve toxinas e odores).\n3. Camada de 8 cm de Areia fina bem lavada.\n4. Camada de 5 cm de Areia grossa.\n5. Camada de 4 cm de Pedriscos pequenos ou cascalho.\n\nNota: A filtragem mecânica retira apenas partículas e turbidez. A água filtrada AINDA PRECISA ser fervida ou clorada antes do consumo!"
+      },
+      {
+        "heading": "4. Método SODIS (Desinfecção Solar)",
+        "content": "Encha garrafas plásticas transparentes tipo PET (até 2 litros) com água pré-filtrada. Deite as garrafas horizontalmente sobre uma superfície refletora (telhado de metal, calçada ou papel alumínio) sob sol pleno por no mínimo 6 horas (ou 2 dias se o tempo estiver nublado). A combinação dos raios UVA e o aumento de temperatura elimina os micro-organismos patogênicos."
+      }
+    ]
+  },
+  {
+    "id": "telecom-radio",
+    "title": "Telecomunicações de Emergência: Rádio PX e Radioamador",
+    "category": "Comunicações",
+    "icon": "radio",
+    "sections": [
+      {
+        "heading": "1. Frequências do Rádio Cidadão (Faixa PX - 11 Metros / 27 MHz)",
+        "content": "O rádio PX opera entre 26.965 MHz e 27.405 MHz (40 canais em AM/USB/LSB). É a faixa mais popular entre caminhoneiros, fazendas e socorristas no interior do Brasil.\n\n• Canal 9 (27.065 MHz): CANAL DE EMERGÊNCIA NACIONAL E INTERNACIONAL. Deve ser mantido livre apenas para pedidos de socorro, resgate e catástrofes.\n• Canal 19 (27.185 MHz): CANAL DE RODOVIA. Principal frequência de monitoramento de tráfego, acidentes e condições de estradas pelos caminhoneiros em todo o Brasil.\n• Canal 11 (27.085 MHz): Canal de chamada geral (inicia contato e muda de canal)."
+      },
+      {
+        "heading": "2. Frequências de Chamada VHF e UHF no Brasil (PY)",
+        "content": "• VHF Simplex Chamada Nacional: 146.520 MHz (frequência de monitoramento padrão de emergência entre radioamadores em todo o território nacional).\n• VHF Frequência Secundária: 146.550 MHz e 145.500 MHz.\n• UHF Chamada Padrão: 433.000 MHz (e 439.000 MHz para repetidoras locais).\n• Rádios tipo Baofeng/Walkie-Talkie FRS/GMRS: Canais 1 a 7 (462.5625 a 462.7125 MHz)."
+      },
+      {
+        "heading": "3. Código Q Essencial para Transmissões Críticas",
+        "content": "• QTH: Qual é a sua localização? / Minha localização é...\n• QRA: Qual é o seu nome ou indicativo? / Meu nome é...\n• QTR: Que horas são? / A hora exata é...\n• QSL: Entendido / Mensagem confirmada.\n• QRZ: Quem está chamando?\n• QSO: Contato ou conversa pelo rádio.\n• QRL: Estou ocupado, favor não interferir.\n• QRM: Interferência humana no sinal.\n• QRN: Interferência estática atmosférica.\n• QRT: Encerrando transmissões / desligando a estação."
+      }
+    ]
+  },
+  {
+    "id": "energia-solar-baterias",
+    "title": "Energia Solar e Baterias de Emergência (Sistema 12V)",
+    "category": "Eletricidade & Resiliência",
+    "icon": "zap",
+    "sections": [
+      {
+        "heading": "1. Princípios de um Sistema Solar Isolado (Off-Grid)",
+        "content": "Um sistema básico de energia de sobrevivência é composto por 4 elementos:\n1. Painel Solar Fotovoltaico (gera corrente contínua a partir do sol).\n2. Controlador de Carga (regula a tensão para 12V ou 24V e protege a bateria contra sobrecarga).\n3. Banco de Baterias (estacionária, ciclo profundo ou LiFePO4 para acumular energia).\n4. Inversor de Tensão 12V para 110V/220V (para alimentar eletrônicos essenciais)."
+      },
+      {
+        "heading": "2. Dimensionamento para Apagão e Emergência",
+        "content": "Exemplo de consumo essencial diário de 12V:\n• 2 lâmpadas LED 12V (9W x 4 horas = 72 Wh)\n• Carregador de rádio comunicador e lanternas (20 Wh)\n• Celulares e aparelhos de telemetria (50 Wh)\n• Pequeno rádio ou ventilador portátil (40 Wh)\nTotal: ~180 a 200 Watt-hora/dia.\n\nCapacidade de bateria recomendada: Uma bateria estacionária de 12V 45Ah possui ~540 Wh teóricos (usando 50% de profundidade de descarga = 270 Wh úteis), suficiente para suportar mais de 1 dia de autonomia sem sol.\nPainel solar necessário: 1 painel de 100W a 150W com controlador PWM de 10A ou MPPT."
+      },
+      {
+        "heading": "3. Cuidados Críticos com Baterias",
+        "content": "• Baterias de Chumbo-Ácido automotivas: não devem ser descarregadas abaixo de 11.8V (risco de sulfatação precoce).\n• Mantenha as baterias em local bem ventilado (liberam gás hidrogênio durante a carga rápida).\n• Nunca feche curto entre os polos positivo (+) e negativo (-) com ferramentas metálicas."
+      }
+    ]
+  },
+  {
+    "id": "armazenamento-alimentos",
+    "title": "Armazenamento Prolongado de Alimentos e Grãos",
+    "category": "Alimentação",
+    "icon": "archive",
+    "sections": [
+      {
+        "heading": "1. Regra dos 4 Inimigos da Comida",
+        "content": "Os alimentos se degradam pela ação de: 1. Oxigênio; 2. Umidade; 3. Luz; 4. Calor e Insetos/Carunchos. Eliminando o oxigênio e a umidade, a validade de grãos secos salta de meses para décadas."
+      },
+      {
+        "heading": "2. Método da Garrafa PET com Alho ou Absorvedor de Oxigênio",
+        "content": "Armazenamento de arroz, feijão, milho e lentilhas:\n1. Lave e seque COMPLETAMENTE garrafas PET transparentes de refrigerante (não use garrafas de óleo ou água mineral fina).\n2. Encha a garrafa com o grão seco batendo o fundo da garrafa em uma toalha na mesa para compactar bem e não deixar bolsas de ar.\n3. A cada 1/3 da garrafa, adicione 1 dente de alho com casca (funciona como fungicida e repelente natural).\n4. No topo, adicione 1 sachê absorvedor de oxigênio de 100cc a 300cc (ou um chumaço de algodão embebido em álcool 70% aceso na boca da garrafa, tampando imediatamente para consumir o O2).\n5. Aperte bem a tampa e vede com fita isolante ou cera de vela derretida.\n\nDurabilidade estimada em local escuro e fresco:\n• Arroz branco: até 20 a 30 anos.\n• Feijão: até 5 a 10 anos.\n• Sal e Açúcar refinado: Indeterminado (não use absorvedor de oxigênio no sal/açúcar pois eles endurecem)."
+      }
+    ]
+  }
+]

@@ -1,0 +1,115 @@
+[
+  {
+    "id": "rcp",
+    "title": "Reanimação Cardiopulmonar (RCP / Parada Cardíaca)",
+    "category": "Suporte Básico de Vida",
+    "severity": "crítico",
+    "summary": "Procedimento de emergência vital para manter o fluxo de sangue no cérebro e coração em caso de parada cardíaca.",
+    "phone": "192 (SAMU) ou 193 (Bombeiros)",
+    "steps": [
+      "Verifique a segurança do local (não se coloque em perigo).",
+      "Avalie a responsividade: chame a vítima tocando nos ombros ('Você está bem?').",
+      "Se não responder e não respirar (ou respirar apenas com arquejos/gasping): PEÇA AJUDA IMEDIATA (ligue 192 ou peça para alguém ligar).",
+      "Posicione a vítima deitada de costas sobre uma superfície rígida e plana.",
+      "Ajoelhe-se ao lado do tórax da vítima.",
+      "Coloque a base da palma de uma mão no centro do peito (metade inferior do osso esterno) e entrelace a outra mão por cima.",
+      "Mantenha os braços esticados e perpendiculares ao corpo da vítima (não dobre os cotovelos).",
+      "Inicie compressões rápidas e fortes: comprima pelo menos 5 cm a 6 cm de profundidade, na frequência de 100 a 120 compressões por minuto (ritmo da música 'Stayin' Alive').",
+      "Permita o retorno completo do tórax após cada compressão (não fique apoiado no peito).",
+      "Se você for leigo ou não tiver máscara, faça compressões CONTÍNUAS sem parar até a chegada do socorro ou até o paciente se mover."
+    ],
+    "notes": "Se houver Desfibrilador Externo Automático (DEA) disponível no local, ligue-o imediatamente e siga as instruções sonoras."
+  },
+  {
+    "id": "engasgo",
+    "title": "Engasgo Severo (Manobra de Heimlich)",
+    "category": "Vias Aéreas",
+    "severity": "crítico",
+    "summary": "Desobstrução de emergência das vias aéreas por corpo estranho (alimento ou objeto).",
+    "phone": "193 (Bombeiros) ou 192 (SAMU)",
+    "steps": [
+      "Identifique o engasgo severo: a vítima não consegue falar, tossir nem respirar, e geralmente leva as duas mãos ao pescoço (sinal universal de asfixia).",
+      "Posicione-se atrás da vítima em pé ou sentada.",
+      "Passe os braços ao redor da cintura da vítima.",
+      "Feche um punho com o polegar voltado para a barriga da pessoa, posicionando-o entre o umbigo e o osso do esterno (na 'boca do estômago').",
+      "Com a outra mão, segure firme o seu punho fechado.",
+      "Faça compressões abdominais vigorosas em movimento rápido PARA DENTRO E PARA CIMA (em formato da letra 'J').",
+      "Repita a manobra até que o objeto seja expelido ou a vítima perca a consciência.",
+      "Se a vítima desmaiar: deite-a no chão com cuidado, ligue 192/193 e inicie compressões de RCP imediatamente."
+    ],
+    "notes": "Em gestantes ou pessoas obesas: faça as compressões no centro do tórax (como na RCP), e não no abdômen. Em bebês menores de 1 ano: faça 5 batidas nas costas (de bruços sobre seu antebraço) seguidas de 5 compressões torácicas com 2 dedos."
+  },
+  {
+    "id": "hemorragia",
+    "title": "Controle de Hemorragias Graves & Uso de Torniquete",
+    "category": "Trauma",
+    "severity": "crítico",
+    "summary": "Técnicas de contenção de sangramento arterial e venoso maciço.",
+    "phone": "192 / 193",
+    "steps": [
+      "Garanta sua proteção: use luvas ou proteção limpa se houver.",
+      "Exponha a ferida cortando ou retirando a roupa para ver a origem exata do sangue.",
+      "PRESSÃO DIRETA: Com gaze, pano limpo ou camisa, aplique pressão contínua e muito forte diretamente sobre o ferimento com ambas as mãos.",
+      "Mantenha a pressão firme e contínua por pelo menos 5 a 10 minutos sem aliviar para espiar.",
+      "Se o sangramento for em membros (braço ou perna) e for em jato ou sangue jorrando intensamente sem parar com a pressão:",
+      "APLICAÇÃO DE TORNIQUETE: Posicione o torniquete (comercial ou improvisado com tira larga de pano de pelo menos 5 cm) cerca de 5 a 7 cm ACIMA do ferimento, entre a lesão e o coração (nunca sobre articulação).",
+      "Aperte o torniquete ou gire a haste até o sangramento parar completamente e o pulso distal desaparecer.",
+      "Trave a haste do torniquete.",
+      "ANOTE O HORÁRIO EXATO da aplicação na testa do paciente ou no torniquete (ex: 'TK 14:35'). NUNCA afrouxe o torniquete por conta própria."
+    ],
+    "notes": "Para ferimentos em junções (virilha, axila, pescoço) onde não é possível passar torniquete: faça preenchimento firme da ferida (wound packing) com gaze e mantenha compressão contínua."
+  },
+  {
+    "id": "peconhentos",
+    "title": "Picadas de Animais Peçonhentos no Brasil",
+    "category": "Toxicologia",
+    "severity": "alto",
+    "summary": "Condutas para acidentes ofídicos (serpentes), escorpiões e aranhas nativas do Brasil.",
+    "phone": "192 (SAMU) / 193 (Bombeiros) / Disque-Intoxicação: 0800-722-6001",
+    "steps": [
+      "Afaste a vítima do animal com segurança para evitar nova picada.",
+      "Mantenha a vítima em repouso e calma (a agitação acelera a circulação do veneno).",
+      "Lave o local da picada apenas com ÁGUA E SABÃO neutro abundante.",
+      "Mantenha o membro acometido levemente elevado ou nivelado ao coração.",
+      "Retire anéis, pulseiras, relógios e calçados apertados (o membro vai inchar rapidamente).",
+      "Transporte a vítima com urgência ao hospital de referência mais próximo para administração do soro antiofídico ou antiescorpiônico adequado.",
+      "Se possível e sem risco, tire uma foto do animal para facilitar a identificação médica (Jararaca, Cascavel, Coral, Escorpião-amarelo)."
+    ],
+    "notes": "O QUE NUNCA FAZER: NÃO faça torniquete ou garrote (aumenta risco de necrose e amputação). NÃO corte, fure ou chupe o local da picada. NÃO coloque pó de café, folhas, álcool ou querosene. NÃO dê bebida alcoólica à vítima."
+  },
+  {
+    "id": "queimaduras",
+    "title": "Queimaduras Térmicas, Químicas e Elétricas",
+    "category": "Trauma",
+    "severity": "médio",
+    "summary": "Primeiro atendimento a queimaduras de 1º, 2º e 3º grau.",
+    "phone": "193 / 192",
+    "steps": [
+      "Interrompa o processo de queimadura: apague o fogo, desligue a corrente elétrica ou remova o produto químico.",
+      "RESFRIAMENTO: Coloque a área queimada sob ÁGUA CORRENTE LIMPA E EM TEMPERATURA AMBIENTE por 15 a 20 minutos.",
+      "Remova com cuidado roupas não grudadas, anéis e adereços antes que comece o inchaço.",
+      "NÃO puxe roupas que estiverem coladas na pele queimada (corte ao redor).",
+      "Cubra a lesão com plástico filme limpo ou gaze estéril seca e não aderente, sem apertar.",
+      "Mantenha a vítima aquecida (queimaduras extensas causam hipotermia rápida)."
+    ],
+    "notes": "NUNCA use gelo direto (o gelo queima os tecidos e piora a lesão). NUNCA fure bolhas. NUNCA passe manteiga, óleo, pasta de dente ou café."
+  },
+  {
+    "id": "fraturas",
+    "title": "Fraturas, Entorses e Luxações",
+    "category": "Ortopedia",
+    "severity": "médio",
+    "summary": "Estabilização e imobilização de ossos e articulações traumatizadas.",
+    "phone": "192 / 193",
+    "steps": [
+      "Não tente 'colocar o osso no lugar' ou alinhar a fratura.",
+      "Se houver fratura exposta (osso visível): controle o sangramento com curativo limpo e estéril sem empurrar o osso para dentro.",
+      "Imobilize o membro na posição em que ele se encontra.",
+      "Para imobilizar: use talas rígidas (madeira, galhos retos, papelão grosso dobrado, revistas) e amarre com faixas ou tiras de tecido.",
+      "Regra de ouro: a tala deve imobilizar a articulação ACIMA e a articulação ABAIXO do ponto da fratura.",
+      "Aplique compressas frias ou gelo protegido por pano nas primeiras 24h para diminuir dor e inchaço (em fraturas fechadas).",
+      "Verifique a circulação nos dedos (cor rosada e temperatura) para garantir que a amarração não está prendendo o sangue."
+    ],
+    "notes": "Suspeita de trauma na coluna ou pescoço (queda de altura, acidente de trânsito): NÃO MOVA a vítima, mantenha a cabeça estabilizada e aguarde resgate especializado."
+  }
+]

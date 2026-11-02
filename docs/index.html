@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #070a12;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --border: rgba(16, 185, 129, 0.2);
+      --border-focus: #10b981;
+      --accent-green: #10b981;
+      --accent-cyan: #06b6d4;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
+      min-height: 100vh;
+    }
+
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Tactical Navigation */
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 10, 18, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .nav-brand img { width: 32px; height: 32px; }
+    .brand-tag {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #000;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .nav-btn:hover {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--accent-green);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #000;
+      font-weight: 800;
+      border: none;
+    }
+
+    .nav-btn.primary:hover {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Hero */
+    .hero-banner {
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    .hero-banner img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Tabs */
+    .demo-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 0.4rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .demo-tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+
+    .demo-tab-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+    .demo-tab-btn.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--accent-green);
+      color: #34d399;
+    }
+
+    /* Tab Panes */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; animation: fadeIn 0.25s ease-out; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Card Panels */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* City Search */
+    .search-box {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #090e1a;
+      border: 1px solid var(--border);
+      padding: 0.85rem 1.2rem;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .city-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #0c1424;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 4px;
+      max-height: 280px;
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+    }
+
+    .city-item {
+      padding: 0.65rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .city-item:hover {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+
+    /* Intel Box */
+    .intel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .intel-card {
+      background: #090e1a;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .intel-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .intel-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 0.2rem;
+    }
+
+    /* Quick Install Block */
+    .install-box {
+      background: #060911;
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #34d399;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    /* Protocol Cards */
+    .protocol-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+
+    .protocol-card {
+      background: #090e1a;
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .protocol-card:hover {
+      border-color: var(--accent-green);
+      transform: translateY(-2px);
+    }
+
+    .protocol-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.65rem;
+      font-weight: 800;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 4rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="nav-bar">
+    <a href="#" class="nav-brand">
+      <img src="logo.svg" alt="NOMAD Logo">
+      <span class="brand-tag">BRASIL 🇧🇷</span>
+      <span class="brand-name">NOMAD</span>
+    </a>
+
+    <div class="nav-links">
+      <a href="https://github.com/DougPomp/nomad-brasil" target="_blank" class="nav-btn">
+        <span>⭐</span> GitHub
+      </a>
+      <a href="https://github.com/DougPomp/nomad-brasil/archive/refs/heads/main.zip" class="nav-btn primary">
+        <span>📥</span> Baixar Projeto
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <img src="banner.svg" alt="NOMAD Brasil - Central de Sobrevivência, Mapas e Conhecimento 100% Offline">
+    </div>
+
+    <!-- Live Demo Navigation Tabs -->
+    <div class="demo-tabs">
+      <button class="demo-tab-btn active" onclick="switchDemoTab('quickstart')">
+        <span>⚡</span> Instalação Rápida (1 Clique)
+      </button>
+      <button class="demo-tab-btn" onclick="switchDemoTab('cities')">
+        <span>📊</span> City Intel (5.571 Cidades)
+      </button>
+      <button class="demo-tab-btn" onclick="switchDemoTab('emergencies')">
+        <span>🚑</span> Primeiros Socorros
+      </button>
+      <button class="demo-tab-btn" onclick="switchDemoTab('survival')">
+        <span>🏕️</span> Sobrevivência &amp; Rádio
+      </button>
+      <button class="demo-tab-btn" onclick="switchDemoTab('offline')">
+        <span>🗺️</span> Sistema Offline (Docker)
+      </button>
+    </div>
+
+    <!-- TAB 1: QUICKSTART -->
+    <section class="tab-pane active" id="tab-quickstart">
+      <div class="card">
+        <h2 class="card-title">🚀 Como Rodar o NOMAD Brasil no seu Computador</h2>
+        <p class="card-subtitle">
+          O NOMAD Brasil foi feito para funcionar <strong>100% desconectado da internet</strong> através do Docker.
+        </p>
+
+        <h3 style="color: #34d399; font-size: 1rem; margin-top: 1rem;">No Windows (Instalador Automático de 1 Clique):</h3>
+        <ol style="padding-left: 1.25rem; color: #cbd5e1; margin-top: 0.5rem; font-size: 0.95rem;">
+          <li>Baixe o projeto pelo botão <strong>"Baixar Projeto"</strong> ou clone via terminal:</li>
+          <div class="install-box">git clone https://github.com/DougPomp/nomad-brasil.git<br>cd nomad-brasil</div>
+          <li>Dê dois cliques no arquivo: <strong><code>setup-nomad-brasil.bat</code></strong></li>
+          <li>O instalador baixa o mapa do Brasil (1,57 GB), a Wikipédia e sobe o sistema automaticamente em:</li>
+          <div style="margin-top: 0.5rem;">
+            🌐 <strong>Portal:</strong> <a href="http://localhost:8000" target="_blank" style="color: #38bdf8;">http://localhost:8000</a> | 
+            📚 <strong>Kiwix Wikipédia:</strong> <a href="http://localhost:8090" target="_blank" style="color: #38bdf8;">http://localhost:8090</a>
+          </div>
+        </ol>
+
+        <h3 style="color: #34d399; font-size: 1rem; margin-top: 1.5rem;">No Linux / macOS / Raspberry Pi:</h3>
+        <div class="install-box">chmod +x setup-nomad-brasil.sh<br>./setup-nomad-brasil.sh</div>
+      </div>
+    </section>
+
+    <!-- TAB 2: CITY INTEL -->
+    <section class="tab-pane" id="tab-cities">
+      <div class="card">
+        <h2 class="card-title">🔍 Busca Municipal em Tempo Real</h2>
+        <p class="card-subtitle">
+          Base completa de dados geodésicos e administrativos de <strong>todos os 5.571 municípios do Brasil (IBGE)</strong>.
+        </p>
+
+        <div class="search-box">
+          <input type="text" id="city-search-input" class="search-input" placeholder="Digite o nome de uma cidade (ex: Louveira, Vinhedo, Manaus, Curitiba)..." oninput="filterCities()">
+          <div id="city-dropdown" class="city-dropdown"></div>
+        </div>
+
+        <div id="city-intel-result" style="display: none;">
+          <div class="intel-grid">
+            <div class="intel-card">
+              <span class="intel-label">MUNICÍPIO / UF</span>
+              <div class="intel-val" id="intel-city-name">-</div>
+            </div>
+            <div class="intel-card">
+              <span class="intel-label">CÓDIGO IBGE</span>
+              <div class="intel-val font-mono" id="intel-city-ibge">-</div>
+            </div>
+            <div class="intel-card">
+              <span class="intel-label">DDD TELEFÔNICO</span>
+              <div class="intel-val font-mono text-emerald-400" id="intel-city-ddd">-</div>
+            </div>
+            <div class="intel-card">
+              <span class="intel-label">DISTÂNCIA DA CAPITAL</span>
+              <div class="intel-val font-mono text-amber-400" id="intel-city-dist">-</div>
+            </div>
+            <div class="intel-card">
+              <span class="intel-label">COORDENADAS GPS</span>
+              <div class="intel-val font-mono" style="font-size: 0.9rem;" id="intel-city-coords">-</div>
+            </div>
+            <div class="intel-card">
+              <span class="intel-label">REGIÃO DO PAÍS</span>
+              <div class="intel-val" id="intel-city-regiao">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: EMERGENCIES -->
+    <section class="tab-pane" id="tab-emergencies">
+      <div class="card">
+        <h2 class="card-title">🚑 Protocolos de Primeiros Socorros &amp; Emergências</h2>
+        <p class="card-subtitle">Procedimentos imediatos para preservação da vida sem depender de conectividade.</p>
+        <div class="protocol-grid" id="emergencies-list">
+          <div style="color: var(--text-muted); font-size: 0.9rem;">Carregando protocolos médicos...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SURVIVAL -->
+    <section class="tab-pane" id="tab-survival">
+      <div class="card">
+        <h2 class="card-title">🏕️ Manuais Práticos de Sobrevivência &amp; Resiliência</h2>
+        <p class="card-subtitle">Guias de purificação de água, canais de rádio PX e dimensionamento solar autônomo.</p>
+        <div class="protocol-grid" id="survival-list">
+          <div style="color: var(--text-muted); font-size: 0.9rem;">Carregando manuais de sobrevivência...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: OFFLINE STACK -->
+    <section class="tab-pane" id="tab-offline">
+      <div class="card">
+        <h2 class="card-title">🛡️ A Arquitetura 100% Offline</h2>
+        <p class="card-subtitle">Projetado para resistir a cenários de blecaute de rede, desastres e áreas remotas.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <h4 style="color: #34d399; margin-bottom: 0.4rem;">🗺️ Mapas PMTiles Locais</h4>
+            <p style="font-size: 0.85rem; color: #cbd5e1;">1,57 GB contendo todas as ruas do Brasil em vetor, servidos por streaming Range 206 pelo backend em Node.js com tipografia Noto Sans offline.</p>
+          </div>
+          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <h4 style="color: #38bdf8; margin-bottom: 0.4rem;">📚 Wikipédia em Português</h4>
+            <p style="font-size: 0.85rem; color: #cbd5e1;">Mais de 1 milhão de artigos com imagens e enciclopédia médica completa em formato ZIM através do servidor Kiwix embutido.</p>
+          </div>
+          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <h4 style="color: #f59e0b; margin-bottom: 0.4rem;">🚗 Traçado de Rotas &amp; GPX</h4>
+            <p style="font-size: 0.85rem; color: #cbd5e1;">Cálculo de evacuação com cache em disco vitalício, ritmo de marcha a pé, cálculo de litros de água/calorias e exportação para aparelhos GPS Garmin.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+      <img src="logo.svg" width="20" height="20" alt="NOMAD">
+      <strong style="color: #fff;">NOMAD Brasil</strong> — Projeto Open Source sob Licença MIT
+    </div>
+    <p>Criado por <a href="https://github.com/DougPomp" target="_blank" style="color: #34d399; text-decoration: none; font-weight: bold;">DougPomp</a> • Hospedado via GitHub Pages</p>
+  </footer>
+
+  <script>
+    let allCities = [];
+
+    // Switch Tabs
+    function switchDemoTab(tabId) {
+      document.querySelectorAll('.demo-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+      
+      const activeBtn = Array.from(document.querySelectorAll('.demo-tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      const pane = document.getElementById(`tab-${tabId}`);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Load static data
+    async function initData() {
+      try {
+        const [citiesRes, emergRes, survRes] = await Promise.all([
+          fetch('data/cities.json').then(r => r.json()).catch(() => []),
+          fetch('data/emergencies.json').then(r => r.json()).catch(() => []),
+          fetch('data/survival.json').then(r => r.json()).catch(() => [])
+        ]);
+
+        allCities = citiesRes;
+
+        // Render emergencies
+        const emergList = document.getElementById('emergencies-list');
+        if (emergList && emergRes.length) {
+          emergList.innerHTML = emergRes.map(item => `
+            <div class="protocol-card">
+              <span class="protocol-badge">${item.category || 'EMERGÊNCIA'}</span>
+              <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.4rem;">${item.title}</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;">${item.summary || (item.steps ? item.steps[0] : '')}</p>
+            </div>
+          `).join('');
+        }
+
+        // Render survival
+        const survList = document.getElementById('survival-list');
+        if (survList && survRes.length) {
+          survList.innerHTML = survRes.map(item => `
+            <div class="protocol-card">
+              <span class="protocol-badge" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7;">MANUAL</span>
+              <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.4rem;">${item.title}</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;">${item.summary || item.description || ''}</p>
+            </div>
+          `).join('');
+        }
+
+        // Default city
+        const def = allCities.find(c => c.name === 'Louveira') || allCities[0];
+        if (def) displayCityIntel(def);
+
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+    }
+
+    function filterCities() {
+      const q = document.getElementById('city-search-input').value.trim().toLowerCase();
+      const dd = document.getElementById('city-dropdown');
+      if (q.length < 2) {
+        dd.style.display = 'none';
+        return;
+      }
+
+      const matches = allCities.filter(c => c.name.toLowerCase().includes(q)).slice(0, 8);
+      if (!matches.length) {
+        dd.style.display = 'none';
+        return;
+      }
+
+      dd.innerHTML = matches.map(c => `
+        <div class="city-item" onclick="selectCity('${c.ibge || c.name}')">
+          <span>${c.name} - ${c.uf}</span>
+          <span class="font-mono text-xs text-gray-400">DDD ${c.ddd || 'N/A'}</span>
+        </div>
+      `).join('');
+      dd.style.display = 'block';
+    }
+
+    function selectCity(identifier) {
+      const city = allCities.find(c => c.ibge == identifier || c.name === identifier);
+      if (!city) return;
+      document.getElementById('city-search-input').value = `${city.name} - ${city.uf}`;
+      document.getElementById('city-dropdown').style.display = 'none';
+      displayCityIntel(city);
+    }
+
+    function displayCityIntel(city) {
+      document.getElementById('city-intel-result').style.display = 'block';
+      document.getElementById('intel-city-name').textContent = `${city.name} / ${city.uf}`;
+      document.getElementById('intel-city-ibge').textContent = city.ibge || 'N/A';
+      document.getElementById('intel-city-ddd').textContent = city.ddd ? `(${city.ddd})` : 'N/A';
+      document.getElementById('intel-city-dist').textContent = city.distCapital ? `${city.distCapital} km` : '0 km (Capital)';
+      document.getElementById('intel-city-coords').textContent = `${Number(city.lat).toFixed(4)}, ${Number(city.lng).toFixed(4)}`;
+      document.getElementById('intel-city-regiao').textContent = city.regiao || 'Brasil';
+    }
+
+    initData();
+  </script>
+</body>
+</html>

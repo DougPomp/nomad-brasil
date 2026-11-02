@@ -1,7 +1,17 @@
-# 🇧🇷 NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento 100% Offline
+<p align="center">
+  <img src="docs/banner.svg" alt="NOMAD Brasil — Central de Sobrevivência, Mapas e Conhecimento 100% Offline" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://dougpomp.github.io/nomad-brasil/"><img src="https://img.shields.io/badge/Demo_Online-GitHub_Pages-10b981?style=for-the-badge&logo=github&logoColor=white" alt="Live Demo"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Licen%C3%A7a-MIT-06b6d4?style=for-the-badge" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/Operacional-100%25_Offline-10b981?style=for-the-badge" alt="100% Offline">
+  <img src="https://img.shields.io/badge/Docker-Pronto-2496ed?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready">
+</p>
 
 > **Sistema autônomo e resiliente de mapas vetoriais, planejamento de rotas de evacuação, enciclopédia completa e protocolos de emergência para o Brasil.**  
-> Projetado para operar com **zero dependência de internet**, funcionando diretamente em um HD externo, pendrive, notebook ou servidor de campo (Docker).
+> Projetado para operar com **zero dependência de internet**, funcionando diretamente em um HD externo, pendrive, notebook ou servidor de campo (Docker).  
+> 🌐 **Acesse a Demonstração Online no GitHub Pages:** [https://dougpomp.github.io/nomad-brasil/](https://dougpomp.github.io/nomad-brasil/)
 
 ---
 
