@@ -1,0 +1,27 @@
+name: nomad-brasil
+
+services:
+  nomad_brasil_web:
+    image: node:22-slim
+    container_name: nomad_brasil_web
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - ./storage:/storage:ro
+    environment:
+      - PORT=8000
+      - STORAGE_PATH=/storage
+    command: ["node", "server.js"]
+
+  nomad_brasil_kiwix:
+    image: ghcr.io/kiwix/kiwix-serve:3.8.1
+    container_name: nomad_brasil_kiwix
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./storage/zim:/data:ro
+    command: ["--library", "/data/kiwix-library.xml"]

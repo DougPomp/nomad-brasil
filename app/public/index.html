@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOMAD Brasil - Central de Sobrevivência & Conhecimento Offline</title>
+  <link rel="stylesheet" href="/styles.css?v=2.4">
+  <link rel="stylesheet" href="/vendor/maplibre-gl.css">
+  <script src="/vendor/maplibre-gl.js"></script>
+  <script src="/vendor/pmtiles.js"></script>
+</head>
+<body>
+
+  <!-- Top Tactical Navbar -->
+  <header class="tactical-nav">
+    <div class="brand">
+      <span class="brand-badge">BRASIL 🇧🇷</span>
+      <span class="brand-title">NOMAD</span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab-btn active" data-tab-target="dashboard">
+        <span>🏠</span> Painel Geral
+      </button>
+      <button class="nav-tab-btn" data-tab-target="map">
+        <span>🗺️</span> Mapas do Brasil
+      </button>
+      <button class="nav-tab-btn" data-tab-target="wiki">
+        <span>📚</span> Wikipédia PT
+      </button>
+      <button class="nav-tab-btn" data-tab-target="emergencies">
+        <span>🚑</span> Primeiros Socorros
+      </button>
+      <button class="nav-tab-btn" data-tab-target="survival">
+        <span>🏕️</span> Sobrevivência
+      </button>
+    </nav>
+
+    <!-- Offline Status Indicator -->
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      <span>100% OFFLINE</span>
+    </div>
+  </header>
+
+  <!-- Main Content Areas -->
+  <main class="main-content">
+
+    <!-- 1. TAB: Dashboard -->
+    <section class="tab-view active" id="tab-dashboard">
+      <div class="dashboard-container">
+        
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+          <div>
+            <h1 class="hero-title">Central Operacional NOMAD Brasil</h1>
+            <p class="hero-subtitle">
+              Ambiente de sobrevivência e preservação de conhecimento 100% independente da internet. Mapas nacionais, milhões de artigos enciclopédicos e protocolos médicos de campo gravados com segurança no seu HD externo de 1 TB.
+            </p>
+          </div>
+          <div class="system-clock">
+            <div id="system-clock-time">--:--:--</div>
+            <div class="clock-sub">Brasília (UTC-3)</div>
+          </div>
+        </div>
+
+        <!-- Quick Access Tactical Cards -->
+        <div class="grid-cards">
+          
+          <!-- Card: Mapas -->
+          <div class="tactical-card" onclick="switchTab('map')">
+            <div class="card-icon green">🗺️</div>
+            <div class="card-title">
+              <span>Mapas Nacionais</span>
+              <span class="card-tag tag-active">Offline</span>
+            </div>
+            <p class="card-desc">
+              Navegação vetorial com busca instantânea de capitais e cidades brasileiras, cálculo de distância e coordenadas geográficas de emergência.
+            </p>
+          </div>
+
+          <!-- Card: Wikipédia Completa -->
+          <div class="tactical-card" onclick="switchTab('wiki')">
+            <div class="card-icon blue">📚</div>
+            <div class="card-title">
+              <span>Wikipédia em Português</span>
+              <span class="card-tag tag-wiki">23 GB</span>
+            </div>
+            <p class="card-desc">
+              Mais de 1 milhão de artigos completos com fotos e diagramas. Enciclopédia médica, guias de cidades e livros didáticos salvos em formato ZIM.
+            </p>
+          </div>
+
+          <!-- Card: Primeiros Socorros -->
+          <div class="tactical-card" onclick="switchTab('emergencies')">
+            <div class="card-icon red">🚑</div>
+            <div class="card-title">
+              <span>Primeiros Socorros</span>
+              <span class="card-tag tag-alert">Triagem</span>
+            </div>
+            <p class="card-desc">
+              Protocolos de ação rápida para Parada Cardíaca (RCP), Desengasgo (Heimlich), Hemorragias e Picadas de Serpentes e Escorpiões do Brasil.
+            </p>
+          </div>
+
+          <!-- Card: Manuais de Sobrevivência -->
+          <div class="tactical-card" onclick="switchTab('survival')">
+            <div class="card-icon amber">🏕️</div>
+            <div class="card-title">
+              <span>Manuais de Resiliência</span>
+              <span class="card-tag tag-active">Campo</span>
+            </div>
+            <p class="card-desc">
+              Técnicas de purificação de água, frequências do Rádio PX (Canais 9 e 19), código Q, dimensionamento de energia solar 12V e estocagem de alimentos.
+            </p>
+          </div>
+
+          <!-- Card: Kiwix Servidor Externo -->
+          <div class="tactical-card" onclick="window.open('http://localhost:8090', '_blank')">
+            <div class="card-icon blue">📖</div>
+            <div class="card-title">
+              <span>Estante Kiwix (Porta 8090)</span>
+              <span class="card-tag tag-wiki">Acervo</span>
+            </div>
+            <p class="card-desc">
+              Acesso direto ao catálogo nativo do Kiwix Serve com todos os 13 livros e coleções científicas organizados por categoria.
+            </p>
+          </div>
+
+          <!-- Card: Telefones de Emergência -->
+          <div class="tactical-card" style="border-left: 4px solid var(--accent-red);">
+            <div class="card-icon red">📞</div>
+            <div class="card-title">
+              <span>Socorro Nacional</span>
+              <span class="card-tag tag-alert">Brasil</span>
+            </div>
+            <div class="card-desc" style="font-family: monospace; font-size: 0.95rem; line-height: 1.8;">
+              <div>🚨 <strong>190</strong> &bull; Polícia Militar</div>
+              <div>🚑 <strong>192</strong> &bull; SAMU (Urgência Médica)</div>
+              <div>🚒 <strong>193</strong> &bull; Corpo de Bombeiros</div>
+              <div>🛡️ <strong>199</strong> &bull; Defesa Civil</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- System Stats Footer -->
+        <div class="bg-card border border-border p-4 rounded-lg flex items-center justify-between text-xs text-gray-400">
+          <div>
+            <strong>Status do Acervo:</strong> <span id="status-summary">Carregando dados...</span>
+          </div>
+          <div>
+            Armazenamento: <strong>HD Externo 1 TB (E:\)</strong> &bull; Engine: <strong>Docker Engine</strong>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. TAB: Mapas do Brasil -->
+    <section class="tab-view" id="tab-map">
+      <div class="map-view-container">
+        
+        <!-- Tactical Map Search HUD -->
+        <div class="map-hud">
+          <div class="map-search-row">
+            <div class="map-search-box">
+              <span class="text-emerald-400 font-bold">🔍</span>
+              <input 
+                type="text" 
+                id="map-city-search" 
+                class="map-search-input" 
+                placeholder="Buscar cidade brasileira ou coordenadas (ex: Louveira, Vinhedo, São Paulo, Brasília)..."
+                autocomplete="off"
+              >
+            </div>
+            <button type="button" class="btn-toggle-routes" id="btn-toggle-route-panel" onclick="toggleRoutePlanner()">
+              <span>🧭</span> Traçar Rota
+            </button>
+          </div>
+          <div id="map-search-results" class="search-results-dropdown"></div>
+
+          <!-- Quick Navigation Pills -->
+          <div class="map-quick-chips">
+            <button type="button" class="chip-btn chip-highlight" onclick="flyToCity('sp-louveira')">📍 Louveira (SP)</button>
+            <button type="button" class="chip-btn" onclick="flyToCity('sp-vinhedo')">Vinhedo</button>
+            <button type="button" class="chip-btn" onclick="flyToCity('sp-campinas')">Campinas</button>
+            <button type="button" class="chip-btn" onclick="flyToCity('sp-sao-paulo')">São Paulo</button>
+            <button type="button" class="chip-btn" onclick="flyToCity('df-brasilia')">Brasília</button>
+            <button type="button" class="chip-btn" onclick="flyToCity('rj-rio-de-janeiro')">Rio de Janeiro</button>
+            <button type="button" class="chip-btn" onclick="flyToCity('pr-curitiba')">Curitiba</button>
+            <button type="button" class="chip-btn" onclick="flyToCity('ba-salvador')">Salvador</button>
+          </div>
+        </div>
+
+        <!-- Coordinates HUD -->
+        <div class="map-coordinates-bar" id="hud-coordinates">
+          LAT: -15.7975° | LNG: -47.8919° | ZOOM: 4.2 (Brasil Central)
+        </div>
+
+        <!-- Tactical Route Planner Panel -->
+        <div id="route-planner-panel" class="route-planner-panel">
+          <div class="route-panel-header">
+            <div class="flex items-center gap-2">
+              <span class="route-badge">ROTA TÁTICA</span>
+              <span class="text-sm font-bold text-white">Planejador de Deslocamento</span>
+            </div>
+            <button type="button" class="drawer-close-btn" onclick="toggleRoutePlanner(false)" title="Fechar Painel">&times;</button>
+          </div>
+
+          <div class="route-panel-body">
+            <!-- Inputs Origin & Dest -->
+            <div class="route-inputs-card">
+              <!-- Origin -->
+              <div class="route-input-group">
+                <div class="route-input-label">
+                  <span class="dot-origin">A</span>
+                  <span>Ponto de Partida (Origem)</span>
+                </div>
+                <div class="route-field-wrap">
+                  <input type="text" id="route-from-input" class="route-input" placeholder="Buscar cidade de saída..." autocomplete="off">
+                  <button type="button" class="btn-input-action" onclick="enableMapPick('origin')" title="Definir clicando no mapa">📍 Mapa</button>
+                </div>
+                <div id="route-from-dropdown" class="search-results-dropdown route-dropdown"></div>
+              </div>
+
+              <!-- Swap Button -->
+              <div class="route-swap-row">
+                <button type="button" class="btn-swap-points" onclick="swapRoutePoints()" title="Inverter Origem e Destino">
+                  ⇅ Inverter Pontos
+                </button>
+              </div>
+
+              <!-- Destination -->
+              <div class="route-input-group">
+                <div class="route-input-label">
+                  <span class="dot-dest">B</span>
+                  <span>Ponto de Chegada (Destino)</span>
+                </div>
+                <div class="route-field-wrap">
+                  <input type="text" id="route-to-input" class="route-input" placeholder="Buscar cidade de destino..." autocomplete="off">
+                  <button type="button" class="btn-input-action" onclick="enableMapPick('dest')" title="Definir clicando no mapa">📍 Mapa</button>
+                </div>
+                <div id="route-to-dropdown" class="search-results-dropdown route-dropdown"></div>
+              </div>
+            </div>
+
+            <!-- Profiles -->
+            <div class="route-profiles">
+              <button type="button" class="profile-option active" id="prof-driving" onclick="selectProfile('driving')">
+                <span class="profile-icon">🚗</span>
+                <span class="profile-name">Veículo</span>
+              </button>
+              <button type="button" class="profile-option" id="prof-tactical" onclick="selectProfile('tactical')">
+                <span class="profile-icon">🛞</span>
+                <span class="profile-name">4x4 Tático</span>
+              </button>
+              <button type="button" class="profile-option" id="prof-walking" onclick="selectProfile('walking')">
+                <span class="profile-icon">🥾</span>
+                <span class="profile-name">Marcha a Pé</span>
+              </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="route-actions-row">
+              <button type="button" class="btn-calc-route" id="btn-calc-route" onclick="calculateRoute()">
+                <span>🚀</span> Calcular Rota Tática
+              </button>
+              <button type="button" class="btn-clear-route" onclick="clearCurrentRoute()">
+                Limpar
+              </button>
+            </div>
+
+            <!-- Pick mode alert banner -->
+            <div id="map-pick-banner" class="map-pick-banner" style="display: none;">
+              <span>📍 Clique em qualquer ponto do mapa para definir: <strong id="map-pick-target-name">Origem</strong></span>
+              <button type="button" onclick="cancelMapPick()" class="text-xs text-red-400 font-bold underline ml-2">Cancelar</button>
+            </div>
+
+            <!-- Route Result Container -->
+            <div id="route-result-container" class="route-result-container" style="display: none;">
+              <!-- Metrics -->
+              <div class="route-metrics-grid">
+                <div class="metric-card">
+                  <span class="metric-title">DISTÂNCIA</span>
+                  <span class="metric-value font-mono text-emerald-400" id="route-metric-dist">0 km</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">TEMPO ESTIMADO</span>
+                  <span class="metric-value font-mono text-white" id="route-metric-dur">0 min</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title" id="route-metric-fuel-title">COMBUSTÍVEL</span>
+                  <span class="metric-value font-mono text-amber-400" id="route-metric-fuel">0 L</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">MODO DE REDE</span>
+                  <span class="metric-badge" id="route-metric-source">OSRM</span>
+                </div>
+              </div>
+
+              <!-- Steps List -->
+              <div class="route-steps-section">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold text-gray-300 uppercase tracking-wider">Passo a Passo da Rota</span>
+                  <span class="text-[11px] text-gray-500 font-mono" id="route-steps-count">0 etapas</span>
+                </div>
+                <div class="route-steps-list" id="route-steps-list"></div>
+              </div>
+
+              <!-- Export GPX -->
+              <div class="route-export-row">
+                <button type="button" class="btn-export-gpx" onclick="downloadCurrentRouteGpx()">
+                  <span>📥</span> Baixar GPX (Garmin / OsmAnd)
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tactical City Intel Drawer -->
+        <div id="city-intel-drawer" class="city-intel-drawer">
+          <div class="drawer-header">
+            <div class="drawer-header-left">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="drawer-badge" id="drawer-badge-region">SUDESTE</span>
+                <span class="drawer-badge drawer-badge-state" id="drawer-badge-uf">SP</span>
+              </div>
+              <h3 id="drawer-city-name" class="drawer-title">Louveira</h3>
+              <span id="drawer-state-name" class="drawer-subtitle">São Paulo</span>
+            </div>
+            <button class="drawer-close-btn" onclick="closeCityDrawer()" title="Fechar Painel">&times;</button>
+          </div>
+
+          <div class="drawer-body">
+            <!-- Key Municipal Indicators -->
+            <div class="drawer-grid">
+              <div class="drawer-stat-card">
+                <span class="stat-label">CÓDIGO IBGE</span>
+                <span class="stat-value font-mono" id="drawer-ibge">3527306</span>
+              </div>
+              <div class="drawer-stat-card">
+                <span class="stat-label">PREFIXO DDD</span>
+                <span class="stat-value font-mono" id="drawer-ddd">(19)</span>
+              </div>
+              <div class="drawer-stat-card">
+                <span class="stat-label">STATUS</span>
+                <span class="stat-value" id="drawer-capital-status">Município</span>
+              </div>
+              <div class="drawer-stat-card">
+                <span class="stat-label">DISTÂNCIA CAPITAL</span>
+                <span class="stat-value font-mono" id="drawer-distance">-- km</span>
+              </div>
+            </div>
+
+            <!-- Geographic Coordinates Box -->
+            <div class="drawer-section">
+              <div class="drawer-section-title">📍 Coordenadas Geográficas</div>
+              <div class="coords-box">
+                <div>
+                  <div class="text-[11px] text-gray-400">LATITUDE / LONGITUDE</div>
+                  <div class="text-sm font-mono text-emerald-400 font-bold" id="drawer-coords">-23.0856°, -46.9484°</div>
+                </div>
+                <button type="button" class="btn-copy-coords" onclick="copyCityCoords()" id="btn-copy-coords" title="Copiar coordenadas">
+                  📋 Copiar
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Zoom & Routing Actions -->
+            <div class="drawer-section">
+              <div class="drawer-section-title">🔍 Visualização Tática & Navegação</div>
+              <div class="drawer-actions-row">
+                <button type="button" class="btn-drawer-action" onclick="zoomCity(14)">
+                  <span>🏘️</span> Nível de Ruas (Zoom 14)
+                </button>
+                <button type="button" class="btn-drawer-action" onclick="zoomCity(11.5)">
+                  <span>🗺️</span> Visão Regional (Zoom 11.5)
+                </button>
+                <button type="button" class="btn-drawer-action btn-route-city-action" onclick="planRouteToSelectedCity()">
+                  <span>🧭</span> Traçar Rota até esta Cidade
+                </button>
+              </div>
+            </div>
+
+            <!-- Offline Wikipedia Integration -->
+            <div class="drawer-section">
+              <div class="drawer-section-title">📚 Enciclopédia Offline (ZIM Kiwix)</div>
+              <a href="#" id="drawer-wiki-link" target="_blank" class="btn-wiki-open">
+                <span class="text-2xl">📖</span>
+                <div class="text-left">
+                  <div class="font-bold text-sm text-white">Artigo Completo na Wikipédia</div>
+                  <div class="text-xs text-emerald-300">História, demografia, relevo, hidrografia e economia</div>
+                </div>
+              </a>
+            </div>
+
+            <!-- Direct Emergency Lines -->
+            <div class="drawer-section">
+              <div class="drawer-section-title">🚨 Linhas Nacionais de Socorro</div>
+              <div class="emergency-grid">
+                <div class="emergency-pill"><span class="em-num text-red-400">190</span><span class="em-name">Polícia Militar</span></div>
+                <div class="emergency-pill"><span class="em-num text-red-400">192</span><span class="em-name">SAMU Emergência</span></div>
+                <div class="emergency-pill"><span class="em-num text-red-400">193</span><span class="em-name">Corpo de Bombeiros</span></div>
+                <div class="emergency-pill"><span class="em-num text-amber-400">199</span><span class="em-name">Defesa Civil</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Map Canvas -->
+        <div id="map-container"></div>
+      </div>
+    </section>
+
+    <!-- 3. TAB: Wikipédia & Acervo Kiwix -->
+    <section class="tab-view" id="tab-wiki">
+      <div class="kiwix-frame-container">
+        <!-- Floating Action Bar -->
+        <div style="position: absolute; top: 12px; right: 12px; z-index: 50; display: flex; gap: 8px;">
+          <a href="http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05" target="_blank" class="nav-tab-btn" style="background: rgba(15,20,26,0.9); border: 1px solid var(--border); color: #fff;">
+            ↗️ Abrir Wikipédia em Nova Aba
+          </a>
+          <a href="http://localhost:8090" target="_blank" class="nav-tab-btn" style="background: rgba(15,20,26,0.9); border: 1px solid var(--border); color: #fff;">
+            📚 Estante de Livros
+          </a>
+        </div>
+        <iframe id="kiwix-iframe" class="kiwix-iframe" src=""></iframe>
+      </div>
+    </section>
+
+    <!-- 4. TAB: Primeiros Socorros -->
+    <section class="tab-view" id="tab-emergencies">
+      <div class="content-detail-view">
+        <div class="mb-6">
+          <h2 class="text-2xl font-extrabold text-white mb-2">Protocolos de Primeiros Socorros & Triagem</h2>
+          <p class="text-gray-400 text-sm">
+            Guias de intervenção imediata para salvar vidas em situações de desastre, acidentes ou isolamento hospitalar.
+          </p>
+        </div>
+        <div id="emergencies-container">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. TAB: Manuais de Sobrevivência -->
+    <section class="tab-view" id="tab-survival">
+      <div class="content-detail-view">
+        <div class="mb-6">
+          <h2 class="text-2xl font-extrabold text-white mb-2">Manuais Práticos de Sobrevivência & Resiliência</h2>
+          <p class="text-gray-400 text-sm">
+            Instruções técnicas para obtenção de água potável, telecomunicações de emergência, energia solar e armazenamento seguro de alimentos.
+          </p>
+        </div>
+        <div id="survival-container">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/app.js?v=2.4"></script>
+</body>
+</html>

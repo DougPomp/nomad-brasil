@@ -1,0 +1,17 @@
+# Storage and heavy offline datasets (Download via setup-nomad-brasil)
+storage/zim/*.zim
+storage/maps/*.pmtiles
+storage/routes_cache/
+app/data/routes_cache/
+
+# Binary tools
+tools/*.exe
+
+# Node & Docker
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
