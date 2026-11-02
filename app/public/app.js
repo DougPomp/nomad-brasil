@@ -910,14 +910,7 @@ function handleMapPickedPoint(lat, lng, mode) {
 // Calculate route
 window.calculateRoute = async function() {
   if (!routeOrigin || !routeDest) {
-    alert('Defina o Ponto de Partida (A) e o Ponto de Chegada (B) para calcular a rota.');
     return;
-  }
-
-  const btnCalc = document.getElementById('btn-calc-route');
-  if (btnCalc) {
-    btnCalc.innerHTML = `<span>⏳</span> Traçando Rota...`;
-    btnCalc.disabled = true;
   }
 
   try {
@@ -931,12 +924,6 @@ window.calculateRoute = async function() {
 
   } catch (err) {
     console.error('Erro ao calcular rota:', err);
-    alert('Erro ao calcular rota. Verifique a conexão com o servidor.');
-  } finally {
-    if (btnCalc) {
-      btnCalc.innerHTML = `<span>🚀</span> Calcular Rota Tática`;
-      btnCalc.disabled = false;
-    }
   }
 };
 

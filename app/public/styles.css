@@ -1131,43 +1131,27 @@ body {
 
 .route-actions-row {
   display: flex;
+  justify-content: flex-end;
   gap: 0.5rem;
-}
-
-.btn-calc-route {
-  flex: 1;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #000;
-  font-weight: 800;
-  border: none;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  transition: all 0.2s ease;
-}
-.btn-calc-route:hover {
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-  transform: translateY(-1px);
 }
 
 .btn-clear-route {
   background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  padding: 0.75rem 0.85rem;
+  padding: 0.5rem 0.85rem;
   border-radius: 8px;
   font-size: 0.8rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   transition: all 0.15s ease;
 }
 .btn-clear-route:hover {
   color: var(--accent-red);
   border-color: var(--accent-red);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .map-pick-banner {
