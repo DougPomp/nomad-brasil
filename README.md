@@ -24,7 +24,7 @@ O sistema integra em um único painel web ultra-rápido:
 ### No Windows:
 1. Clone o repositório ou baixe os arquivos para o seu computador ou HD externo:
    ```cmd
-   git clone https://github.com/SEU_USUARIO/nomad-brasil.git
+   git clone https://github.com/DougPomp/nomad-brasil.git
    cd nomad-brasil
    ```
 2. Execute o instalador automático com 2 cliques ou pelo terminal:
@@ -35,7 +35,7 @@ O sistema integra em um único painel web ultra-rápido:
 
 ### No Linux / macOS / Raspberry Pi:
 ```bash
-git clone https://github.com/SEU_USUARIO/nomad-brasil.git
+git clone https://github.com/DougPomp/nomad-brasil.git
 cd nomad-brasil
 chmod +x setup-nomad-brasil.sh
 ./setup-nomad-brasil.sh
