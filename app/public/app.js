@@ -3326,11 +3326,241 @@ window.resetPacePlan = function() {
   if (document.getElementById('pace-in-e')) document.getElementById('pace-in-e').value = '3 silvos de apito a cada 15 min / Espelho Heliógrafo às 12h';
 };
 
+// =====================================================================
+// 25. ORTOPEDIA AUSTERA & MANEJO DE FRATURAS/PMS
+// =====================================================================
+window.calculateOrthopedics = function() {
+  const type = document.getElementById('ortho-injury-select')?.value || 'femur';
+  const techEl = document.getElementById('ortho-res-tech');
+  const descEl = document.getElementById('ortho-res-desc');
+  const pmsEl = document.getElementById('ortho-res-pms');
+  if (!techEl || !descEl || !pmsEl) return;
+
+  if (type === 'femur') {
+    techEl.textContent = 'Tração Femoral com Molinete (Estilo Hare/Sager)';
+    descEl.textContent = 'Requer aplicação de tração axial contínua para sobrepor o espasmo do quadríceps, realinhar as bordas ósseas e prevenir choque hipovolêmico por laceração da artéria femoral profunda.';
+    pmsEl.innerHTML = '<strong>Checagem PMS Obrigatória:</strong> Palpar pulso pedioso dorsal e tibial posterior antes e após tracionar. Tempo de enchimento capilar &lt; 2s.';
+  } else if (type === 'shoulder') {
+    techEl.textContent = 'Método Atraumático de Cunningham ou Milch';
+    descEl.textContent = 'Sente o paciente ereto. Realize massagem suave no trapézio superior, deltoide e bíceps até relaxamento muscular completo. A cabeça do úmero desliza suavemente para a fossa glenoide sem puxões violentos.';
+    pmsEl.innerHTML = '<strong>Checagem PMS Obrigatória:</strong> Avaliar sensibilidade na face lateral do deltoide (nervo axilar) e pulso radial antes e após a redução. Imobilizar em tipoia de Velpeau.';
+  } else if (type === 'tibia') {
+    techEl.textContent = 'Tala Rígida Moldada em "U" + Tala Posterior';
+    descEl.textContent = 'Alinhe a perna aplicando tração manual suave no calcanhar. Imobilize desde o joelho até além do tornozelo em 90 graus com papelão reforçado ou galhos acolchoados.';
+    pmsEl.innerHTML = '<strong>Checagem PMS Obrigatória:</strong> Verifique se a tala não comprime a cabeça da fíbula (risco de lesão do nervo fibular comum / pé caído).';
+  } else if (type === 'patella') {
+    techEl.textContent = 'Extensão Passiva e Medialização Suave';
+    descEl.textContent = 'Estenda lentamente a perna e flexione levemente o quadril para relaxar o tendão patelar. Com a ponta dos dedos, empurre suavemente a patela em direção medial até o encaixe anatômico.';
+    pmsEl.innerHTML = '<strong>Checagem PMS Obrigatória:</strong> Manter a perna estendida com tala posterior rígida por 2 a 3 semanas. Verificar circulação distal.';
+  }
+};
+
+// =====================================================================
+// 26. APICULTURA NATIVA & ATRATIVO DE ABELHAS ASF
+// =====================================================================
+window.calculateAsfBait = function() {
+  const ml = parseFloat(document.getElementById('asf-alcohol-input')?.value) || 500;
+  const sp = document.getElementById('asf-target-species')?.value || 'jatai';
+  
+  let propolisG = Math.round(ml * 0.25);
+  let bottles = Math.round(ml / 20);
+  let timeStr = '30 a 45 dias no escuro';
+
+  if (sp === 'mandacaia') {
+    propolisG = Math.round(ml * 0.30);
+    timeStr = '40 a 60 dias (resina densa com geoprópolis)';
+  } else if (sp === 'urucu') {
+    propolisG = Math.round(ml * 0.35);
+    timeStr = '45 dias no escuro';
+  }
+
+  const pEl = document.getElementById('asf-res-propolis');
+  const bEl = document.getElementById('asf-res-bottles');
+  const tEl = document.getElementById('asf-res-time');
+
+  if (pEl) pEl.textContent = `${propolisG} g de própolis bruto`;
+  if (bEl) bEl.textContent = `~${bottles} garrafas PET 2L`;
+  if (tEl) tEl.textContent = timeStr;
+};
+
+// =====================================================================
+// 27. AQUAPONIA & PISCICULTURA EM IBC 1000L
+// =====================================================================
+window.calculateAquaponics = function() {
+  const liters = parseFloat(document.getElementById('aqua-tank-input')?.value) || 1000;
+  const fish = document.getElementById('aqua-fish-select')?.value || 'tilapia';
+
+  let density = '';
+  let biomass = '';
+  let filterL = Math.round(liters * 0.30);
+  let bedM2 = (liters * 0.0025).toFixed(1);
+  let pumpFlow = `${Math.round(liters * 1.2)} a ${Math.round(liters * 1.5)} L/h`;
+
+  if (fish === 'tilapia') {
+    const minFish = Math.round((liters / 1000) * 50);
+    const maxFish = Math.round((liters / 1000) * 65);
+    density = `${minFish} a ${maxFish} alevinos`;
+    biomass = `~${Math.round(maxFish * 0.55)} kg de tilápia adulta`;
+  } else if (fish === 'lambari') {
+    const minFish = Math.round((liters / 1000) * 150);
+    const maxFish = Math.round((liters / 1000) * 220);
+    density = `${minFish} a ${maxFish} lambaris`;
+    biomass = `~${Math.round(maxFish * 0.04)} kg de lambari`;
+  } else {
+    const minFish = Math.round((liters / 1000) * 20);
+    const maxFish = Math.round((liters / 1000) * 30);
+    density = `${minFish} a ${maxFish} carpas`;
+    biomass = `~${Math.round(maxFish * 0.8)} kg de peixe vivo`;
+  }
+
+  const dEl = document.getElementById('aqua-res-density');
+  const bEl = document.getElementById('aqua-res-biomass');
+  const fEl = document.getElementById('aqua-res-filter');
+  const bedEl = document.getElementById('aqua-res-bed');
+  const pEl = document.getElementById('aqua-res-pump');
+
+  if (dEl) dEl.textContent = density;
+  if (bEl) bEl.textContent = biomass;
+  if (fEl) fEl.textContent = `${filterL} Litros (biofiltro brita)`;
+  if (bedEl) bedEl.textContent = `~${bedM2} m² de bancada vegetal`;
+  if (pEl) pEl.textContent = pumpFlow;
+};
+
+// =====================================================================
+// 28. GASOGÊNIO & RENDIMENTO WOOD GAS
+// =====================================================================
+window.calculateGasifier = function() {
+  const kw = parseFloat(document.getElementById('gas-kw-input')?.value) || 3.5;
+  const netKw = (kw * 0.72).toFixed(1);
+  const woodPerH = (netKw * 1.35).toFixed(1);
+  const hours = ((40 / woodPerH)).toFixed(1);
+
+  const pEl = document.getElementById('gas-res-power');
+  const wEl = document.getElementById('gas-res-wood');
+  const hEl = document.getElementById('gas-res-hours');
+
+  if (pEl) pEl.textContent = `~${netKw} kW (-28% perda térmica)`;
+  if (wEl) wEl.textContent = `~${woodPerH} kg de madeira seca/h`;
+  if (hEl) hEl.textContent = `~${hours} horas contínuas`;
+};
+
+// =====================================================================
+// 29. FORTIFICAÇÃO & PROTEÇÃO BALÍSTICA
+// =====================================================================
+window.calculateFortification = function() {
+  const threat = document.getElementById('fort-threat-select')?.value || 'handgun';
+
+  let sand = '20 cm';
+  let earth = '30 cm';
+  let gravel = '15 cm';
+  let wood = '25 cm';
+  let steel = '4.5 mm (3/16")';
+
+  if (threat === 'shotgun') {
+    sand = '30 cm';
+    earth = '40 cm';
+    gravel = '25 cm';
+    wood = '35 cm';
+    steel = '6.5 mm (1/4")';
+  } else if (threat === '556') {
+    sand = '40 cm';
+    earth = '50 cm';
+    gravel = '30 cm';
+    wood = '55 cm';
+    steel = '9.5 mm (3/8")';
+  } else if (threat === '762') {
+    sand = '60 cm (dupla fileira)';
+    earth = '75 cm compactada';
+    gravel = '45 cm';
+    wood = '80 cm (dormentes cruzados)';
+    steel = '12.7 mm (1/2" chapa blindada)';
+  }
+
+  const sEl = document.getElementById('fort-res-sand');
+  const eEl = document.getElementById('fort-res-earth');
+  const gEl = document.getElementById('fort-res-gravel');
+  const wEl = document.getElementById('fort-res-wood');
+  const stEl = document.getElementById('fort-res-steel');
+
+  if (sEl) sEl.textContent = sand;
+  if (eEl) eEl.textContent = earth;
+  if (gEl) gEl.textContent = gravel;
+  if (wEl) wEl.textContent = wood;
+  if (stEl) stEl.textContent = steel;
+};
+
+// =====================================================================
+// 30. FORJA & TRATAMENTO TÉRMICO DE AÇOS
+// =====================================================================
+window.calculateBlacksmith = function() {
+  const steel = document.getElementById('smith-steel-select')?.value || '5160';
+
+  let forge = '950°C a 1150°C (Laranja a Amarelo)';
+  let quench = '~800°C - 830°C (Vermelho Cereja Vivo)';
+  let medium = 'Óleo Vegetal Morno (45°C - 55°C)';
+  let temper = '2 horas a 200°C (Cor Palha Dourada)';
+  let hrc = '58 a 60 HRC (Tenacidade Máxima)';
+
+  if (steel === '1095') {
+    forge = '900°C a 1050°C (Vermelho Claro / Laranja)';
+    quench = '~790°C (Perda imediata de magnetismo)';
+    medium = 'Óleo Fino Rápido (40°C)';
+    temper = '2 horas a 220°C';
+    hrc = '60 a 62 HRC (Fio de Navalha Extremo)';
+  } else if (steel === '52100') {
+    forge = '950°C a 1100°C';
+    quench = '~820°C - 840°C';
+    medium = 'Óleo Vegetal Morno a 50°C';
+    temper = '2 ciclos de 1h30 a 190°C';
+    hrc = '61 a 63 HRC (Resistência ao Desgaste)';
+  } else if (steel === 'cable') {
+    forge = '1050°C a 1250°C (Amarelo Claro / Solda)';
+    quench = '~810°C (Vermelho Cereja)';
+    medium = 'Óleo Mineral ou Vegetal Morno';
+    temper = '2 horas a 200°C';
+    hrc = '56 a 58 HRC (Padrão Damasco Flexível)';
+  }
+
+  const fEl = document.getElementById('smith-res-forge');
+  const qEl = document.getElementById('smith-res-quench');
+  const mEl = document.getElementById('smith-res-medium');
+  const tEl = document.getElementById('smith-res-temper');
+  const hEl = document.getElementById('smith-res-hrc');
+
+  if (fEl) fEl.textContent = forge;
+  if (qEl) qEl.textContent = quench;
+  if (mEl) mEl.textContent = medium;
+  if (tEl) tEl.textContent = temper;
+  if (hEl) hEl.textContent = hrc;
+};
+
+// =====================================================================
+// 31. CARVÃO ATIVADO MEDICINAL & DOSAGEM ANTITÓXICA
+// =====================================================================
+window.calculateCharcoal = function() {
+  const kg = parseFloat(document.getElementById('char-weight-input')?.value) || 70;
+  const doseG = Math.round(kg * 1.0);
+  const waterMl = Math.round(doseG * 4.5);
+
+  const dEl = document.getElementById('char-res-dose');
+  const wEl = document.getElementById('char-res-water');
+
+  if (dEl) dEl.textContent = `${doseG} gramas de pó fino (1g/kg)`;
+  if (wEl) wEl.textContent = `${waterMl} a ${Math.round(waterMl * 1.3)} ml de água limpa`;
+};
+
 // Auto-init new calculators
 document.addEventListener('DOMContentLoaded', () => {
   if (window.calculateSoroDose) window.calculateSoroDose();
   if (window.calculateBleachDilution) window.calculateBleachDilution();
   if (window.calculateBatteryAutonomy) window.calculateBatteryAutonomy();
   if (window.loadPacePlan) window.loadPacePlan();
+  if (window.calculateOrthopedics) window.calculateOrthopedics();
+  if (window.calculateAsfBait) window.calculateAsfBait();
+  if (window.calculateAquaponics) window.calculateAquaponics();
+  if (window.calculateGasifier) window.calculateGasifier();
+  if (window.calculateFortification) window.calculateFortification();
+  if (window.calculateBlacksmith) window.calculateBlacksmith();
+  if (window.calculateCharcoal) window.calculateCharcoal();
 });
 

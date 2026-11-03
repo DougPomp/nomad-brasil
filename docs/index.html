@@ -1012,6 +1012,10 @@
             <span class="tab-icon">🩸</span>
             <span>Suturas &amp; Feridas na Mata</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="orthopedics" onclick="switchDemoTab('orthopedics')">
+            <span class="tab-icon">🦴</span>
+            <span>Fraturas &amp; Tração de Campo</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="biosecurity" onclick="switchDemoTab('biosecurity')">
             <span class="tab-icon">☣️</span>
             <span>Biossegurança &amp; Epidemias</span>
@@ -1055,6 +1059,14 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="k9" onclick="switchDemoTab('k9')">
             <span class="tab-icon">🐕</span>
             <span>Cinotécnica &amp; APH Canino</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="asf" onclick="switchDemoTab('asf')">
+            <span class="tab-icon">🐝</span>
+            <span>Apicultura &amp; Abelhas ASF</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="aquaponics" onclick="switchDemoTab('aquaponics')">
+            <span class="tab-icon">🐟</span>
+            <span>Piscicultura &amp; Aquaponia</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="knots" onclick="switchDemoTab('knots')">
             <span class="tab-icon">🪢</span>
@@ -1124,6 +1136,10 @@
             <span class="tab-icon">🛡️</span>
             <span>Gaiola Faraday &amp; Digital</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="gasifier" onclick="switchDemoTab('gasifier')">
+            <span class="tab-icon">⚡</span>
+            <span>Gasogênio &amp; Motores a Lenha</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="bob" onclick="switchDemoTab('bob')">
             <span class="tab-icon">🎒</span>
             <span>Mochila 72h (BOB)</span>
@@ -1135,6 +1151,10 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="perimeter" onclick="switchDemoTab('perimeter')">
             <span class="tab-icon">🛡️</span>
             <span>Segurança Perimetral</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="fortification" onclick="switchDemoTab('fortification')">
+            <span class="tab-icon">🏰</span>
+            <span>Fortificação &amp; Abrigo Seguro</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="grayman" onclick="switchDemoTab('grayman')">
             <span class="tab-icon">👤</span>
@@ -1167,6 +1187,14 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="tanning" onclick="switchDemoTab('tanning')">
             <span class="tab-icon">🏕️</span>
             <span>Curtume Rústico &amp; Couro</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="blacksmith" onclick="switchDemoTab('blacksmith')">
+            <span class="tab-icon">⚒️</span>
+            <span>Forja &amp; Ferraria Rústica</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="charcoal" onclick="switchDemoTab('charcoal')">
+            <span class="tab-icon">🧪</span>
+            <span>Carvão Ativado &amp; Filtros</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="rationing" onclick="switchDemoTab('rationing')">
             <span class="tab-icon">🍲</span>
@@ -2998,6 +3026,282 @@
           </div>
         </section>
 
+        <!-- TAB 49: FRATURAS, LUXAÇÕES & TRAÇÃO ÓSSEA -->
+        <section class="tab-pane" id="tab-orthopedics">
+          <div class="card">
+            <h2 class="card-title">🦴 Fraturas, Luxações &amp; Tração Óssea</h2>
+            <p class="card-subtitle">
+              Protocolo neurovascular PMS, tração femoral rústica com molinete e redução atraumática de luxação escapular.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🩺 Manejo Traumatológico &amp; PMS</h3>
+                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Tipo de Lesão:</label>
+                <select id="on-ortho-injury-select" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.45rem; border-radius: 4px; font-size: 0.8rem; margin-bottom: 0.75rem;" onchange="calcOnlineOrthopedics()">
+                  <option value="femur">Fratura Fechada de Diáfise Femoral (Fêmur)</option>
+                  <option value="shoulder">Luxação Anterior de Ombro (Glenoumeral)</option>
+                  <option value="tibia">Fratura Fechada de Tíbia e Fíbula</option>
+                  <option value="patella">Luxação Patelar / Lesão de Joelho</option>
+                </select>
+
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 4px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Protocolo:</span><strong id="on-ortho-res-tech" style="color: #fbbf24;">Tração Femoral com Molinete</strong></div>
+                  <div id="on-ortho-res-desc" style="color: var(--text-secondary); line-height: 1.4; margin-top: 0.25rem;">Requer aplicação de tração axial imediata para sobrepor o espasmo do quadríceps, realinhar as bordas ósseas e prevenir choque hipovolêmico por laceração da artéria femoral profunda.</div>
+                  <div id="on-ortho-res-pms" style="margin-top: 0.5rem; padding: 0.4rem; background: rgba(16,185,129,0.1); border-left: 3px solid #10b981; color: #34d399; font-size: 0.74rem;"><strong>PMS Obrigatório:</strong> Palpar pulso pedioso dorsal e tibial posterior antes e após tracionar. Tempo de enchimento capilar &lt; 2s.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🛠️ Tala de Tração Femoral Rústica</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">1. Ancoragem Pélvica:</strong> Bastão longo na lateral externa do quadril, amarrado firmemente à virilha/quadril com bandagem triangular acolchoada.</div>
+                  <div><strong style="color: #fbbf24;">2. Estribo no Tornozelo:</strong> Confeccione laço acolchoado no tornozelo e dorso do pé (nó em oito duplo com paracord) sem garrotear a circulação.</div>
+                  <div><strong style="color: #34d399;">3. Molinete:</strong> Gire alavanca de madeira no cordim distal até a perna fraturada igualar o comprimento da perna sã. Trave a alavanca.</div>
+                  <div><strong style="color: #ef4444;">⚠️ Contraindicação:</strong> NUNCA aplique tração se houver fratura de pelve ou tornozelo no mesmo membro.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 50: APICULTURA NATIVA & ABELHAS ASF -->
+        <section class="tab-pane" id="tab-asf">
+          <div class="card">
+            <h2 class="card-title">🐝 Apicultura Nativa &amp; Abelhas Sem Ferrão (ASF)</h2>
+            <p class="card-subtitle">
+              Criação, resgate e multiplicação de espécies nativas (Jataí, Mandaçaia, Uruçu) e produção de mel medicinal e própolis.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🍯 Calculadora de Ninhos-Isca &amp; Atrativo</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.6rem;">
+                  <div>
+                    <label style="font-size: 0.72rem; color: var(--text-muted); display: block;">Álcool 70% (ml):</label>
+                    <input type="number" id="on-asf-alcohol-input" value="500" min="100" max="5000" step="50" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem;" oninput="calcOnlineAsf()">
+                  </div>
+                  <div>
+                    <label style="font-size: 0.72rem; color: var(--text-muted); display: block;">Espécie Alvo:</label>
+                    <select id="on-asf-target-species" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem;" onchange="calcOnlineAsf()">
+                      <option value="jatai">Jataí</option>
+                      <option value="mandacaia">Mandaçaia</option>
+                      <option value="urucu">Uruçu Amarela</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 4px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Própolis Bruto:</span><strong id="on-asf-res-propolis" style="color: #fbbf24;">125 g</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Ninhos-Isca (PET 2L):</span><strong id="on-asf-res-bottles" style="color: #34d399;">~25 garrafas</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Tempo de Maceração:</span><strong id="on-asf-res-time" style="color: #38bdf8;">30 a 45 dias no escuro</strong></div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">📦 Caixas Racionais Modelo INPA</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Madeira 25mm:</strong> Espessura de 2,5 cm garante isolamento térmico contra frio e calor extremo.</div>
+                  <div><strong style="color: #fbbf24;">Medidas Internas:</strong> Jataí: 12x12 cm (ninho 7cm); Mandaçaia: 18x18 cm (ninho 9cm); Uruçu: 20x20 cm (ninho 10cm).</div>
+                  <div><strong style="color: #34d399;">Colheita com Seringa:</strong> Nunca esprema potes de mel para não misturar com o saburá (pólen fermentado).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 51: PISCICULTURA & AQUAPONIA IBC -->
+        <section class="tab-pane" id="tab-aquaponics">
+          <div class="card">
+            <h2 class="card-title">🐟 Piscicultura &amp; Aquaponia Artesanal (IBC 1000L)</h2>
+            <p class="card-subtitle">
+              Criação de Tilápias e Lambaris em circuito fechado integrado a hortaliças, aeração venturi por gravidade e larvas BSFL.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">📐 Calculadora de Dimensionamento IBC</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.6rem;">
+                  <div>
+                    <label style="font-size: 0.72rem; color: var(--text-muted); display: block;">Volume Tanque (L):</label>
+                    <input type="number" id="on-aqua-tank-input" value="1000" min="300" max="10000" step="100" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem;" oninput="calcOnlineAquaponics()">
+                  </div>
+                  <div>
+                    <label style="font-size: 0.72rem; color: var(--text-muted); display: block;">Espécie:</label>
+                    <select id="on-aqua-fish-select" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.4rem; border-radius: 4px; font-size: 0.8rem;" onchange="calcOnlineAquaponics()">
+                      <option value="tilapia">Tilápia</option>
+                      <option value="lambari">Lambari</option>
+                      <option value="carpa">Carpa</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 4px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Capacidade:</span><strong id="on-aqua-res-density" style="color: #34d399;">50 a 65 alevinos</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Biomassa Abate:</span><strong id="on-aqua-res-biomass" style="color: #38bdf8;">~35 kg de peixe</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Biofiltro Brita:</span><strong id="on-aqua-res-filter" style="color: #fbbf24;">300 Litros</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Hortaliças:</span><strong id="on-aqua-res-bed" style="color: #34d399;">~2.5 m²</strong></div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🔄 Venturi Passivo &amp; Ração BSFL</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Efeito Venturi:</strong> Redução no cano de retorno de 32mm para 20mm suga ar por mangueira lateral, oxigenando a água por gravidade sem bombas elétricas adicionais.</div>
+                  <div><strong style="color: #fbbf24;">Larvas BSFL (Mosca Soldado Negro):</strong> 42% de proteína bruta e rampa de auto-colheita diretamente na água dos peixes.</div>
+                  <div><strong style="color: #34d399;">Bactérias Nitrificantes:</strong> Amônia &rarr; Nitrito &rarr; Nitrato (adubo para verduras).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 52: GASOGÊNIO & MOTORES A LENHA -->
+        <section class="tab-pane" id="tab-gasifier">
+          <div class="card">
+            <h2 class="card-title">⚡ Gasogênio &amp; Motores a Lenha (Wood Gas)</h2>
+            <p class="card-subtitle">
+              Gaseificação de madeira e carvão em reatores down-draft para alimentar motores a combustão ciclo Otto sem gasolina.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🔥 Rendimento de Gás de Madeira</h3>
+                <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Potência Nominal do Gerador (kW):</label>
+                <input type="number" id="on-gas-kw-input" value="3.5" min="1.0" max="20.0" step="0.5" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.45rem; border-radius: 4px; font-size: 0.8rem; margin-bottom: 0.6rem;" oninput="calcOnlineGasifier()">
+
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 4px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Potência Efetiva:</span><strong id="on-gas-res-power" style="color: #fbbf24;">~2.5 kW (-28%)</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Consumo Lenha Seca:</span><strong id="on-gas-res-wood" style="color: #34d399;">~3.3 kg / h</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Autonomia (Tambor 40kg):</span><strong id="on-gas-res-hours" style="color: #38bdf8;">~12.1 horas</strong></div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 0.5rem;">☠️ Trem de Filtros &amp; Alerta Monóxido (CO)</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">1. Ciclone + Radiador:</strong> Separa fuligem centrífuga e resfria gás abaixo de 40°C.</div>
+                  <div><strong style="color: #fbbf24;">2. Filtro de Serragem:</strong> Retém vapor de água e alcatrão antes do carburador.</div>
+                  <div><strong style="color: #ef4444;">3. Risco Letal de CO:</strong> O Wood Gas tem 20% de Monóxido de Carbono (inodoro). Opere 100% ao ar livre.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 53: FORTIFICAÇÃO DE ABRIGO -->
+        <section class="tab-pane" id="tab-fortification">
+          <div class="card">
+            <h2 class="card-title">🏰 Fortificação de Abrigo &amp; Defesa Perimetral Passiva</h2>
+            <p class="card-subtitle">
+              Blindagem improvisada com terra/areia, barreiras botânicas de espinho e disciplina de luz contra invasões.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🛡️ Calculadora Balística de Materiais</h3>
+                <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Calibre / Ameaça:</label>
+                <select id="on-fort-threat-select" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.45rem; border-radius: 4px; font-size: 0.8rem; margin-bottom: 0.6rem;" onchange="calcOnlineFortification()">
+                  <option value="handgun">Pistola 9mm / .40 S&amp;W</option>
+                  <option value="shotgun">Escopeta 12 (Balote)</option>
+                  <option value="556">Fuzil 5.56x45mm NATO</option>
+                  <option value="762">Fuzil 7.62x51mm / .308</option>
+                </select>
+
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 4px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Sacos de Areia:</span><strong id="on-fort-res-sand" style="color: #34d399;">20 cm</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Terra Compactada:</span><strong id="on-fort-res-earth" style="color: #38bdf8;">30 cm</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Brita Confinada:</span><strong id="on-fort-res-gravel" style="color: #fbbf24;">15 cm</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Madeira de Lei:</span><strong id="on-fort-res-wood" style="color: #fff;">25 cm</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Chapa de Aço:</span><strong id="on-fort-res-steel" style="color: #34d399;">4.5 mm</strong></div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🌿 Cercas Vivas &amp; Disciplina de Luz</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Sansão-do-Campo:</strong> Muralha espinhosa de 3m de altura com espinhos retrorsos impenetráveis.</div>
+                  <div><strong style="color: #fbbf24;">Disciplina de Luz Noturna:</strong> Lona blackout dupla em todas as aberturas; visibilidade zero a 3km.</div>
+                  <div><strong style="color: #34d399;">Quinas Limpas:</strong> 15 metros ao redor da casa sem pontos cegos para aproximação oculta.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 54: FORJA & FERRARIA RÚSTICA -->
+        <section class="tab-pane" id="tab-blacksmith">
+          <div class="card">
+            <h2 class="card-title">⚒️ Forja &amp; Ferraria Rústica de Campo</h2>
+            <p class="card-subtitle">
+              Metalurgia de sobrevivência, forja a carvão vegetal, identificação de aços de sucata e têmpera térmica.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🔥 Aço de Sucata &amp; Ciclo Térmico</h3>
+                <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Sucata Automotiva:</label>
+                <select id="on-smith-steel-select" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.45rem; border-radius: 4px; font-size: 0.8rem; margin-bottom: 0.6rem;" onchange="calcOnlineBlacksmith()">
+                  <option value="5160">Molas Helicoidais / Feixes (Aço 5160)</option>
+                  <option value="1095">Limas Antigas de Carpintaria (Aço 1095)</option>
+                  <option value="52100">Capas de Rolamento Grande (Aço 52100)</option>
+                  <option value="cable">Cabos de Aço de Guindaste (Damasco)</option>
+                </select>
+
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 4px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Forjamento:</span><strong id="on-smith-res-forge" style="color: #fbbf24;">950°C - 1150°C</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Têmpera (Ímã):</span><strong id="on-smith-res-quench" style="color: #38bdf8;">~800°C - 830°C</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Meio Têmpera:</span><strong id="on-smith-res-medium" style="color: #34d399;">Óleo Vegetal Morno</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Revenimento:</span><strong id="on-smith-res-temper" style="color: #fff;">2h a 200°C</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Dureza Final:</span><strong id="on-smith-res-hrc" style="color: #fbbf24;">58 a 60 HRC</strong></div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🔨 Forja a Carvão com Tambor</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Revestimento Refratário:</strong> 50% argila vermelha, 30% areia fina e 20% cinzas de madeira.</div>
+                  <div><strong style="color: #fbbf24;">Ar Forçado:</strong> Tubo de ferro 1.5" no fundo acoplado a secador velho ou fole manual.</div>
+                  <div><strong style="color: #ef4444;">Nunca Tempere em Água:</strong> Aços alto carbono trincam instantaneamente em água fria. Use óleo vegetal a 50°C.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 55: CARVÃO ATIVADO MEDICINAL -->
+        <section class="tab-pane" id="tab-charcoal">
+          <div class="card">
+            <h2 class="card-title">🧪 Carvão Vegetal Ativado Medicinal &amp; Filtros</h2>
+            <p class="card-subtitle">
+              Produção por pirólise anaeróbica em retorta, ativação rústica ácida/térmica e dosagem antitóxica humana.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">💊 Dosagem em Intoxicação Aguda</h3>
+                <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">Peso Corporal (kg):</label>
+                <input type="number" id="on-char-weight-input" value="70" min="5" max="150" step="5" style="width: 100%; background: #0f141a; border: 1px solid var(--border); color: #fff; padding: 0.45rem; border-radius: 4px; font-size: 0.8rem; margin-bottom: 0.6rem;" oninput="calcOnlineCharcoal()">
+
+                <div style="background: rgba(0,0,0,0.25); padding: 0.6rem; border-radius: 4px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Dose Carvão em Pó:</span><strong id="on-char-res-dose" style="color: #34d399;">70 gramas (1g/kg)</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Água para Suspensão:</span><strong id="on-char-res-water" style="color: #38bdf8;">280 a 350 ml</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Janela Terapêutica:</span><strong style="color: #fbbf24;">&lt; 60 a 120 minutos</strong></div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🔥 Pirólise em Retorta &amp; Ativação</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Retorta de Coco Seco:</strong> Lata metálica fechada com furo de 3mm na fogueira até cessar fumaça branca.</div>
+                  <div><strong style="color: #fbbf24;">Ativação Ácida:</strong> Ferva o carvão em pó com suco de limão concentrado para desobstruir microporos (multiplica área específica para 800 m²/g).</div>
+                  <div><strong style="color: #ef4444;">Não Adsorve:</strong> Álcool, soda cáustica, ácido muriático, lítio e metais pesados.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <footer>
@@ -4007,6 +4311,204 @@
       } catch (e) {}
     }
 
+    function calcOnlineOrthopedics() {
+      const type = document.getElementById('on-ortho-injury-select')?.value || 'femur';
+      const techEl = document.getElementById('on-ortho-res-tech');
+      const descEl = document.getElementById('on-ortho-res-desc');
+      const pmsEl = document.getElementById('on-ortho-res-pms');
+      if (!techEl || !descEl || !pmsEl) return;
+
+      if (type === 'femur') {
+        techEl.textContent = 'Tração Femoral com Molinete (Estilo Hare/Sager)';
+        descEl.textContent = 'Requer aplicação de tração axial contínua para sobrepor o espasmo do quadríceps, realinhar as bordas ósseas e prevenir choque hipovolêmico por laceração da artéria femoral profunda.';
+        pmsEl.innerHTML = '<strong>PMS Obrigatório:</strong> Palpar pulso pedioso dorsal e tibial posterior antes e após tracionar. Tempo de enchimento capilar &lt; 2s.';
+      } else if (type === 'shoulder') {
+        techEl.textContent = 'Método Atraumático de Cunningham ou Milch';
+        descEl.textContent = 'Sente o paciente ereto. Realize massagem suave no trapézio superior, deltoide e bíceps até relaxamento muscular completo. A cabeça do úmero desliza suavemente para a fossa glenoide.';
+        pmsEl.innerHTML = '<strong>PMS Obrigatório:</strong> Avaliar sensibilidade na face lateral do deltoide (nervo axilar) e pulso radial antes e após a redução. Imobilizar em tipoia de Velpeau.';
+      } else if (type === 'tibia') {
+        techEl.textContent = 'Tala Rígida Moldada em "U" + Tala Posterior';
+        descEl.textContent = 'Alinhe a perna aplicando tração manual suave no calcanhar. Imobilize desde o joelho até além do tornozelo em 90 graus com papelão reforçado ou galhos acolchoados.';
+        pmsEl.innerHTML = '<strong>PMS Obrigatório:</strong> Verifique se a tala não comprime a cabeça da fíbula (risco de lesão do nervo fibular comum / pé caído).';
+      } else if (type === 'patella') {
+        techEl.textContent = 'Extensão Passiva e Medialização Suave';
+        descEl.textContent = 'Estenda lentamente a perna e flexione levemente o quadril para relaxar o tendão patelar. Com a ponta dos dedos, empurre suavemente a patela em direção medial até o encaixe anatômico.';
+        pmsEl.innerHTML = '<strong>PMS Obrigatório:</strong> Manter a perna estendida com tala posterior rígida por 2 a 3 semanas. Verificar circulação distal.';
+      }
+    }
+
+    function calcOnlineAsf() {
+      const ml = parseFloat(document.getElementById('on-asf-alcohol-input')?.value) || 500;
+      const sp = document.getElementById('on-asf-target-species')?.value || 'jatai';
+      let propolisG = Math.round(ml * 0.25);
+      let bottles = Math.round(ml / 20);
+      let timeStr = '30 a 45 dias no escuro';
+
+      if (sp === 'mandacaia') {
+        propolisG = Math.round(ml * 0.30);
+        timeStr = '40 a 60 dias (geoprópolis)';
+      } else if (sp === 'urucu') {
+        propolisG = Math.round(ml * 0.35);
+        timeStr = '45 dias no escuro';
+      }
+
+      const pEl = document.getElementById('on-asf-res-propolis');
+      const bEl = document.getElementById('on-asf-res-bottles');
+      const tEl = document.getElementById('on-asf-res-time');
+
+      if (pEl) pEl.textContent = `${propolisG} g`;
+      if (bEl) bEl.textContent = `~${bottles} garrafas`;
+      if (tEl) tEl.textContent = timeStr;
+    }
+
+    function calcOnlineAquaponics() {
+      const liters = parseFloat(document.getElementById('on-aqua-tank-input')?.value) || 1000;
+      const fish = document.getElementById('on-aqua-fish-select')?.value || 'tilapia';
+
+      let density = '';
+      let biomass = '';
+      let filterL = Math.round(liters * 0.30);
+      let bedM2 = (liters * 0.0025).toFixed(1);
+
+      if (fish === 'tilapia') {
+        const minFish = Math.round((liters / 1000) * 50);
+        const maxFish = Math.round((liters / 1000) * 65);
+        density = `${minFish} a ${maxFish} alevinos`;
+        biomass = `~${Math.round(maxFish * 0.55)} kg de peixe`;
+      } else if (fish === 'lambari') {
+        const minFish = Math.round((liters / 1000) * 150);
+        const maxFish = Math.round((liters / 1000) * 220);
+        density = `${minFish} a ${maxFish} lambaris`;
+        biomass = `~${Math.round(maxFish * 0.04)} kg`;
+      } else {
+        const minFish = Math.round((liters / 1000) * 20);
+        const maxFish = Math.round((liters / 1000) * 30);
+        density = `${minFish} a ${maxFish} carpas`;
+        biomass = `~${Math.round(maxFish * 0.8)} kg`;
+      }
+
+      const dEl = document.getElementById('on-aqua-res-density');
+      const bEl = document.getElementById('on-aqua-res-biomass');
+      const fEl = document.getElementById('on-aqua-res-filter');
+      const bedEl = document.getElementById('on-aqua-res-bed');
+
+      if (dEl) dEl.textContent = density;
+      if (bEl) bEl.textContent = biomass;
+      if (fEl) fEl.textContent = `${filterL} Litros`;
+      if (bedEl) bedEl.textContent = `~${bedM2} m²`;
+    }
+
+    function calcOnlineGasifier() {
+      const kw = parseFloat(document.getElementById('on-gas-kw-input')?.value) || 3.5;
+      const netKw = (kw * 0.72).toFixed(1);
+      const woodPerH = (netKw * 1.35).toFixed(1);
+      const hours = ((40 / woodPerH)).toFixed(1);
+
+      const pEl = document.getElementById('on-gas-res-power');
+      const wEl = document.getElementById('on-gas-res-wood');
+      const hEl = document.getElementById('on-gas-res-hours');
+
+      if (pEl) pEl.textContent = `~${netKw} kW (-28%)`;
+      if (wEl) wEl.textContent = `~${woodPerH} kg/h`;
+      if (hEl) hEl.textContent = `~${hours} horas`;
+    }
+
+    function calcOnlineFortification() {
+      const threat = document.getElementById('on-fort-threat-select')?.value || 'handgun';
+
+      let sand = '20 cm';
+      let earth = '30 cm';
+      let gravel = '15 cm';
+      let wood = '25 cm';
+      let steel = '4.5 mm';
+
+      if (threat === 'shotgun') {
+        sand = '30 cm';
+        earth = '40 cm';
+        gravel = '25 cm';
+        wood = '35 cm';
+        steel = '6.5 mm';
+      } else if (threat === '556') {
+        sand = '40 cm';
+        earth = '50 cm';
+        gravel = '30 cm';
+        wood = '55 cm';
+        steel = '9.5 mm';
+      } else if (threat === '762') {
+        sand = '60 cm (duplo)';
+        earth = '75 cm compactada';
+        gravel = '45 cm';
+        wood = '80 cm (cruzado)';
+        steel = '12.7 mm (1/2")';
+      }
+
+      const sEl = document.getElementById('on-fort-res-sand');
+      const eEl = document.getElementById('on-fort-res-earth');
+      const gEl = document.getElementById('on-fort-res-gravel');
+      const wEl = document.getElementById('on-fort-res-wood');
+      const stEl = document.getElementById('on-fort-res-steel');
+
+      if (sEl) sEl.textContent = sand;
+      if (eEl) eEl.textContent = earth;
+      if (gEl) gEl.textContent = gravel;
+      if (wEl) wEl.textContent = wood;
+      if (stEl) stEl.textContent = steel;
+    }
+
+    function calcOnlineBlacksmith() {
+      const steel = document.getElementById('on-smith-steel-select')?.value || '5160';
+
+      let forge = '950°C - 1150°C';
+      let quench = '~800°C - 830°C';
+      let medium = 'Óleo Vegetal Morno';
+      let temper = '2h a 200°C';
+      let hrc = '58 a 60 HRC';
+
+      if (steel === '1095') {
+        forge = '900°C - 1050°C';
+        quench = '~790°C (Não magnético)';
+        medium = 'Óleo Fino Rápido (40°C)';
+        temper = '2h a 220°C';
+        hrc = '60 a 62 HRC';
+      } else if (steel === '52100') {
+        forge = '950°C - 1100°C';
+        quench = '~820°C - 840°C';
+        medium = 'Óleo Vegetal a 50°C';
+        temper = '2x 1h30 a 190°C';
+        hrc = '61 a 63 HRC';
+      } else if (steel === 'cable') {
+        forge = '1050°C - 1250°C';
+        quench = '~810°C';
+        medium = 'Óleo Mineral/Vegetal Morno';
+        temper = '2h a 200°C';
+        hrc = '56 a 58 HRC';
+      }
+
+      const fEl = document.getElementById('on-smith-res-forge');
+      const qEl = document.getElementById('on-smith-res-quench');
+      const mEl = document.getElementById('on-smith-res-medium');
+      const tEl = document.getElementById('on-smith-res-temper');
+      const hEl = document.getElementById('on-smith-res-hrc');
+
+      if (fEl) fEl.textContent = forge;
+      if (qEl) qEl.textContent = quench;
+      if (mEl) mEl.textContent = medium;
+      if (tEl) tEl.textContent = temper;
+      if (hEl) hEl.textContent = hrc;
+    }
+
+    function calcOnlineCharcoal() {
+      const kg = parseFloat(document.getElementById('on-char-weight-input')?.value) || 70;
+      const doseG = Math.round(kg * 1.0);
+      const waterMl = Math.round(doseG * 4.5);
+
+      const dEl = document.getElementById('on-char-res-dose');
+      const wEl = document.getElementById('on-char-res-water');
+
+      if (dEl) dEl.textContent = `${doseG} gramas (1g/kg)`;
+      if (wEl) wEl.textContent = `${waterMl} a ${Math.round(waterMl * 1.3)} ml`;
+    }
+
     // Service Worker PWA registration
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -4025,6 +4527,13 @@
     calcOnlineBleach();
     calcOnlineBatt();
     loadOnlinePace();
+    calcOnlineOrthopedics();
+    calcOnlineAsf();
+    calcOnlineAquaponics();
+    calcOnlineGasifier();
+    calcOnlineFortification();
+    calcOnlineBlacksmith();
+    calcOnlineCharcoal();
   </script>
 </body>
 </html>
