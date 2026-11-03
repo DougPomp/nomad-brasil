@@ -76,13 +76,22 @@ nomad-brasil/
 │   ├── data/
 │   │   ├── cities.json         # Todos os 5.571 municípios do IBGE (UTF-8, DDD, Lat/Lng)
 │   │   ├── emergencies.json    # Protocolos de atendimento pré-hospitalar
+│   │   ├── pois.json           # POIs estratégicos (Hospitais, Bombeiros, PRF, Água, Postos)
+│   │   ├── radio_frequencies.json # Frequências oficiais (PX, VHF, Marítimo, Código Q)
 │   │   ├── survival.json       # Manuais técnicos de resiliência e campo
 │   │   └── routes_cache/       # Cache permanente em disco de todas as rotas traçadas
 │   └── public/
-│       ├── index.html          # Interface tática em dark mode (Glassmorphism)
-│       ├── styles.css          # Estilização HUD e painéis deslizantes
-│       ├── app.js              # Lógica de mapas, busca e cálculo de rota
+│       ├── index.html          # Interface tática em dark mode responsivo
+│       ├── styles.css          # Design system com sidebar lateral e gavetas móveis
+│       ├── app.js              # Lógica de mapas, busca, rotas, POIs, Morse e estoque
+│       ├── banner.svg          # Banner vetorizado da marca
+│       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
+├── docs/                       # Showcase publicado via GitHub Pages
+│   ├── index.html              # Demonstração estática das ferramentas táticas
+│   ├── banner.svg              # Imagem Open Graph / Twitter Card
+│   ├── logo.svg                # Favicon
+│   └── data/                   # Datasets para o showcase online
 ├── storage/
 │   ├── maps/
 │   │   ├── brazil-streets.pmtiles      # Arquivo vetorial (1,57 GB, 1.186.952 tiles)
@@ -94,6 +103,7 @@ nomad-brasil/
 ├── docker-compose.yml          # Orquestração dos serviços (Web e Kiwix)
 ├── setup-nomad-brasil.bat      # Instalador e downloader automático para Windows
 ├── setup-nomad-brasil.sh       # Instalador e downloader automático para Linux/macOS
+├── iniciar-nomad-brasil.bat    # Inicializador rápido diário
 └── README.md
 ```
 
