@@ -312,7 +312,7 @@
                   type="text"
                   id="map-city-search"
                   class="map-search-input"
-                  placeholder="Buscar município ou coordenadas (ex: Louveira, São Paulo, Brasília)..."
+                  placeholder="Buscar município ou coordenadas (ex: São Paulo, Campinas, Brasília)..."
                   autocomplete="off"
                 >
               </div>
@@ -350,14 +350,14 @@
 
               <div class="map-quick-chips">
                 <span class="layer-toggle-title">IR PARA:</span>
-                <button type="button" class="chip-btn chip-highlight" onclick="flyToCity('sp-louveira')">📍 Louveira</button>
-                <button type="button" class="chip-btn" onclick="flyToCity('sp-vinhedo')">Vinhedo</button>
+                <button type="button" class="chip-btn chip-highlight" onclick="flyToCity('sp-sao-paulo')">📍 São Paulo</button>
                 <button type="button" class="chip-btn" onclick="flyToCity('sp-campinas')">Campinas</button>
-                <button type="button" class="chip-btn" onclick="flyToCity('sp-sao-paulo')">São Paulo</button>
                 <button type="button" class="chip-btn" onclick="flyToCity('df-brasilia')">Brasília</button>
                 <button type="button" class="chip-btn" onclick="flyToCity('rj-rio-de-janeiro')">Rio de Janeiro</button>
                 <button type="button" class="chip-btn" onclick="flyToCity('pr-curitiba')">Curitiba</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('mg-belo-horizonte')">Belo Horizonte</button>
                 <button type="button" class="chip-btn" onclick="flyToCity('ba-salvador')">Salvador</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('am-manaus')">Manaus</button>
               </div>
             </div>
           </div>
@@ -552,7 +552,7 @@
                   <span class="drawer-badge" id="drawer-badge-region">SUDESTE</span>
                   <span class="drawer-badge drawer-badge-state" id="drawer-badge-uf">SP</span>
                 </div>
-                <h3 id="drawer-city-name" class="drawer-title">Louveira</h3>
+                <h3 id="drawer-city-name" class="drawer-title">São Paulo</h3>
                 <span id="drawer-state-name" class="drawer-subtitle">São Paulo</span>
               </div>
               <button type="button" class="drawer-close-btn" onclick="closeCityDrawer()" title="Fechar">&times;</button>
@@ -562,19 +562,19 @@
               <div class="drawer-grid">
                 <div class="drawer-stat-card">
                   <span class="stat-label">CÓDIGO IBGE</span>
-                  <span class="stat-value font-mono" id="drawer-ibge">3527306</span>
+                  <span class="stat-value font-mono" id="drawer-ibge">3550308</span>
                 </div>
                 <div class="drawer-stat-card">
                   <span class="stat-label">PREFIXO DDD</span>
-                  <span class="stat-value font-mono" id="drawer-ddd">(19)</span>
+                  <span class="stat-value font-mono" id="drawer-ddd">(11)</span>
                 </div>
                 <div class="drawer-stat-card">
                   <span class="stat-label">STATUS</span>
-                  <span class="stat-value" id="drawer-capital-status">Município</span>
+                  <span class="stat-value" id="drawer-capital-status">Capital Estadual</span>
                 </div>
                 <div class="drawer-stat-card">
                   <span class="stat-label">DISTÂNCIA CAPITAL</span>
-                  <span class="stat-value font-mono" id="drawer-distance">-- km</span>
+                  <span class="stat-value font-mono" id="drawer-distance">0 km</span>
                 </div>
               </div>
 
@@ -583,7 +583,7 @@
                 <div class="coords-box">
                   <div>
                     <div class="text-xs text-gray-400">LATITUDE / LONGITUDE</div>
-                    <div class="text-sm font-mono text-emerald-400 font-bold" id="drawer-coords">-23.0856°, -46.9484°</div>
+                    <div class="text-sm font-mono text-emerald-400 font-bold" id="drawer-coords">-23.5505°, -46.6333°</div>
                   </div>
                   <button type="button" class="btn-copy-coords" onclick="copyCityCoords()" id="btn-copy-coords">
                     📋 Copiar
