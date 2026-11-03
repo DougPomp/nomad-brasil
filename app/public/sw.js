@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomad-brasil-v3';
+const CACHE_NAME = 'nomad-brasil-v4';
 const OFFLINE_URLS = [
   '/',
   '/index.html',
@@ -51,6 +51,22 @@ self.addEventListener('fetch', (event) => {
 
   // Range requests (such as PMTiles) bypass default cache to avoid chunk corruptions
   if (event.request.headers.get('range')) {
+    return;
+  }
+
+  // HTML navigation requests: Network-First to immediately reflect code changes when online, fallback to cache
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('/index.html').then((res) => res || caches.match('/')))
+    );
     return;
   }
 

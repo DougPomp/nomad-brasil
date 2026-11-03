@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomad-brasil-ghpages-v3';
+const CACHE_NAME = 'nomad-brasil-ghpages-v4';
 const OFFLINE_URLS = [
   './',
   './index.html',
@@ -39,20 +39,36 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  // Para navegação HTML (páginas), prioriza rede para receber atualizações do GitHub Pages instantaneamente, caindo para cache se offline
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('./index.html').then((res) => res || caches.match('./')))
+    );
+    return;
+  }
+
+  // Stale-while-revalidate para recursos estáticos e dados JSON
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return networkResponse;
-      });
-    }).catch(() => {
-      if (event.request.mode === 'navigate') {
-        return caches.match('./index.html');
-      }
+      }).catch(() => null);
+
+      return cachedResponse || fetchPromise;
     })
   );
 });
