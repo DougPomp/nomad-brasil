@@ -4,7 +4,7 @@ echo ========================================================
 echo   NOMAD Brasil - Central de Sobrevivencia e Resiliencia
 echo ========================================================
 echo.
-cd /d "E:\nomad-brasil"
+cd /d "%~dp0"
 
 echo Verificando e iniciando servicos Docker...
 docker compose up -d
