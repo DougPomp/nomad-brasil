@@ -951,6 +951,10 @@
             <span class="tab-icon">🩹</span>
             <span>Trauma TCCC / MARCHE</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="woundcare" onclick="switchDemoTab('woundcare')">
+            <span class="tab-icon">🩸</span>
+            <span>Suturas &amp; Feridas na Mata</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="biosecurity" onclick="switchDemoTab('biosecurity')">
             <span class="tab-icon">☣️</span>
             <span>Biossegurança &amp; Epidemias</span>
@@ -958,6 +962,10 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="disasters" onclick="switchDemoTab('disasters')">
             <span class="tab-icon">🛡️</span>
             <span>Defesa Civil &amp; Desastres</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="shelter" onclick="switchDemoTab('shelter')">
+            <span class="tab-icon">🛖</span>
+            <span>Abrigos &amp; Bioconstrução</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="venomous" onclick="switchDemoTab('venomous')">
             <span class="tab-icon">🐍</span>
@@ -995,6 +1003,10 @@
             <span class="tab-icon">📻</span>
             <span>Rádio &amp; Antenas</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="pacecomms" onclick="switchDemoTab('pacecomms')">
+            <span class="tab-icon">📶</span>
+            <span>Protocolo PACE &amp; Rádio</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="comms" onclick="switchDemoTab('comms')">
             <span class="tab-icon">📢</span>
             <span>Código Q &amp; ICAO</span>
@@ -1006,6 +1018,14 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="cipher" onclick="switchDemoTab('cipher')">
             <span class="tab-icon">🔐</span>
             <span>Cifra &amp; Código Tático</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="navigation" onclick="switchDemoTab('navigation')">
+            <span class="tab-icon">🧭</span>
+            <span>Bússola &amp; Orientação</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="celestial" onclick="switchDemoTab('celestial')">
+            <span class="tab-icon">✨</span>
+            <span>Navegação Celeste (Cruzeiro)</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="march" onclick="switchDemoTab('march')">
             <span class="tab-icon">🥾</span>
@@ -1043,6 +1063,10 @@
             <span class="tab-icon">🛡️</span>
             <span>Segurança Perimetral</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="grayman" onclick="switchDemoTab('grayman')">
+            <span class="tab-icon">👤</span>
+            <span>Evasão Urbana (Gray Man)</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="vehicle" onclick="switchDemoTab('vehicle')">
             <span class="tab-icon">🚗</span>
             <span>Mecânica &amp; 4x4</span>
@@ -1051,13 +1075,17 @@
             <span class="tab-icon">🥫</span>
             <span>Conservação Alimentos</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="seeds" onclick="switchDemoTab('seeds')">
+            <span class="tab-icon">🌱</span>
+            <span>Sementes &amp; Hortas de Crise</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="chem" onclick="switchDemoTab('chem')">
             <span class="tab-icon">🧪</span>
             <span>Química Prática &amp; Sabão</span>
           </button>
-          <button type="button" class="demo-tab-btn" data-demo-tab="navigation" onclick="switchDemoTab('navigation')">
-            <span class="tab-icon">🧭</span>
-            <span>Bússola &amp; Orientação</span>
+          <button type="button" class="demo-tab-btn" data-demo-tab="bladecare" onclick="switchDemoTab('bladecare')">
+            <span class="tab-icon">🔪</span>
+            <span>Cutelaria &amp; Afiação</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="rationing" onclick="switchDemoTab('rationing')">
             <span class="tab-icon">🍲</span>
@@ -2475,6 +2503,214 @@
           </div>
         </section>
 
+        <!-- TAB 35: CONSTRUÇÃO DE ABRIGOS & BIOCONSTRUÇÃO -->
+        <section class="tab-pane" id="tab-shelter">
+          <div class="card">
+            <h2 class="card-title">🛖 Construção de Abrigos &amp; Bioconstrução</h2>
+            <p class="card-subtitle">
+              Montagens táticas de lona (tarp tents), isolamento contra peçonhentos do solo brasileiro e abrigos térmicos de detritos na Mata Atlântica.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">⛺ Montagens Rápidas de Lona (Tarp 3x3m)</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Diamante:</strong> Duas pontas diagonais na cumeeira e duas estaqueadas no chão; ideal para cobrir redes com vento cruzado.</div>
+                  <div><strong style="color: #fbbf24;">Tubo A-Frame:</strong> Dobrada em "V" invertido rente ao chão a 80 cm de altura; retenção de calor e resistência a vendavais.</div>
+                  <div><strong style="color: #34d399;">Alpendre com Refletor:</strong> Fogueira a 2m da entrada aberta com parede de toras refletindo calor para o interior da lona.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🌿 Cama Elevada de Selva &amp; Detritos</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #ef4444;">Jungle Bed (Cama de Varas):</strong> NUNCA durma encostado na terra úmida brasileira (hipotermia e aranhas/escorpiões). Erga estrado de varas roliças a 40 cm do chão.</div>
+                  <div><strong style="color: #38bdf8;">Abrigo de Detritos:</strong> Mastro dorsal com costelas de galhos coberto por 60 cm de folhas secas. Dispensa saco de dormir perto de 0°C.</div>
+                  <div><strong style="color: #34d399;">Valeta Perimetral:</strong> Vala rasa de 10 cm contornando o abrigo pelo lado alto para desviar a enxurrada.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 36: SUTURAS & FERIDAS NA MATA -->
+        <section class="tab-pane" id="tab-woundcare">
+          <div class="card">
+            <h2 class="card-title">🩸 Suturas &amp; Feridas na Mata</h2>
+            <p class="card-subtitle">
+              Técnicas de aproximação de bordas sem agulha cirúrgica, cianoacrilato de emergência, sutura com saúvas e antissépticos naturais.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 0.5rem;">🩹 Fechamento sem Fio Cirúrgico</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Borboletas (Butterfly Stitches):</strong> Tiras de esparadrapo estreitadas no centro puxando as bordas da pele até o fechamento.</div>
+                  <div><strong style="color: #fbbf24;">Cianoacrilato (Cola de Emergência):</strong> Aproxime bordas de corte limpo e aplique uma gota fina apenas na junção externa da pele (nunca dentro).</div>
+                  <div><strong style="color: #34d399;">Sutura com Saúvas (Atta):</strong> Aproxime a cabeça da formiga soldado da ferida; ao morder travando as bordas, destaque o corpo.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🍯 Fitoterapia Cicatrizante &amp; Tétano</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #34d399;">Mel Puro:</strong> Desidrata bactérias por pressão osmótica e produz microdoses de peróxido de hidrogênio acelerando cicatrização.</div>
+                  <div><strong style="color: #38bdf8;">Óleo de Copaíba:</strong> Rico em beta-cariofileno; anti-inflamatório e germicida tópico de alta potência.</div>
+                  <div><strong style="color: #ef4444;">Alerta Tétano:</strong> Furos profundos por pregos e mordidas NUNCA devem ser colados; lave sob pressão e mantenha abertos.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 37: NAVEGAÇÃO CELESTE (CRUZEIRO DO SUL) -->
+        <section class="tab-pane" id="tab-celestial">
+          <div class="card">
+            <h2 class="card-title">✨ Navegação Celeste: Cruzeiro do Sul &amp; Órion</h2>
+            <p class="card-subtitle">
+              Determinação do Sul Verdadeiro pelas constelações austrais e identificação do Leste/Oeste absolutos sem equipamentos.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">✝️ O Método do Cruzeiro do Sul (Crux)</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">1. Braço Maior:</strong> Meça a distância visual entre a estrela do topo (Gacrux) e a da base (Acrux).</div>
+                  <div><strong style="color: #fbbf24;">2. Projeção 4,5x:</strong> A partir da base (Acrux), trace linha reta prolongando o braço por 4,5 vezes a sua extensão.</div>
+                  <div><strong style="color: #34d399;">3. Sul Verdadeiro:</strong> Desça uma perpendicular imaginária do ponto final até a linha do horizonte. Ali está o Sul exato (180°).</div>
+                  <div><strong style="color: #ef4444;">Ponteiros Centauri:</strong> As duas estrelas brilhantes ao lado (Alfa e Beta Centauri) confirmam que é a cruz verdadeira.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🏹 Cinturão de Órion (Três Marias)</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #fbbf24;">Equador Celeste (Mintaka):</strong> A estrela Mintaka (Três Marias) nasce exatamente no Leste (090°) e se põe no Oeste (270°).</div>
+                  <div><strong style="color: #34d399;">Relógio Estelar (15°/hora):</strong> A abóbada gira 15 graus por hora. A largura de 4 dedos com o braço estendido equivale a cerca de 1 hora de tempo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 38: PROTOCOLO PACE & JANELAS DE RÁDIO -->
+        <section class="tab-pane" id="tab-pacecomms">
+          <div class="card">
+            <h2 class="card-title">📶 Protocolo PACE &amp; Janelas de Rádio</h2>
+            <p class="card-subtitle">
+              Matriz militar de contingência de comunicações e protocolo de escuta cronometrada para estender baterias de rádio por dias.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">📋 Matriz PACE Interativa</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.8rem;">
+                  <div><strong style="color: #38bdf8;">P (Primary):</strong> <input type="text" id="on-pace-p" class="form-input font-mono mt-0.5" value="VHF 146.520 MHz Simplex / Canal 1 Baofeng" oninput="saveOnlinePace()"></div>
+                  <div><strong style="color: #34d399;">A (Alternate):</strong> <input type="text" id="on-pace-a" class="form-input font-mono mt-0.5" value="PX Canal 9 (27.065 MHz) / Rádio Rodoviário Ch 19" oninput="saveOnlinePace()"></div>
+                  <div><strong style="color: #fbbf24;">C (Contingency):</strong> <input type="text" id="on-pace-c" class="form-input font-mono mt-0.5" value="HF 7.060 MHz LSB (RENER) / Mensageiro de bicicleta" oninput="saveOnlinePace()"></div>
+                  <div><strong style="color: #ef4444;">E (Emergency):</strong> <input type="text" id="on-pace-e" class="form-input font-mono mt-0.5" value="3 silvos de apito a cada 15 min / Heliógrafo ao meio-dia" oninput="saveOnlinePace()"></div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">⏱️ Janelas dos Primeiros 5 Minutos</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #fbbf24;">Economia de 92% da Bateria:</strong> Ligue o rádio transceptor somente nos 5 primeiros minutos de cada hora par (08:00–08:05, 10:00–10:05...).</div>
+                  <div><strong style="color: #34d399;">Duração em Campo:</strong> Uma bateria comum de 1800mAh passa de 18 horas para mais de 12 dias de operação contínua.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 39: EVASÃO URBANA & GRAY MAN -->
+        <section class="tab-pane" id="tab-grayman">
+          <div class="card">
+            <h2 class="card-title">👤 Evasão Urbana &amp; Conceito Gray Man</h2>
+            <p class="card-subtitle">
+              Princípios para transitar imperceptível em centros urbanos em colapso, código de cores de alerta e conduta em esmagamentos de multidão.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🚶 O Conceito Homem Cinzento</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #ef4444;">Evite Roupas Táticas:</strong> Camuflagem e coletes MOLLE atraem saqueadores que presumem suprimentos valiosos.</div>
+                  <div><strong style="color: #38bdf8;">Silhueta Neutra:</strong> Jeans comum, tênis de corrida desgastado e mochila escolar sem marcas chamativas.</div>
+                  <div><strong style="color: #34d399;">Postura:</strong> Passo firme no ritmo do fluxo, sem contato visual agressivo e mãos livres.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🚨 Cores de Cooper &amp; Multidões</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div>• <strong>Amarelo:</strong> Consciência situacional relaxada 360° constante.</div>
+                  <div>• <strong>Laranja:</strong> Ameaça detectada; plano mental de fuga ativado.</div>
+                  <div><strong style="color: #ef4444;">Crowd Crush (Esmagamento):</strong> Mantenha braços erguidos em postura de boxeador protegendo a caixa torácica e mova-se em diagonal para as bordas do fluxo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 40: CUTELARIA & AFIAÇÃO DE CAMPO -->
+        <section class="tab-pane" id="tab-bladecare">
+          <div class="card">
+            <h2 class="card-title">🔪 Cutelaria &amp; Afiação de Campo</h2>
+            <p class="card-subtitle">
+              O facão de carbono como ferramenta suprema brasileira, anatomia de fios de lâmina e métodos de afiação rústica com recursos naturais.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🗡️ O Facão de Carbono Brasileiro</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Facão 14" a 18":</strong> Aço carbono com facilidade de afiação; substitui foice, machado e faca com peso leve no cinto.</div>
+                  <div><strong style="color: #fbbf24;">Fio Convexo:</strong> Máxima resistência a lascas contra troncos duros e ossos.</div>
+                  <div><strong style="color: #34d399;">Fio Misto:</strong> Terço traseiro fino para entalhe e terço frontal robusto para desbaste pesado.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🪨 Afiação sem Pedras Comerciais</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Seixo de Rio:</strong> Pedras lisas de basalto molhadas com água atuam como pedra de grão 800-1000.</div>
+                  <div><strong style="color: #fbbf24;">Fundo de Cerâmica:</strong> A borda áspera não esmaltada no fundo de xícaras alinha o microfio instantaneamente.</div>
+                  <div><strong style="color: #34d399;">Strop com Cinzas:</strong> Cinto de couro polvilhado com cinza fina de fogueira para polimento espelhado.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 41: SEMENTES CRIOULAS & HORTAS DE CRISE -->
+        <section class="tab-pane" id="tab-seeds">
+          <div class="card">
+            <h2 class="card-title">🌱 Sementes Crioulas &amp; Hortas de Crise</h2>
+            <p class="card-subtitle">
+              Preservação de sementes não-híbridas, produção de brotos comestíveis em 72h sem solo e raízes rústicas de alta caloria no Brasil.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🌾 Sementes Crioulas Não-Híbridas</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #ef4444;">Evite Híbridos F1:</strong> Sementes industriais de saquinho geram plantas estéreis na segunda geração.</div>
+                  <div><strong style="color: #34d399;">Culturas Vitais:</strong> Feijão-caupi (proteína e seca), Milho crioulo (energia), Abóbora rústica e Quiabo.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🫘 Brotos em 72h &amp; Mandioca</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #34d399;">Brotos sem Fogo (72h):</strong> Lentilha ou feijão moyashi em garrafa PET furada; enxágue 2x/dia no escuro para vitamina C pura.</div>
+                  <div><strong style="color: #fbbf24;">Mandioca (Maniva):</strong> Enterre ramas de 15 cm; produz raízes calóricas por até 2 anos sob a terra protegidas de fogo e saques.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <footer>
@@ -3462,6 +3698,28 @@
       if (hEl) hEl.textContent = `${hours} horas`;
     }
 
+    function saveOnlinePace() {
+      const plan = {
+        p: document.getElementById('on-pace-p')?.value || '',
+        a: document.getElementById('on-pace-a')?.value || '',
+        c: document.getElementById('on-pace-c')?.value || '',
+        e: document.getElementById('on-pace-e')?.value || ''
+      };
+      try { localStorage.setItem('nomad_online_pace_v1', JSON.stringify(plan)); } catch (e) {}
+    }
+
+    function loadOnlinePace() {
+      try {
+        const raw = localStorage.getItem('nomad_online_pace_v1');
+        if (!raw) return;
+        const plan = JSON.parse(raw);
+        if (plan.p && document.getElementById('on-pace-p')) document.getElementById('on-pace-p').value = plan.p;
+        if (plan.a && document.getElementById('on-pace-a')) document.getElementById('on-pace-a').value = plan.a;
+        if (plan.c && document.getElementById('on-pace-c')) document.getElementById('on-pace-c').value = plan.c;
+        if (plan.e && document.getElementById('on-pace-e')) document.getElementById('on-pace-e').value = plan.e;
+      } catch (e) {}
+    }
+
     // Service Worker PWA registration
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -3479,6 +3737,7 @@
     calcOnlineSoro();
     calcOnlineBleach();
     calcOnlineBatt();
+    loadOnlinePace();
   </script>
 </body>
 </html>

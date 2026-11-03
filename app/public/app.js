@@ -3291,10 +3291,46 @@ window.calculateBatteryAutonomy = function() {
   if (hoursEl) hoursEl.textContent = `${hours} horas`;
 };
 
+// =====================================================================
+// 24. PROTOCOLO PACE (LOCALSTORAGE)
+// =====================================================================
+window.savePacePlan = function() {
+  const plan = {
+    p: document.getElementById('pace-in-p')?.value || '',
+    a: document.getElementById('pace-in-a')?.value || '',
+    c: document.getElementById('pace-in-c')?.value || '',
+    e: document.getElementById('pace-in-e')?.value || ''
+  };
+  try {
+    localStorage.setItem('nomad_pace_plan_v1', JSON.stringify(plan));
+  } catch (err) {}
+};
+
+window.loadPacePlan = function() {
+  try {
+    const raw = localStorage.getItem('nomad_pace_plan_v1');
+    if (!raw) return;
+    const plan = JSON.parse(raw);
+    if (plan.p && document.getElementById('pace-in-p')) document.getElementById('pace-in-p').value = plan.p;
+    if (plan.a && document.getElementById('pace-in-a')) document.getElementById('pace-in-a').value = plan.a;
+    if (plan.c && document.getElementById('pace-in-c')) document.getElementById('pace-in-c').value = plan.c;
+    if (plan.e && document.getElementById('pace-in-e')) document.getElementById('pace-in-e').value = plan.e;
+  } catch (err) {}
+};
+
+window.resetPacePlan = function() {
+  try { localStorage.removeItem('nomad_pace_plan_v1'); } catch (e) {}
+  if (document.getElementById('pace-in-p')) document.getElementById('pace-in-p').value = 'VHF 146.520 MHz Simplex / Canal 1 Baofeng';
+  if (document.getElementById('pace-in-a')) document.getElementById('pace-in-a').value = 'PX Canal 9 (27.065 MHz) / Rádio Caminhoneiro Ch 19';
+  if (document.getElementById('pace-in-c')) document.getElementById('pace-in-c').value = 'HF 7.060 MHz LSB (RENER) / Bilhete escrito em ponto de apoio';
+  if (document.getElementById('pace-in-e')) document.getElementById('pace-in-e').value = '3 silvos de apito a cada 15 min / Espelho Heliógrafo às 12h';
+};
+
 // Auto-init new calculators
 document.addEventListener('DOMContentLoaded', () => {
   if (window.calculateSoroDose) window.calculateSoroDose();
   if (window.calculateBleachDilution) window.calculateBleachDilution();
   if (window.calculateBatteryAutonomy) window.calculateBatteryAutonomy();
+  if (window.loadPacePlan) window.loadPacePlan();
 });
 
