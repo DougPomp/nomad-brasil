@@ -137,38 +137,71 @@
       display: block;
     }
 
-    /* Tabs */
+    /* Tactical Segmented Control / Tabs */
     .demo-tabs {
-      display: flex;
-      gap: 0.5rem;
-      background: rgba(15, 23, 42, 0.5);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.4rem;
+      background: rgba(11, 17, 32, 0.85);
       padding: 0.4rem;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      margin-bottom: 2rem;
+      backdrop-filter: blur(16px);
     }
 
     .demo-tab-btn {
       background: transparent;
       border: 1px solid transparent;
       color: var(--text-muted);
-      padding: 0.6rem 1.2rem;
-      border-radius: 6px;
+      padding: 0.75rem 0.5rem;
+      border-radius: 8px;
       font-weight: 700;
       font-size: 0.85rem;
       cursor: pointer;
       display: flex;
+      flex-direction: row;
       align-items: center;
-      gap: 0.4rem;
-      transition: all 0.2s;
+      justify-content: center;
+      gap: 0.45rem;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .demo-tab-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+    .demo-tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
     .demo-tab-btn.active {
-      background: rgba(16, 185, 129, 0.15);
-      border-color: var(--accent-green);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.16) 100%);
+      border: 1px solid var(--accent-green);
       color: #34d399;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .demo-tab-btn .tab-icon {
+      font-size: 1.05rem;
+      line-height: 1;
+      display: inline-flex;
+    }
+
+    @media (max-width: 900px) {
+      .demo-tabs {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 0.35rem;
+      }
+      .demo-tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .demo-tab-btn {
+        flex: 0 0 auto;
+        padding: 0.65rem 1rem;
+      }
     }
 
     /* Tab Panes */
@@ -372,21 +405,26 @@
     </div>
 
     <!-- Live Demo Navigation Tabs -->
-    <div class="demo-tabs">
+    <div class="demo-tabs" role="tablist">
       <button class="demo-tab-btn active" onclick="switchDemoTab('quickstart')">
-        <span>⚡</span> Instalação Rápida (1 Clique)
+        <span class="tab-icon">⚡</span>
+        <span>Instalação Rápida</span>
       </button>
       <button class="demo-tab-btn" onclick="switchDemoTab('cities')">
-        <span>📊</span> City Intel (5.571 Cidades)
+        <span class="tab-icon">📊</span>
+        <span>Cidades (IBGE)</span>
       </button>
       <button class="demo-tab-btn" onclick="switchDemoTab('emergencies')">
-        <span>🚑</span> Primeiros Socorros
+        <span class="tab-icon">🚑</span>
+        <span>Primeiros Socorros</span>
       </button>
       <button class="demo-tab-btn" onclick="switchDemoTab('survival')">
-        <span>🏕️</span> Sobrevivência &amp; Rádio
+        <span class="tab-icon">🏕️</span>
+        <span>Sobrevivência &amp; Rádio</span>
       </button>
       <button class="demo-tab-btn" onclick="switchDemoTab('offline')">
-        <span>🗺️</span> Sistema Offline (Docker)
+        <span class="tab-icon">🛡️</span>
+        <span>Arquitetura Offline</span>
       </button>
     </div>
 
