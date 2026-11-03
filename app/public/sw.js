@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomad-brasil-v5';
+const CACHE_NAME = 'nomad-brasil-v6';
 const OFFLINE_URLS = [
   '/',
   '/index.html',
