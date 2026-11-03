@@ -1479,6 +1479,26 @@
               </div>
             </div>
 
+            <!-- Tradutor e Transmissor de Mensagens Morse -->
+            <div class="metric-card" style="margin-bottom: 1.25rem;">
+              <h4 style="color: #fff; font-size: 0.95rem; margin-bottom: 0.35rem;">🔤 Tradutor &amp; Transmissor de Mensagens em Código Morse</h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Converta qualquer mensagem em código Morse e transmita o áudio sonoro correspondente (o botão trava automaticamente durante a transmissão até finalizar o áudio).
+              </p>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.65rem;">
+                <input type="text" id="on-morse-custom-input" class="tactical-input" style="flex: 1; min-width: 220px;" placeholder="Digite sua mensagem..." value="SOS NOMAD BRASIL">
+                <button type="button" id="on-btn-morse-transmit" class="btn-sidebar-action primary" style="width: auto; padding: 0.6rem 1.25rem; border: none; cursor: pointer; white-space: nowrap;" onclick="convertAndPlayOnlineMorse(this)">
+                  <span>▶️</span> Transmitir Áudio
+                </button>
+              </div>
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 0.75rem; border-radius: 4px;">
+                <div style="font-size: 0.68rem; color: var(--text-dim); font-weight: 800; text-transform: uppercase; margin-bottom: 0.25rem;">Sequência Morse Gerada:</div>
+                <div id="on-morse-output-display" class="font-mono" style="color: #34d399; font-weight: bold; font-size: 1.1rem; letter-spacing: 0.12em; word-break: break-all;">
+                  ... --- ... / -. --- -- .- -.. / -... .-. .- ... .. .-..
+                </div>
+              </div>
+            </div>
+
             <div class="metric-card">
               <h4 style="color: #fff; font-size: 0.9rem; margin-bottom: 0.5rem;">🚁 Sinais Terra-Ar para Aeronaves de Resgate (ICAO / SAR)</h4>
               <div class="intel-grid">
@@ -3655,6 +3675,92 @@
         await sleep(250);
         for (let i = 0; i < 3; i++) { if (!isAudActive) return; await tone(120); await sleep(120); }
         await sleep(1400);
+      }
+    }
+
+    const ONLINE_MORSE_MAP = {
+      'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+      'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+      'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+      'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+      'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
+      '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..',
+      '9': '----.', '0': '-----', ' ': '/'
+    };
+
+    let isOnlineMorseTransmitting = false;
+
+    async function convertAndPlayOnlineMorse(btnEl) {
+      if (isOnlineMorseTransmitting) return;
+
+      const btn = btnEl || document.getElementById('on-btn-morse-transmit');
+      const input = document.getElementById('on-morse-custom-input');
+      const text = (input?.value || 'SOS').toUpperCase().trim();
+      const display = document.getElementById('on-morse-output-display');
+
+      if (!text) return;
+
+      const morseSeq = text.split('').map(char => ONLINE_MORSE_MAP[char] || (char === ' ' ? '/' : '?')).join(' ');
+      if (display) display.textContent = morseSeq;
+
+      // Travar botão até finalizar
+      isOnlineMorseTransmitting = true;
+      let origHtml = '';
+      if (btn) {
+        btn.disabled = true;
+        origHtml = btn.innerHTML;
+        btn.innerHTML = '<span>⏳</span> Transmitindo...';
+        btn.style.opacity = '0.65';
+        btn.style.cursor = 'not-allowed';
+      }
+      if (input) input.disabled = true;
+
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      function tone(ms) {
+        return new Promise(res => {
+          try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.value = 800;
+            gain.gain.value = 0.2;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            setTimeout(() => { osc.stop(); res(); }, ms);
+          } catch(e) { res(); }
+        });
+      }
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+      try {
+        for (const char of morseSeq) {
+          if (!isOnlineMorseTransmitting) break;
+          if (char === '.') {
+            await tone(100);
+            await sleep(80);
+          } else if (char === '-') {
+            await tone(300);
+            await sleep(80);
+          } else if (char === ' ') {
+            await sleep(200);
+          } else if (char === '/') {
+            await sleep(400);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        isOnlineMorseTransmitting = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml || '<span>▶️</span> Transmitir Áudio';
+          btn.style.opacity = '';
+          btn.style.cursor = '';
+        }
+        if (input) input.disabled = false;
       }
     }
 

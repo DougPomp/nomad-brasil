@@ -1973,26 +1973,61 @@ async function runOpticalFlashLoop(overlay) {
   }
 }
 
-window.convertAndPlayCustomMorse = async function() {
-  const text = (document.getElementById('morse-custom-input')?.value || 'SOS').toUpperCase().trim();
+let isMorseTransmitting = false;
+
+window.convertAndPlayCustomMorse = async function(btnEl) {
+  if (isMorseTransmitting) return;
+
+  const btn = btnEl || document.getElementById('btn-morse-transmit');
+  const input = document.getElementById('morse-custom-input');
+  const text = (input?.value || 'SOS').toUpperCase().trim();
   const display = document.getElementById('morse-output-display');
 
-  const morseSeq = text.split('').map(char => MORSE_MAP[char] || '?').join(' ');
+  if (!text) return;
+
+  const morseSeq = text.split('').map(char => MORSE_MAP[char] || (char === ' ' ? '/' : '?')).join(' ');
   if (display) display.textContent = morseSeq;
 
-  // Play audio sequence
-  for (const char of morseSeq) {
-    if (char === '.') {
-      await playTone(800, 100);
-      await sleepMs(80);
-    } else if (char === '-') {
-      await playTone(800, 300);
-      await sleepMs(80);
-    } else if (char === ' ') {
-      await sleepMs(200);
-    } else if (char === '/') {
-      await sleepMs(400);
+  // Travar o botão e indicar transmissão em andamento
+  isMorseTransmitting = true;
+  let originalBtnHtml = '';
+  if (btn) {
+    btn.disabled = true;
+    originalBtnHtml = btn.innerHTML;
+    btn.innerHTML = '<span>⏳</span> Transmitindo...';
+    btn.style.opacity = '0.65';
+    btn.style.cursor = 'not-allowed';
+  }
+  if (input) input.disabled = true;
+
+  try {
+    // Reprodução da sequência Morse
+    for (const char of morseSeq) {
+      if (!isMorseTransmitting) break;
+      if (char === '.') {
+        await playTone(800, 100);
+        await sleepMs(80);
+      } else if (char === '-') {
+        await playTone(800, 300);
+        await sleepMs(80);
+      } else if (char === ' ') {
+        await sleepMs(200);
+      } else if (char === '/') {
+        await sleepMs(400);
+      }
     }
+  } catch (err) {
+    console.error('Erro na transmissão Morse:', err);
+  } finally {
+    // Destravar o botão após a finalização do áudio
+    isMorseTransmitting = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalBtnHtml || '<span>▶️</span> Transmitir Áudio';
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+    }
+    if (input) input.disabled = false;
   }
 };
 

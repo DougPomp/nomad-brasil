@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomad-brasil-ghpages-v6';
+const CACHE_NAME = 'nomad-brasil-ghpages-v7';
 const OFFLINE_URLS = [
   './',
   './index.html',
