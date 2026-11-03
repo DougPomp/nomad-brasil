@@ -13,10 +13,14 @@ const STORAGE_PATH = process.env.STORAGE_PATH || path.join(__dirname, '..', 'sto
 const citiesPath = path.join(__dirname, 'data', 'cities.json');
 const emergenciesPath = path.join(__dirname, 'data', 'emergencies.json');
 const survivalPath = path.join(__dirname, 'data', 'survival.json');
+const poisPath = path.join(__dirname, 'data', 'pois.json');
+const radioPath = path.join(__dirname, 'data', 'radio_frequencies.json');
 
 const cities = fs.existsSync(citiesPath) ? JSON.parse(fs.readFileSync(citiesPath, 'utf8')) : [];
 const emergencies = fs.existsSync(emergenciesPath) ? JSON.parse(fs.readFileSync(emergenciesPath, 'utf8')) : [];
 const survivalManuals = fs.existsSync(survivalPath) ? JSON.parse(fs.readFileSync(survivalPath, 'utf8')) : [];
+const strategicPois = fs.existsSync(poisPath) ? JSON.parse(fs.readFileSync(poisPath, 'utf8')) : [];
+const radioData = fs.existsSync(radioPath) ? JSON.parse(fs.readFileSync(radioPath, 'utf8')) : { bands: [], q_code: [], phonetic_alphabet: [], antennas: [] };
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -231,6 +235,25 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/survival') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(survivalManuals));
+    return;
+  }
+
+  // 4.01 API: Strategic POIs
+  if (pathname === '/api/pois') {
+    const category = urlObj.searchParams.get('category');
+    let results = strategicPois;
+    if (category && category !== 'all') {
+      results = strategicPois.filter(p => p.category === category);
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(results));
+    return;
+  }
+
+  // 4.02 API: Radio Frequencies & Telecom
+  if (pathname === '/api/radio') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(radioData));
     return;
   }
 

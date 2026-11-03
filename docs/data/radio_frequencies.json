@@ -1,0 +1,113 @@
+{
+  "bands": [
+    {
+      "name": "Rádio Cidadão (Faixa do Cidadão - PX / 11 Metros)",
+      "description": "Faixa livre de alta popularidade no Brasil (26.965 a 27.855 MHz), muito utilizada por caminhoneiros, fazendas e operadores rurais. Não requer internet nem repetidoras.",
+      "channels": [
+        { "channel": "Canal 9", "freq": "27.065 MHz", "mode": "AM", "usage": "🚨 EMERGÊNCIA & SOCORRO NACIONAL (Canal protegido por lei, exclusivo para pedidos de auxílio e acidentes)" },
+        { "channel": "Canal 11", "freq": "27.085 MHz", "mode": "AM", "usage": "🗣️ Chamada Geral Nacional (Estabelece contato e direciona para outro canal livre)" },
+        { "channel": "Canal 19", "freq": "27.185 MHz", "mode": "AM", "usage": "🚛 Rodovias & Caminhoneiros (Informações em tempo real sobre bloqueios, acidentes, clima e polícia)" },
+        { "channel": "Canal 5", "freq": "27.015 MHz", "mode": "AM/LSB", "usage": "🏕️ Comunicações Locais e Expedições de Campo" },
+        { "channel": "Canal 31", "freq": "27.315 MHz", "mode": "LSB/USB", "usage": "📡 Longa Distância (DX) em Banda Lateral Única" }
+      ]
+    },
+    {
+      "name": "VHF Marítimo & Náutico",
+      "description": "Utilizado em toda a costa brasileira, rios navegáveis (Tietê, Paraná, Amazonas, São Francisco) e represas.",
+      "channels": [
+        { "channel": "Canal 16", "freq": "156.800 MHz", "mode": "FM", "usage": "🚨 SOCORRO, EMERGÊNCIA & CHAMADA (Monitorado obrigatoriamente pela Capitania dos Portos e embarcações)" },
+        { "channel": "Canal 6", "freq": "156.300 MHz", "mode": "FM", "usage": "🚁 Operações de Busca e Salvamento (SAR) entre navios e aeronaves" },
+        { "channel": "Canal 13", "freq": "156.650 MHz", "mode": "FM", "usage": "⚓ Segurança da Navegação de Prático a Navio" },
+        { "channel": "Canal 68", "freq": "156.425 MHz", "mode": "FM", "usage": "⛵ Comunicações entre Embarcações de Recreio" }
+      ]
+    },
+    {
+      "name": "Radioamadorismo & Defesa Civil (VHF / UHF / HF)",
+      "description": "Frequências estratégicas utilizadas por radioamadores licenciados e integradas à Defesa Civil Nacional.",
+      "channels": [
+        { "channel": "VHF Simplex", "freq": "146.520 MHz", "mode": "FM", "usage": "📞 Frequência Nacional de Encontro VHF 2m (Direto rádio a rádio)" },
+        { "channel": "UHF Simplex", "freq": "433.500 MHz", "mode": "FM", "usage": "📞 Frequência Nacional de Encontro UHF 70cm" },
+        { "channel": "RENER HF 40m", "freq": "7.060 MHz", "mode": "LSB", "usage": "🛡️ Rede Nacional de Emergência de Radioamadores / Defesa Civil (Cobertura interestadual)" },
+        { "channel": "RENER HF 20m", "freq": "14.120 MHz", "mode": "USB", "usage": "🛡️ RENER Diurna Interestadual e Internacional" },
+        { "channel": "RENER VHF", "freq": "146.500 MHz", "mode": "FM", "usage": "🛡️ Triagem Local de Desastres e Apoio a Abrigos" }
+      ]
+    },
+    {
+      "name": "Aeronáutico de Socorro",
+      "description": "Frequências monitoradas pela Força Aérea Brasileira (FAB), controle de tráfego aéreo e satélites SAR Cospas-Sarsat.",
+      "channels": [
+        { "channel": "Civil SAR", "freq": "121.500 MHz", "mode": "AM", "usage": "🚨 Frequência Internacional de Emergência Aeronáutica e Balizas ELT" },
+        { "channel": "Militar SAR", "freq": "243.000 MHz", "mode": "AM", "usage": "🚨 Frequência Militar de Resgate" }
+      ]
+    }
+  ],
+  "q_code": [
+    { "code": "QAP", "meaning": "Na escuta / Aguardando na frequência", "example": "Viatura 01 em QAP." },
+    { "code": "QSL", "meaning": "Entendido / Confirmado / Ciente", "example": "QSL, mensagem recebida com clareza." },
+    { "code": "QTH", "meaning": "Localização geográfica / Posição atual", "example": "Qual o seu QTH? Meu QTH é Louveira." },
+    { "code": "QRX", "meaning": "Aguarde um momento", "example": "QRX 2 minutos para verificar o mapa." },
+    { "code": "QRA", "meaning": "Nome do operador ou prefixo da estação", "example": "Qual o seu QRA? Meu QRA é Nomad-Alpha." },
+    { "code": "QRT", "meaning": "Encerrando transmissão / Desligando a estação", "example": "Vou ficar QRT por falta de bateria." },
+    { "code": "QTC", "meaning": "Mensagem importante ou boletim a transmitir", "example": "Tenho um QTC urgente sobre a ponte interditada." },
+    { "code": "QSO", "meaning": "Contato estabelecido entre operadores", "example": "Tivemos um bom QSO ontem à noite." },
+    { "code": "QRL", "meaning": "Frequência ocupada / Estou ocupado", "example": "A frequência está QRL, por favor mudar para canal 5." },
+    { "code": "QRM", "meaning": "Interferência causada por outra estação humana", "example": "Muito QRM no canal 19." },
+    { "code": "QRN", "meaning": "Interferência atmosférica (estática, raios)", "example": "Tempestade causando forte QRN." },
+    { "code": "QRO", "meaning": "Aumentar a potência do transmissor", "example": "Sinal fraco, se puder passe para QRO." },
+    { "code": "QRP", "meaning": "Diminuir a potência / Operação em baixa potência", "example": "Operando em QRP com bateria de 5W." },
+    { "code": "QRZ", "meaning": "Quem está chamando?", "example": "QRZ na frequência? Repita seu indicativo." },
+    { "code": "QSB", "meaning": "Sinal oscilando / Desvanecimento", "example": "Seu áudio está com forte QSB." },
+    { "code": "QSY", "meaning": "Mudar para outra frequência", "example": "QSY para 146.520 MHz." },
+    { "code": "QTR", "meaning": "Hora exata", "example": "Qual o seu QTR? Meu QTR é 21:00h." }
+  ],
+  "phonetic_alphabet": [
+    { "letter": "A", "code": "Alfa", "pronunciation": "AL-FA" },
+    { "letter": "B", "code": "Bravo", "pronunciation": "BRA-VO" },
+    { "letter": "C", "code": "Charlie", "pronunciation": "TCHAR-LI" },
+    { "letter": "D", "code": "Delta", "pronunciation": "DEL-TA" },
+    { "letter": "E", "code": "Echo", "pronunciation": "E-KO" },
+    { "letter": "F", "code": "Foxtrot", "pronunciation": "FOKS-TROT" },
+    { "letter": "G", "code": "Golf", "pronunciation": "GOLF" },
+    { "letter": "H", "code": "Hotel", "pronunciation": "HO-TEL" },
+    { "letter": "I", "code": "India", "pronunciation": "IN-DI-A" },
+    { "letter": "J", "code": "Juliett", "pronunciation": "DJU-LI-ET" },
+    { "letter": "K", "code": "Kilo", "pronunciation": "KI-LO" },
+    { "letter": "L", "code": "Lima", "pronunciation": "LI-MA" },
+    { "letter": "M", "code": "Mike", "pronunciation": "MAIK" },
+    { "letter": "N", "code": "November", "pronunciation": "NO-VEM-BER" },
+    { "letter": "O", "code": "Oscar", "pronunciation": "OS-KAR" },
+    { "letter": "P", "code": "Papa", "pronunciation": "PA-PA" },
+    { "letter": "Q", "code": "Quebec", "pronunciation": "KE-BEK" },
+    { "letter": "R", "code": "Romeo", "pronunciation": "RO-MIO" },
+    { "letter": "S", "code": "Sierra", "pronunciation": "SI-E-RA" },
+    { "letter": "T", "code": "Tango", "pronunciation": "TAN-GO" },
+    { "letter": "U", "code": "Uniform", "pronunciation": "IU-NI-FORM" },
+    { "letter": "V", "code": "Victor", "pronunciation": "VIK-TOR" },
+    { "letter": "W", "code": "Whiskey", "pronunciation": "UIS-KI" },
+    { "letter": "X", "code": "X-ray", "pronunciation": "EKS-REI" },
+    { "letter": "Y", "code": "Yankee", "pronunciation": "IAN-KI" },
+    { "letter": "Z", "code": "Zulu", "pronunciation": "ZU-LU" }
+  ],
+  "antennas": [
+    {
+      "name": "Antena Dipolo de Meia Onda Improvisada (1/2 Onda)",
+      "description": "A antena mais confiável e fácil de construir no campo usando qualquer fio elétrico comum de cobre (1,0mm a 2,5mm) e cabo coaxial de 50 ohms.",
+      "formula": "Comprimento Total (metros) = 142.5 / Frequência (MHz)",
+      "examples": [
+        { "band": "VHF (146.520 MHz)", "total_length": "0,97 metro (cada perna com 48,5 cm)" },
+        { "band": "PX Canal 19 (27.185 MHz)", "total_length": "5,24 metros (cada perna com 2,62 metros)" },
+        { "band": "RENER 40m (7.060 MHz)", "total_length": "20,18 metros (cada perna com 10,09 metros)" }
+      ],
+      "instructions": "1. Corte dois pedaços iguais de fio conforme o tamanho de cada perna. 2. Solde ou amarre o fio central do cabo coaxial a uma perna. 3. Solde a malha externa do cabo coaxial à outra perna. 4. Isole o centro com fita de alta fusão e estique os fios horizontalmente ou em 'V invertido' amarrados a árvores usando cordão de nylon."
+    },
+    {
+      "name": "Antena Plano-Terra Vertical de Emergência",
+      "description": "Excelente para cobertura omnidirecional em 360 graus na faixa de VHF marítimo ou radioamador.",
+      "formula": "Elemento Irradiador (metros) = 71.25 / Frequência (MHz) | 4 Radiais inclinados a 45 graus com 5% a mais de comprimento.",
+      "examples": [
+        { "band": "VHF (146.500 MHz)", "total_length": "Irradiante vertical: 48,6 cm | 4 Radiais: 51 cm cada" }
+      ],
+      "instructions": "Use um conector fêmea SO-239 de chassis: solde a haste vertical no pino central e prenda os 4 radiais nos parafusos do chassis, inclinando-os a 45° para baixo para obter impedância perfeita de 50 ohms."
+    }
+  ]
+}

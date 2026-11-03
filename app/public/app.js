@@ -866,7 +866,11 @@ window.enableMapPick = function(target) {
   const banner = document.getElementById('map-pick-banner');
   const targetLabel = document.getElementById('map-pick-target-name');
   if (banner) banner.style.display = 'flex';
-  if (targetLabel) targetLabel.textContent = target === 'origin' ? 'Ponto A (Origem)' : 'Ponto B (Destino)';
+  if (targetLabel) {
+    if (target === 'origin') targetLabel.textContent = 'Ponto A (Origem)';
+    else if (target === 'dest') targetLabel.textContent = 'Ponto B (Destino)';
+    else if (target === 'waypoint') targetLabel.textContent = 'Novo Marcador Tático';
+  }
 };
 
 window.cancelMapPick = function() {
@@ -877,6 +881,16 @@ window.cancelMapPick = function() {
 
 function handleMapPickedPoint(lat, lng, mode) {
   cancelMapPick();
+  
+  if (mode === 'waypoint') {
+    const latIn = document.getElementById('wpt-lat-input');
+    const lngIn = document.getElementById('wpt-lng-input');
+    if (latIn) latIn.value = lat.toFixed(4);
+    if (lngIn) lngIn.value = lng.toFixed(4);
+    toggleWaypointsDrawer(true);
+    return;
+  }
+
   let label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   let nearest = null;
   let minDist = Infinity;
@@ -1167,3 +1181,768 @@ window.downloadCurrentRouteGpx = function() {
   a.click();
   document.body.removeChild(a);
 };
+
+/* ========================================================
+   MODULE 1: STRATEGIC POIs ON MAP
+   ======================================================== */
+let poisData = [];
+let poiMarkers = [];
+const activePoiCategories = {
+  hospital: true,
+  rescue: true,
+  police: true,
+  water: true,
+  fuel: true
+};
+
+const POI_ICONS = {
+  hospital: '🏥',
+  rescue: '🚒',
+  police: '🛡️',
+  water: '💧',
+  fuel: '⛽'
+};
+
+async function loadPoisData() {
+  try {
+    const res = await fetch('/api/pois');
+    if (res.ok) {
+      poisData = await res.json();
+      if (mapInstance) renderPoiMarkers();
+    }
+  } catch (err) {
+    console.error('Erro ao carregar POIs estratégicos:', err);
+  }
+}
+
+window.togglePoiCategory = function(cat) {
+  activePoiCategories[cat] = !activePoiCategories[cat];
+  const btn = document.getElementById(`layer-btn-${cat}`);
+  if (btn) {
+    btn.classList.toggle('active', activePoiCategories[cat]);
+  }
+  renderPoiMarkers();
+};
+
+function renderPoiMarkers() {
+  if (!mapInstance || !poisData) return;
+
+  // Clear existing POI markers
+  poiMarkers.forEach(m => m.remove());
+  poiMarkers = [];
+
+  poisData.forEach(poi => {
+    if (!activePoiCategories[poi.category]) return;
+
+    const el = document.createElement('div');
+    el.className = 'poi-custom-marker';
+    el.innerHTML = `
+      <div style="background: rgba(10,15,26,0.9); border: 2px solid #10b981; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 10px rgba(16,185,129,0.5); cursor: pointer;">
+        ${POI_ICONS[poi.category] || '📍'}
+      </div>
+    `;
+
+    const popupHtml = `
+      <div style="color: #fff; font-family: sans-serif; font-size: 12px; line-height: 1.4; padding: 4px;">
+        <div style="font-weight: 800; color: #34d399; font-size: 13px; margin-bottom: 3px;">
+          ${POI_ICONS[poi.category] || ''} ${poi.name}
+        </div>
+        <div style="color: #94a3b8; font-size: 11px; margin-bottom: 5px;">
+          ${poi.city} - ${poi.uf} ${poi.phone ? `&bull; 📞 ${poi.phone}` : ''}
+        </div>
+        <div style="color: #cbd5e1; margin-bottom: 8px;">
+          ${poi.details || ''}
+        </div>
+        <button onclick="setRouteDestination(${poi.lat}, ${poi.lng}, '${poi.name.replace(/'/g, "\\'")}')" 
+                style="background: #10b981; color: #000; font-weight: 800; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; width: 100%;">
+          🧭 Traçar Rota até aqui
+        </button>
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({ offset: 15 }).setHTML(popupHtml);
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([poi.lng, poi.lat])
+      .setPopup(popup)
+      .addTo(mapInstance);
+
+    poiMarkers.push(marker);
+  });
+}
+
+window.setRouteDestination = function(lat, lng, label) {
+  toggleRoutePlanner(true);
+  routeDest = { lat, lng, label };
+  const toInput = document.getElementById('route-to-input');
+  if (toInput) toInput.value = label;
+  if (routeOrigin && routeDest) calculateRoute();
+};
+
+/* ========================================================
+   MODULE 2: PERSONAL TACTICAL WAYPOINTS (LOCALSTORAGE)
+   ======================================================== */
+let userWaypoints = [];
+let userWptMarkers = [];
+
+const WPT_ICONS = {
+  base: '🏠',
+  rendezvous: '🤝',
+  shelter: '🏕️',
+  water: '💧',
+  danger: '⚠️'
+};
+
+function loadUserWaypoints() {
+  try {
+    const raw = localStorage.getItem('nomad_brasil_waypoints');
+    userWaypoints = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    userWaypoints = [];
+  }
+  updateWaypointsBadges();
+  renderWaypointList();
+  if (mapInstance) renderUserWptMarkers();
+}
+
+function saveUserWaypointsToStorage() {
+  try {
+    localStorage.setItem('nomad_brasil_waypoints', JSON.stringify(userWaypoints));
+  } catch (e) {}
+  updateWaypointsBadges();
+  renderWaypointList();
+  renderUserWptMarkers();
+}
+
+function updateWaypointsBadges() {
+  const badge1 = document.getElementById('user-wpt-badge');
+  const badge2 = document.getElementById('user-wpt-total');
+  if (badge1) badge1.textContent = userWaypoints.length;
+  if (badge2) badge2.textContent = userWaypoints.length;
+}
+
+window.toggleWaypointsDrawer = function(force) {
+  const drawer = document.getElementById('waypoints-drawer');
+  if (!drawer) return;
+  const isHidden = drawer.style.display === 'none';
+  const shouldOpen = force !== undefined ? force : isHidden;
+  drawer.style.display = shouldOpen ? 'flex' : 'none';
+  if (shouldOpen) {
+    // close route planner if open to prevent screen clutter
+    const routePanel = document.getElementById('route-planner-panel');
+    if (routePanel) routePanel.classList.remove('open');
+  }
+};
+
+window.setWptFromMapCenter = function() {
+  if (!mapInstance) return;
+  const c = mapInstance.getCenter();
+  const latIn = document.getElementById('wpt-lat-input');
+  const lngIn = document.getElementById('wpt-lng-input');
+  if (latIn) latIn.value = c.lat.toFixed(4);
+  if (lngIn) lngIn.value = c.lng.toFixed(4);
+};
+
+window.saveNewWaypoint = function() {
+  const nameIn = document.getElementById('wpt-name-input');
+  const catIn = document.getElementById('wpt-cat-select');
+  const latIn = document.getElementById('wpt-lat-input');
+  const lngIn = document.getElementById('wpt-lng-input');
+
+  const name = nameIn ? nameIn.value.trim() : '';
+  const category = catIn ? catIn.value : 'base';
+  const lat = parseFloat(latIn ? latIn.value : '');
+  const lng = parseFloat(lngIn ? lngIn.value : '');
+
+  if (!name) {
+    alert('Por favor, informe um nome para o marcador.');
+    return;
+  }
+  if (isNaN(lat) || isNaN(lng)) {
+    alert('Coordenadas de latitude e longitude inválidas. Use o botão "Centro" ou clique no mapa.');
+    return;
+  }
+
+  const wpt = {
+    id: 'wpt_' + Date.now(),
+    name,
+    category,
+    lat,
+    lng,
+    createdAt: new Date().toISOString()
+  };
+
+  userWaypoints.push(wpt);
+  saveUserWaypointsToStorage();
+
+  if (nameIn) nameIn.value = '';
+  alert(`Marcador "${name}" salvo com sucesso!`);
+};
+
+window.deleteWaypoint = function(id) {
+  if (!confirm('Deseja realmente remover este marcador?')) return;
+  userWaypoints = userWaypoints.filter(w => w.id !== id);
+  saveUserWaypointsToStorage();
+};
+
+function renderWaypointList() {
+  const container = document.getElementById('wpt-list-items');
+  if (!container) return;
+
+  if (userWaypoints.length === 0) {
+    container.innerHTML = '<div class="text-xs text-gray-500 py-3 text-center">Nenhum marcador cadastrado ainda.</div>';
+    return;
+  }
+
+  container.innerHTML = userWaypoints.map(w => `
+    <div class="wpt-item">
+      <span class="wpt-icon">${WPT_ICONS[w.category] || '📍'}</span>
+      <div class="wpt-details">
+        <div class="wpt-title">${w.name}</div>
+        <div class="wpt-coords">${w.lat.toFixed(4)}, ${w.lng.toFixed(4)}</div>
+      </div>
+      <div class="wpt-actions">
+        <button class="wpt-act-btn route" onclick="setRouteDestination(${w.lat}, ${w.lng}, '${w.name.replace(/'/g, "\\'")}')" title="Traçar rota até aqui">🧭</button>
+        <button class="wpt-act-btn" onclick="flyToCoords(${w.lat}, ${w.lng}, '${w.name.replace(/'/g, "\\'")}', 14)" title="Ver no mapa">🔍</button>
+        <button class="wpt-act-btn delete" onclick="deleteWaypoint('${w.id}')" title="Remover">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderUserWptMarkers() {
+  if (!mapInstance) return;
+  userWptMarkers.forEach(m => m.remove());
+  userWptMarkers = [];
+
+  userWaypoints.forEach(w => {
+    const el = document.createElement('div');
+    el.innerHTML = `
+      <div style="background: rgba(14,165,233,0.9); border: 2px solid #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 12px rgba(14,165,233,0.7); cursor: pointer;">
+        ${WPT_ICONS[w.category] || '📍'}
+      </div>
+    `;
+
+    const popupHtml = `
+      <div style="color: #fff; font-family: sans-serif; font-size: 12px; padding: 4px;">
+        <div style="font-weight: 800; color: #38bdf8; font-size: 13px; margin-bottom: 2px;">
+          ${WPT_ICONS[w.category] || ''} ${w.name}
+        </div>
+        <div style="color: #94a3b8; font-size: 10px; margin-bottom: 6px;">
+          Coord: ${w.lat.toFixed(4)}, ${w.lng.toFixed(4)}
+        </div>
+        <button onclick="setRouteDestination(${w.lat}, ${w.lng}, '${w.name.replace(/'/g, "\\'")}')" 
+                style="background: #0ea5e9; color: #000; font-weight: 800; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; width: 100%;">
+          🧭 Rota até aqui
+        </button>
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({ offset: 15 }).setHTML(popupHtml);
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([w.lng, w.lat])
+      .setPopup(popup)
+      .addTo(mapInstance);
+
+    userWptMarkers.push(marker);
+  });
+}
+
+window.exportWaypointsGpx = function() {
+  if (userWaypoints.length === 0) {
+    alert('Nenhum marcador pessoal cadastrado para exportar.');
+    return;
+  }
+
+  let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="NOMAD Brasil" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+  userWaypoints.forEach(w => {
+    gpx += `  <wpt lat="${w.lat}" lon="${w.lng}">\n    <name>${w.name}</name>\n    <desc>Categoria: ${w.category}</desc>\n  </wpt>\n`;
+  });
+  gpx += `</gpx>`;
+
+  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nomad_brasil_marcadores_${Date.now()}.gpx`;
+  a.click();
+};
+
+window.exportWaypointsJson = function() {
+  if (userWaypoints.length === 0) {
+    alert('Nenhum marcador para exportar.');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(userWaypoints, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nomad_brasil_marcadores_backup.json`;
+  a.click();
+};
+
+window.handleImportWaypoints = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const content = e.target.result;
+      if (file.name.endsWith('.json')) {
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          userWaypoints = [...userWaypoints, ...parsed];
+          saveUserWaypointsToStorage();
+          alert(`${parsed.length} marcadores importados com sucesso!`);
+        }
+      } else {
+        alert('Formato de importação: utilize arquivos .json');
+      }
+    } catch (err) {
+      alert('Erro ao processar arquivo: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+};
+
+/* ========================================================
+   MODULE 3: TACTICAL RATIONING & FOOD SUPPLY CALCULATOR
+   ======================================================== */
+window.setRationingDays = function(days) {
+  const input = document.getElementById('calc-days');
+  if (input) input.value = days;
+
+  document.querySelectorAll('.map-quick-chips button').forEach(b => b.classList.remove('chip-highlight'));
+  const btn = document.getElementById(`btn-days-${days}`);
+  if (btn) btn.classList.add('chip-highlight');
+
+  calculateRationing();
+};
+
+window.calculateRationing = function() {
+  const adults = parseInt(document.getElementById('calc-adults')?.value || '2', 10);
+  const children = parseInt(document.getElementById('calc-children')?.value || '1', 10);
+  const days = parseInt(document.getElementById('calc-days')?.value || '15', 10);
+  const activity = parseFloat(document.getElementById('calc-activity')?.value || '1.2');
+
+  const totalPeople = adults + children;
+
+  // Caloric computation
+  const baseAdultKcal = 2200;
+  const baseChildKcal = 1500;
+  const dailyKcal = Math.round(((adults * baseAdultKcal) + (children * baseChildKcal)) * activity);
+  const totalKcal = dailyKcal * days;
+
+  // Water computation (Litros)
+  // Consumo: 2.5L/adulto/dia, 1.8L/criança/dia
+  // Higiene mínima: 2L/pessoa/dia
+  const dailyDrinkingWater = (adults * 2.5) + (children * 1.8);
+  const totalDrinkingWater = Math.round(dailyDrinkingWater * days);
+  const dailyHygieneWater = totalPeople * 2.0;
+  const totalHygieneWater = Math.round(dailyHygieneWater * days);
+
+  // Dry food weight estimation (aprox 450g de comida seca por 2000 kcal)
+  const totalFoodWeightKg = Math.round((totalKcal / 2000) * 0.45);
+
+  // Update Summary cards
+  const elWaterTot = document.getElementById('res-water-total');
+  const elWaterHyg = document.getElementById('res-water-hygiene');
+  const elCalTot = document.getElementById('res-calories-total');
+  const elCalDaily = document.getElementById('res-calories-daily');
+  const elFoodWeight = document.getElementById('res-food-weight');
+  const elGroupDesc = document.getElementById('res-group-desc');
+
+  if (elWaterTot) elWaterTot.textContent = `${totalDrinkingWater} L`;
+  if (elWaterHyg) elWaterHyg.textContent = `${totalHygieneWater} L`;
+  if (elCalTot) elCalTot.textContent = `${totalKcal.toLocaleString('pt-BR')} kcal`;
+  if (elCalDaily) elCalDaily.textContent = `${dailyKcal.toLocaleString('pt-BR')} kcal / dia`;
+  if (elFoodWeight) elFoodWeight.textContent = `${totalFoodWeightKg} kg`;
+  if (elGroupDesc) elGroupDesc.textContent = `${adults} adultos, ${children} crianças &bull; ${days} dias`;
+
+  // Energy & Battery calculations
+  // Bateria 12V 100Ah = 1200Wh. Consumo diário (rádio 20W x 3h + 2 leds 5W x 5h = 110Wh/dia)
+  const batteryDays = Math.max(1, Math.round(1200 / 110));
+  const generatorFuel = (days * 4 * 0.6).toFixed(1); // 4h/dia gastando 0.6L/h
+  const batteriesCount = Math.round(totalPeople * Math.ceil(days / 7) * 2);
+
+  const elBatDays = document.getElementById('res-battery-days');
+  const elFuelGen = document.getElementById('res-fuel-generator');
+  const elBatCount = document.getElementById('res-batteries-count');
+  if (elBatDays) elBatDays.textContent = `~${batteryDays} dias`;
+  if (elFuelGen) elFuelGen.textContent = `${generatorFuel} L`;
+  if (elBatCount) elBatCount.textContent = `${batteriesCount} un`;
+
+  // Brazilian Survival Food Basket Items
+  const foodItems = [
+    { name: 'Arroz Branco / Parboilizado', perPersonDay: 0.12, unit: 'kg', kcalPerUnit: 3600, shelfLife: '2 a 5 anos (embalado)' },
+    { name: 'Feijão Preto / Carioca', perPersonDay: 0.08, unit: 'kg', kcalPerUnit: 3400, shelfLife: '1 a 3 anos' },
+    { name: 'Aveia em Flocos / Farinha de Mandioca', perPersonDay: 0.06, unit: 'kg', kcalPerUnit: 3800, shelfLife: '1 a 2 anos' },
+    { name: 'Sardinha / Atum em Óleo (Enlatado)', perPersonDay: 0.4, unit: 'latas (125g)', kcalPerUnit: 250, shelfLife: '3 a 5 anos' },
+    { name: 'Óleo Vegetal (Soja/Girassol)', perPersonDay: 0.025, unit: 'L', kcalPerUnit: 8840, shelfLife: '1 a 2 anos' },
+    { name: 'Açúcar Cristal / Mascavo', perPersonDay: 0.035, unit: 'kg', kcalPerUnit: 3900, shelfLife: 'Indeterminada (seco)' },
+    { name: 'Sal Refinado Iodado', perPersonDay: 0.012, unit: 'kg', kcalPerUnit: 0, shelfLife: 'Indeterminada' },
+    { name: 'Leite em Pó Integral', perPersonDay: 0.04, unit: 'kg', kcalPerUnit: 5000, shelfLife: '1 a 2 anos' },
+    { name: 'Café em Pó / Chá Mate', perPersonDay: 0.015, unit: 'kg', kcalPerUnit: 0, shelfLife: '1 a 2 anos' }
+  ];
+
+  const tbody = document.getElementById('rationing-table-body');
+  if (tbody) {
+    tbody.innerHTML = foodItems.map(item => {
+      const qty = (item.perPersonDay * totalPeople * days).toFixed(item.unit.includes('latas') ? 0 : 1);
+      const totalItemKcal = Math.round(qty * item.kcalPerUnit);
+      return `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <td style="padding: 0.65rem 0.8rem; font-weight: 700; color: #fff;">${item.name}</td>
+          <td style="padding: 0.65rem 0.8rem; font-family: monospace; font-weight: 800; color: #34d399;">${qty} ${item.unit}</td>
+          <td style="padding: 0.65rem 0.8rem; font-family: monospace; color: #f59e0b;">${totalItemKcal > 0 ? totalItemKcal.toLocaleString('pt-BR') + ' kcal' : '-'}</td>
+          <td style="padding: 0.65rem 0.8rem; color: #94a3b8;">${item.shelfLife}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+};
+
+window.printRationingList = function() {
+  window.print();
+};
+
+/* ========================================================
+   MODULE 4: TELECOM & ANTENNA CALCULATOR
+   ======================================================== */
+let radioDataStore = null;
+
+async function loadRadioData() {
+  try {
+    const res = await fetch('/api/radio');
+    if (res.ok) {
+      radioDataStore = await res.json();
+      renderRadioBands(radioDataStore.bands || []);
+      renderQCode(radioDataStore.q_code || []);
+      renderPhoneticAlphabet(radioDataStore.phonetic_alphabet || []);
+    }
+  } catch (e) {
+    console.error('Erro ao carregar dados de rádio:', e);
+  }
+}
+
+function renderRadioBands(bands) {
+  const container = document.getElementById('telecom-bands-container');
+  if (!container) return;
+
+  container.innerHTML = bands.map(b => `
+    <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
+      <h4 style="color: #38bdf8; font-size: 1rem; margin-bottom: 0.25rem;">${b.name}</h4>
+      <p style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 0.75rem;">${b.description}</p>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; text-align: left; font-size: 0.75rem; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: #64748b;">
+              <th style="padding: 0.35rem 0.5rem;">CANAL</th>
+              <th style="padding: 0.35rem 0.5rem;">FREQ.</th>
+              <th style="padding: 0.35rem 0.5rem;">MODO</th>
+              <th style="padding: 0.35rem 0.5rem;">FINALIDADE &amp; USO OFICIAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${b.channels.map(c => `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                <td style="padding: 0.4rem 0.5rem; font-weight: 700; color: #fff;">${c.channel}</td>
+                <td style="padding: 0.4rem 0.5rem; font-family: monospace; color: #10b981; font-weight: 800;">${c.freq}</td>
+                <td style="padding: 0.4rem 0.5rem; color: #f59e0b; font-family: monospace;">${c.mode}</td>
+                <td style="padding: 0.4rem 0.5rem; color: #cbd5e1;">${c.usage}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderQCode(list) {
+  const container = document.getElementById('qcode-list-container');
+  if (!container) return;
+
+  container.innerHTML = list.map(q => `
+    <div class="step-row" style="padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.04);">
+      <span style="font-family: monospace; font-weight: 800; color: #34d399; width: 55px; flex-shrink: 0;">${q.code}</span>
+      <div style="flex: 1; font-size: 0.75rem;">
+        <div style="color: #fff; font-weight: 600;">${q.meaning}</div>
+        <div style="color: #64748b; font-size: 0.7rem;">Ex: "${q.example}"</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.filterQCode = function() {
+  const q = document.getElementById('qcode-search-input')?.value.trim().toLowerCase();
+  if (!radioDataStore || !radioDataStore.q_code) return;
+  if (!q) {
+    renderQCode(radioDataStore.q_code);
+    return;
+  }
+  const filtered = radioDataStore.q_code.filter(item => 
+    item.code.toLowerCase().includes(q) || 
+    item.meaning.toLowerCase().includes(q)
+  );
+  renderQCode(filtered);
+};
+
+function renderPhoneticAlphabet(list) {
+  const container = document.getElementById('phonetic-list-container');
+  if (!container) return;
+
+  container.innerHTML = list.map(p => `
+    <div class="step-row" style="padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.04);">
+      <span style="font-family: monospace; font-size: 1.1rem; font-weight: 900; color: #38bdf8; width: 35px;">${p.letter}</span>
+      <div style="flex: 1; font-size: 0.78rem;">
+        <span style="font-weight: 800; color: #fff;">${p.code}</span>
+        <span style="color: #94a3b8; font-size: 0.7rem; margin-left: 0.5rem;">[${p.pronunciation}]</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.calculateAntennaDipole = function() {
+  const freq = parseFloat(document.getElementById('calc-antenna-freq')?.value || '146.520');
+  if (isNaN(freq) || freq <= 0) return;
+
+  // L total (m) = 142.5 / f(MHz)
+  const totalLengthM = 142.5 / freq;
+  const eachLegCm = (totalLengthM / 2) * 100;
+
+  const elTot = document.getElementById('antenna-res-total');
+  const elLeg = document.getElementById('antenna-res-leg');
+  if (elTot) elTot.textContent = `${totalLengthM.toFixed(2)} m`;
+  if (elLeg) elLeg.textContent = `${eachLegCm.toFixed(1)} cm`;
+};
+
+window.setAntennaPreset = function(mhz) {
+  const input = document.getElementById('calc-antenna-freq');
+  if (input) input.value = mhz;
+  calculateAntennaDipole();
+};
+
+/* ========================================================
+   MODULE 5: MORSE & EMERGENCY SIGNALS (AUDIO + OPTICAL)
+   ======================================================== */
+const MORSE_MAP = {
+  'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+  'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+  'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+  'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+  'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
+  '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..',
+  '9': '----.', '0': '-----', ' ': '/'
+};
+
+let audioContextInstance = null;
+let isAudioSosActive = false;
+let audioSosInterval = null;
+
+let isOpticalSosActive = false;
+let opticalSosInterval = null;
+
+function getAudioContext() {
+  if (!audioContextInstance) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioContextInstance = new AudioContext();
+  }
+  if (audioContextInstance.state === 'suspended') {
+    audioContextInstance.resume();
+  }
+  return audioContextInstance;
+}
+
+function playTone(freq, durationMs) {
+  return new Promise(resolve => {
+    try {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + (durationMs / 1000));
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + (durationMs / 1000));
+      setTimeout(resolve, durationMs);
+    } catch (e) {
+      resolve();
+    }
+  });
+}
+
+function sleepMs(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// SOS Pattern: ... --- ... (Dot: 120ms, Dash: 360ms, Pause: 120ms, Letter pause: 360ms, Word pause: 1200ms)
+async function playSosLoop() {
+  const dot = 120;
+  const dash = 360;
+
+  while (isAudioSosActive) {
+    // S: . . .
+    for (let i = 0; i < 3; i++) {
+      if (!isAudioSosActive) return;
+      await playTone(800, dot);
+      await sleepMs(dot);
+    }
+    await sleepMs(dash);
+
+    // O: - - -
+    for (let i = 0; i < 3; i++) {
+      if (!isAudioSosActive) return;
+      await playTone(800, dash);
+      await sleepMs(dot);
+    }
+    await sleepMs(dash);
+
+    // S: . . .
+    for (let i = 0; i < 3; i++) {
+      if (!isAudioSosActive) return;
+      await playTone(800, dot);
+      await sleepMs(dot);
+    }
+
+    // Long pause between SOS loops
+    await sleepMs(1400);
+  }
+}
+
+window.toggleAudioSos = function() {
+  const btn = document.getElementById('btn-toggle-audio-sos');
+  if (isAudioSosActive) {
+    isAudioSosActive = false;
+    if (btn) {
+      btn.innerHTML = `<span>🔊</span> INICIAR BIPE SONORO (SOS)`;
+      btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      btn.style.color = '#000';
+    }
+  } else {
+    isAudioSosActive = true;
+    if (btn) {
+      btn.innerHTML = `<span>⏹️</span> PARAR BIPE SONORO`;
+      btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)';
+      btn.style.color = '#fff';
+    }
+    playSosLoop();
+  }
+};
+
+window.toggleOpticalSos = function(force) {
+  const overlay = document.getElementById('optical-sos-overlay');
+  if (!overlay) return;
+
+  const shouldActive = force !== undefined ? force : !isOpticalSosActive;
+  isOpticalSosActive = shouldActive;
+
+  const btn = document.getElementById('btn-toggle-optical-sos');
+
+  if (isOpticalSosActive) {
+    overlay.style.display = 'flex';
+    if (btn) {
+      btn.innerHTML = `<span>⏹️</span> PARAR SINALIZADOR VISUAL`;
+      btn.style.background = '#000';
+      btn.style.border = '1px solid #ef4444';
+    }
+    runOpticalFlashLoop(overlay);
+  } else {
+    overlay.style.display = 'none';
+    overlay.classList.remove('flash-active-white', 'flash-active-black');
+    if (btn) {
+      btn.innerHTML = `<span>🚨</span> INICIAR SINALIZADOR VISUAL (SOS)`;
+      btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)';
+      btn.style.border = 'none';
+    }
+  }
+};
+
+async function runOpticalFlashLoop(overlay) {
+  const dot = 150;
+  const dash = 450;
+
+  async function flash(ms) {
+    overlay.classList.add('flash-active-white');
+    overlay.classList.remove('flash-active-black');
+    await sleepMs(ms);
+    overlay.classList.remove('flash-active-white');
+    overlay.classList.add('flash-active-black');
+    await sleepMs(dot);
+  }
+
+  while (isOpticalSosActive) {
+    // S: . . .
+    for (let i = 0; i < 3; i++) {
+      if (!isOpticalSosActive) return;
+      await flash(dot);
+    }
+    await sleepMs(dash);
+
+    // O: - - -
+    for (let i = 0; i < 3; i++) {
+      if (!isOpticalSosActive) return;
+      await flash(dash);
+    }
+    await sleepMs(dash);
+
+    // S: . . .
+    for (let i = 0; i < 3; i++) {
+      if (!isOpticalSosActive) return;
+      await flash(dot);
+    }
+
+    await sleepMs(1500);
+  }
+}
+
+window.convertAndPlayCustomMorse = async function() {
+  const text = (document.getElementById('morse-custom-input')?.value || 'SOS').toUpperCase().trim();
+  const display = document.getElementById('morse-output-display');
+
+  const morseSeq = text.split('').map(char => MORSE_MAP[char] || '?').join(' ');
+  if (display) display.textContent = morseSeq;
+
+  // Play audio sequence
+  for (const char of morseSeq) {
+    if (char === '.') {
+      await playTone(800, 100);
+      await sleepMs(80);
+    } else if (char === '-') {
+      await playTone(800, 300);
+      await sleepMs(80);
+    } else if (char === ' ') {
+      await sleepMs(200);
+    } else if (char === '/') {
+      await sleepMs(400);
+    }
+  }
+};
+
+// Hook into initial loading of application
+const prevInitDashboard = window.initDashboard || function() {};
+window.initDashboard = function() {
+  prevInitDashboard();
+  loadPoisData();
+  loadUserWaypoints();
+  calculateRationing();
+  loadRadioData();
+  calculateAntennaDipole();
+};
+
+// Call immediately if DOM is already ready
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(() => {
+    loadPoisData();
+    loadUserWaypoints();
+    calculateRationing();
+    loadRadioData();
+    calculateAntennaDipole();
+  }, 200);
+}
+

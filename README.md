@@ -21,11 +21,14 @@ O **NOMAD Brasil** é uma plataforma *open source* criada para prover infraestru
 
 O sistema integra em um único painel web ultra-rápido:
 1. **🗺️ Mapas Nacionais em Nível de Ruas (100% Offline):** Cobertura completa do Brasil em formato vetorial PMTiles (1,57 GB) com renderização por aceleração gráfica (MapLibre GL JS), tipografia Noto Sans local e busca instantânea de **todos os 5.571 municípios do IBGE**.
-2. **🚗 Planejador de Rotas & Evacuação:** Traçado de deslocamento rodoviário, tático (4x4) e marcha a pé (4,5 km/h) com instruções curva a curva, consumo de combustível, cálculo vital de água/calorias, cache permanente em disco e exportação direta em **GPX** para aparelhos GPS Garmin ou apps móveis offline (OsmAnd, Organic Maps).
-3. **📊 Painel Tático de Informações Municipais (*City Intel*):** Dossiê de cada município brasileiro contendo Código IBGE, DDD, Região, Distância geodésica da Capital, Coordenadas GPS de precisão e atalho de rota direta.
-4. **📚 Wikipédia Completa em Português (23+ GB):** Servidor Kiwix nativo integrado servindo mais de 1 milhão de artigos com imagens, enciclopédia médica e guias de viagem.
-5. **🚑 Protocolos de Primeiros Socorros & Triagem:** Guias imediatos para Parada Cardíaca (RCP), Desengasgo (Heimlich), Hemorragias, Queimaduras e Acidentes com Animais Peçonhentos do Brasil (serpentes Jararaca/Cascavel e escorpiões).
-6. **🏕️ Manuais Práticos de Resiliência:** Métodos de purificação de água, frequências do Rádio Cidadão / PX (Canais 9 e 19 de Emergência), Código Q e dimensionamento de energia solar 12V autônoma.
+2. **📍 Camadas Táticas de POIs & Marcadores Pessoais:** Hospitais/UPAs 24h, Batalhões da PM/Bombeiros (193), Polícia Rodoviária Federal (PRF), Mananciais de Água Doce e Postos de Abastecimento 24h. Sistema de **Waypoints Pessoais** com gravação local e exportação/importação em GPX e JSON.
+3. **🚗 Planejador de Rotas & Evacuação:** Traçado de deslocamento rodoviário, tático (4x4) e marcha a pé (4,5 km/h) com instruções curva a curva, consumo de combustível, cálculo vital de água/calorias, cache permanente em disco e exportação direta em **GPX** para aparelhos GPS Garmin ou apps móveis offline (OsmAnd, Organic Maps).
+4. **🎒 Calculadora Tática de Racionamento & Estoque:** Dimensionamento dinâmico de litros de água, calorias totais, cesta de alimentos não-perecíveis no padrão brasileiro (arroz, feijão, aveia, sardinha, óleo, sal), pilhas e combustível de gerador para qualquer tamanho de grupo e duração de isolamento.
+5. **📻 Telecomunicações de Campo & Calculadora de Antenas:** Frequências de socorro oficiais do Brasil (PX 11m, VHF Marítimo Ch 16, Radioamadorismo / RENER Defesa Civil, Aeronáutico), Código Q com busca, Alfabeto Fonético ICAO e calculadora empírica para construir antenas dipolo com fio comum de luz.
+6. **🚨 Central de Sinais de Socorro & Morse Ativo:** Farol de tela com padrão visual SOS em contraste máximo, sintetizador de áudio de 800 Hz em tempo real (100% offline via Web Audio), tradutor de texto para Morse, guia SAR terra-ar para helicópteros e códigos de apito de emergência.
+7. **📄 Cartão Tático de Bolso Imprimível (A4 Dobrável):** Folha única de alta densidade pronta para impressão e dobra em 4 partes contendo contatos de socorro, ficha médica de identificação, protocolos de RCP/Heimlich, dosagem de hipoclorito para purificação de água e frequências de rádio.
+8. **📚 Wikipédia Completa em Português (23+ GB):** Servidor Kiwix nativo integrado servindo mais de 1 milhão de artigos com imagens, enciclopédia médica e guias de viagem.
+9. **🚑 Protocolos de Primeiros Socorros & Triagem:** Guias imediatos para Parada Cardíaca (RCP), Desengasgo (Heimlich), Hemorragias, Queimaduras e Acidentes com Animais Peçonhentos do Brasil (serpentes Jararaca/Cascavel e escorpiões).
 
 ---
 

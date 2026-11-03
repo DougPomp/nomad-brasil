@@ -78,7 +78,7 @@
 
     .nav-links {
       display: flex;
-      gap: 1rem;
+      gap: 0.75rem;
       align-items: center;
     }
 
@@ -126,7 +126,7 @@
       width: 100%;
       border-radius: 16px;
       overflow: hidden;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
       border: 1px solid var(--border);
       box-shadow: 0 20px 40px rgba(0,0,0,0.6);
     }
@@ -139,9 +139,8 @@
 
     /* Tactical Segmented Control / Tabs */
     .demo-tabs {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 0.4rem;
+      display: flex;
+      gap: 0.35rem;
       background: rgba(11, 17, 32, 0.85);
       padding: 0.4rem;
       border-radius: 12px;
@@ -149,22 +148,26 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
       margin-bottom: 2rem;
       backdrop-filter: blur(16px);
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .demo-tabs::-webkit-scrollbar { display: none; }
 
     .demo-tab-btn {
+      flex: 1;
+      min-width: 115px;
       background: transparent;
       border: 1px solid transparent;
       color: var(--text-muted);
-      padding: 0.75rem 0.5rem;
+      padding: 0.7rem 0.5rem;
       border-radius: 8px;
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       cursor: pointer;
       display: flex;
-      flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 0.45rem;
+      gap: 0.4rem;
       white-space: nowrap;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -178,30 +181,12 @@
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.16) 100%);
       border: 1px solid var(--accent-green);
       color: #34d399;
-      box-shadow: 0 0 16px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
     }
 
     .demo-tab-btn .tab-icon {
-      font-size: 1.05rem;
+      font-size: 1rem;
       line-height: 1;
-      display: inline-flex;
-    }
-
-    @media (max-width: 900px) {
-      .demo-tabs {
-        display: flex;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        padding: 0.35rem;
-      }
-      .demo-tabs::-webkit-scrollbar {
-        display: none;
-      }
-      .demo-tab-btn {
-        flex: 0 0 auto;
-        padding: 0.65rem 1rem;
-      }
     }
 
     /* Tab Panes */
@@ -239,12 +224,24 @@
       margin-bottom: 1.25rem;
     }
 
-    /* City Search */
-    .search-box {
-      position: relative;
-      margin-bottom: 1rem;
+    /* Forms & Inputs */
+    .route-input {
+      width: 100%;
+      background: #090e1a;
+      border: 1px solid var(--border);
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .route-input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
     }
 
+    /* City Search */
+    .search-box { position: relative; margin-bottom: 1rem; }
     .search-input {
       width: 100%;
       background: #090e1a;
@@ -256,7 +253,6 @@
       outline: none;
       transition: border 0.2s;
     }
-
     .search-input:focus {
       border-color: var(--accent-green);
       box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
@@ -286,7 +282,6 @@
       align-items: center;
       font-size: 0.9rem;
     }
-
     .city-item:hover {
       background: rgba(16, 185, 129, 0.15);
       color: #34d399;
@@ -299,26 +294,41 @@
       gap: 1rem;
       margin-top: 1rem;
     }
-
     .intel-card {
       background: #090e1a;
       border: 1px solid rgba(255, 255, 255, 0.06);
       padding: 1rem;
       border-radius: 8px;
     }
-
     .intel-label {
       font-size: 0.7rem;
       color: var(--text-muted);
       font-weight: 700;
       letter-spacing: 0.05em;
     }
-
     .intel-val {
       font-size: 1.15rem;
       font-weight: 800;
       color: #fff;
       margin-top: 0.2rem;
+    }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chip-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+    .chip-btn.chip-highlight {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-green);
+      color: #34d399;
     }
 
     /* Quick Install Block */
@@ -334,13 +344,35 @@
       margin: 1rem 0;
     }
 
+    /* Metrics Grid */
+    .route-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+    .metric-card {
+      background: #090e1a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .metric-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+    .metric-value { font-size: 1.15rem; font-weight: 800; }
+
     /* Protocol Cards */
     .protocol-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 1rem;
     }
-
     .protocol-card {
       background: #090e1a;
       border: 1px solid var(--border);
@@ -349,12 +381,10 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-
     .protocol-card:hover {
       border-color: var(--accent-green);
       transform: translateY(-2px);
     }
-
     .protocol-badge {
       display: inline-block;
       padding: 0.2rem 0.5rem;
@@ -365,6 +395,63 @@
       background: rgba(239, 68, 68, 0.2);
       color: #fca5a5;
     }
+
+    /* Printable Card */
+    .printable-card-wrap {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      background: #fff;
+      color: #000;
+      padding: 1.75rem;
+      border-radius: 8px;
+    }
+    .pocket-quadrant {
+      border: 2px dashed #333;
+      padding: 1rem;
+      border-radius: 6px;
+      background: #fafafa;
+      min-height: 280px;
+    }
+    .pocket-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px solid #000;
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #000;
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      .printable-card-wrap, .printable-card-wrap * { visibility: visible; }
+      .printable-card-wrap {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 1cm;
+        background: #fff !important;
+        color: #000 !important;
+      }
+    }
+
+    /* Optical SOS Overlay */
+    .optical-sos-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .flash-white { background: #fff !important; }
+    .flash-black { background: #000 !important; }
 
     /* Footer */
     footer {
@@ -404,27 +491,39 @@
       <img src="banner.svg" alt="NOMAD Brasil - Central de Sobrevivência, Mapas e Conhecimento 100% Offline">
     </div>
 
-    <!-- Live Demo Navigation Tabs -->
+    <!-- Live Demo Navigation Tabs (Single Line Segmented Control) -->
     <div class="demo-tabs" role="tablist">
       <button class="demo-tab-btn active" onclick="switchDemoTab('quickstart')">
         <span class="tab-icon">⚡</span>
-        <span>Instalação Rápida</span>
+        <span>Instalação</span>
       </button>
       <button class="demo-tab-btn" onclick="switchDemoTab('cities')">
         <span class="tab-icon">📊</span>
         <span>Cidades (IBGE)</span>
       </button>
+      <button class="demo-tab-btn" onclick="switchDemoTab('rationing')">
+        <span class="tab-icon">🎒</span>
+        <span>Racionamento</span>
+      </button>
+      <button class="demo-tab-btn" onclick="switchDemoTab('telecom')">
+        <span class="tab-icon">📻</span>
+        <span>Rádio &amp; Antenas</span>
+      </button>
+      <button class="demo-tab-btn" onclick="switchDemoTab('morse')">
+        <span class="tab-icon">🚨</span>
+        <span>Morse &amp; SOS</span>
+      </button>
       <button class="demo-tab-btn" onclick="switchDemoTab('emergencies')">
         <span class="tab-icon">🚑</span>
-        <span>Primeiros Socorros</span>
+        <span>Socorros</span>
       </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('survival')">
-        <span class="tab-icon">🏕️</span>
-        <span>Sobrevivência &amp; Rádio</span>
+      <button class="demo-tab-btn" onclick="switchDemoTab('pocketcard')">
+        <span class="tab-icon">📄</span>
+        <span>Cartão A4</span>
       </button>
       <button class="demo-tab-btn" onclick="switchDemoTab('offline')">
         <span class="tab-icon">🛡️</span>
-        <span>Arquitetura Offline</span>
+        <span>Arquitetura</span>
       </button>
     </div>
 
@@ -433,17 +532,17 @@
       <div class="card">
         <h2 class="card-title">🚀 Como Rodar o NOMAD Brasil no seu Computador</h2>
         <p class="card-subtitle">
-          O NOMAD Brasil foi feito para funcionar <strong>100% desconectado da internet</strong> através do Docker.
+          O NOMAD Brasil foi feito para funcionar <strong>100% desconectado da internet</strong> através do Docker no seu HD externo ou notebook.
         </p>
 
         <h3 style="color: #34d399; font-size: 1rem; margin-top: 1rem;">No Windows (Instalador Automático de 1 Clique):</h3>
         <ol style="padding-left: 1.25rem; color: #cbd5e1; margin-top: 0.5rem; font-size: 0.95rem;">
-          <li>Baixe o projeto pelo botão <strong>"Baixar Projeto"</strong> ou clone via terminal:</li>
+          <li>Baixe o repositório ou clone via terminal:</li>
           <div class="install-box">git clone https://github.com/DougPomp/nomad-brasil.git<br>cd nomad-brasil</div>
-          <li>Dê dois cliques no arquivo: <strong><code>setup-nomad-brasil.bat</code></strong></li>
-          <li>O instalador baixa o mapa do Brasil (1,57 GB), a Wikipédia e sobe o sistema automaticamente em:</li>
+          <li>Dê dois cliques no instalador: <strong><code>setup-nomad-brasil.bat</code></strong></li>
+          <li>O instalador baixa o mapa vetorial nacional (1,57 GB), a Wikipédia e inicia tudo sozinho em:</li>
           <div style="margin-top: 0.5rem;">
-            🌐 <strong>Portal:</strong> <a href="http://localhost:8000" target="_blank" style="color: #38bdf8;">http://localhost:8000</a> | 
+            🌐 <strong>Portal Tático:</strong> <a href="http://localhost:8000" target="_blank" style="color: #38bdf8;">http://localhost:8000</a> | 
             📚 <strong>Kiwix Wikipédia:</strong> <a href="http://localhost:8090" target="_blank" style="color: #38bdf8;">http://localhost:8090</a>
           </div>
         </ol>
@@ -497,7 +596,142 @@
       </div>
     </section>
 
-    <!-- TAB 3: EMERGENCIES -->
+    <!-- TAB 3: RATIONING -->
+    <section class="tab-pane" id="tab-rationing">
+      <div class="card">
+        <h2 class="card-title">🎒 Calculadora Tática de Racionamento &amp; Estoque</h2>
+        <p class="card-subtitle">Dimensionamento de água vital, calorias e cesta de alimentos não-perecíveis no padrão brasileiro.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
+          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <div class="stat-label" style="margin-bottom: 0.35rem;">NÚMERO DE ADULTOS</div>
+            <input type="number" id="calc-adults" class="route-input font-mono font-bold" value="2" min="1" max="50" onchange="calcRationingOnline()">
+            
+            <div class="stat-label" style="margin-top: 0.75rem; margin-bottom: 0.35rem;">NÚMERO DE CRIANÇAS</div>
+            <input type="number" id="calc-children" class="route-input font-mono font-bold" value="1" min="0" max="50" onchange="calcRationingOnline()">
+
+            <div class="stat-label" style="margin-top: 0.75rem; margin-bottom: 0.35rem;">DIAS DE ISOLAMENTO</div>
+            <div style="display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+              <button class="chip-btn" onclick="setDaysOnline(3)">3d</button>
+              <button class="chip-btn" onclick="setDaysOnline(7)">7d</button>
+              <button class="chip-btn chip-highlight" id="btn-d-15" onclick="setDaysOnline(15)">15d</button>
+              <button class="chip-btn" onclick="setDaysOnline(30)">30d</button>
+              <button class="chip-btn" onclick="setDaysOnline(60)">60d</button>
+            </div>
+            <input type="number" id="calc-days" class="route-input font-mono font-bold" value="15" min="1" max="365" onchange="calcRationingOnline()">
+          </div>
+
+          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <h4 style="color: #38bdf8; font-size: 0.9rem; margin-bottom: 0.75rem;">DEMANDAS VITAIS ESTIMADAS</h4>
+            <div class="route-metrics-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <div class="metric-card">
+                <span class="metric-title">ÁGUA TOTAL CONSUMO</span>
+                <span class="metric-value font-mono text-cyan-400" id="res-water">102 L</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-title">ÁGUA HIGIENE</span>
+                <span class="metric-value font-mono text-blue-400" id="res-hygiene">90 L</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-title">CALORIAS TOTAIS</span>
+                <span class="metric-value font-mono text-amber-400" id="res-kcal">106.200 kcal</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-title">GERADOR (GASOLINA)</span>
+                <span class="metric-value font-mono text-emerald-400" id="res-fuel">36 L</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h4 style="color: #fff; font-size: 0.95rem; margin-bottom: 0.5rem;">Cesta Não-Perecível Recomendada:</h4>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border); color: #94a3b8;">
+                <th style="padding: 0.4rem 0.6rem;">ITEM</th>
+                <th style="padding: 0.4rem 0.6rem;">QUANTIDADE</th>
+                <th style="padding: 0.4rem 0.6rem;">VALIDADE SECA</th>
+              </tr>
+            </thead>
+            <tbody id="rationing-tbody">
+              <!-- Injected by script -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: TELECOM -->
+    <section class="tab-pane" id="tab-telecom">
+      <div class="card">
+        <h2 class="card-title">📻 Telecomunicações Táticas &amp; Antenas de Emergência</h2>
+        <p class="card-subtitle">Frequências de socorro do Brasil e calculadora de corte de fio para antenas dipolo.</p>
+
+        <div style="background: #090e1a; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--accent-cyan); margin-bottom: 1.5rem;">
+          <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.35rem;">Calculadora de Antena Dipolo (Meia Onda 1/2 λ)</h3>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Calcule o tamanho exato de fio comum de luz para falar no rádio no mato.</p>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="number" id="calc-dipole-freq" class="route-input font-mono" style="width: 180px;" value="146.520" step="0.005" oninput="calcDipoleOnline()">
+            <button class="chip-btn" onclick="setDipoleFreqOnline(27.065)">PX Ch 9 (27 MHz)</button>
+            <button class="chip-btn" onclick="setDipoleFreqOnline(146.520)">VHF 2m (146 MHz)</button>
+            <button class="chip-btn" onclick="setDipoleFreqOnline(156.800)">Marítimo Ch 16</button>
+          </div>
+          <div class="route-metrics-grid" style="margin-top: 1rem; grid-template-columns: repeat(2, 1fr);">
+            <div class="metric-card">
+              <span class="metric-title">COMPRIMENTO TOTAL DO FIO</span>
+              <span class="metric-value font-mono text-cyan-400" id="res-dipole-tot">0.97 metros</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-title">CADA PERNA (POLO A / POLO B)</span>
+              <span class="metric-value font-mono text-emerald-400" id="res-dipole-leg">48.6 cm cada</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="telecom-cards-list">
+          <div style="color: #94a3b8; font-size: 0.85rem;">Carregando frequências e Código Q...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: MORSE & SOS -->
+    <section class="tab-pane" id="tab-morse">
+      <div class="card">
+        <h2 class="card-title">🚨 Central de Sinais de Socorro &amp; Morse</h2>
+        <p class="card-subtitle">Sinalizador visual de tela, bipe de áudio sintetizado em 800 Hz e guia SAR para helicópteros.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="background: #090e1a; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--accent-red);">
+            <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.35rem;">💡 Farol Visual SOS</h3>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Pisca a tela no padrão internacional SOS (... --- ...) com contraste máximo para ser visto à noite.</p>
+            <button type="button" id="btn-opt-sos" class="nav-btn primary" style="background: #ef4444; color: #fff; width: 100%; justify-content: center;" onclick="toggleOpticalSosOnline()">
+              <span>🚨</span> INICIAR SINALIZADOR VISUAL
+            </button>
+          </div>
+
+          <div style="background: #090e1a; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--accent-green);">
+            <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.35rem;">🔊 Bipe Sonoro (800 Hz)</h3>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Onda senoidal pura de alta penetração acústica gerada diretamente pelo seu navegador.</p>
+            <button type="button" id="btn-aud-sos" class="nav-btn primary" style="width: 100%; justify-content: center;" onclick="toggleAudioSosOnline()">
+              <span>🔊</span> INICIAR BIPE SONORO (SOS)
+            </button>
+          </div>
+        </div>
+
+        <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+          <h4 style="color: #fff; font-size: 0.9rem; margin-bottom: 0.5rem;">🚁 Sinais de Solo para Helicópteros de Resgate (ICAO / SAR)</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem; font-size: 0.8rem;">
+            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-amber-400 font-mono text-base">V</strong> &bull; Preciso de Ajuda Geral</div>
+            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-red-400 font-mono text-base">X</strong> &bull; Preciso de Médico Urgente</div>
+            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-blue-400 font-mono text-base">N</strong> &bull; Não / Negativo</div>
+            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-emerald-400 font-mono text-base">Y</strong> &bull; Sim / Afirmativo</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: EMERGENCIES -->
     <section class="tab-pane" id="tab-emergencies">
       <div class="card">
         <h2 class="card-title">🚑 Protocolos de Primeiros Socorros &amp; Emergências</h2>
@@ -508,18 +742,85 @@
       </div>
     </section>
 
-    <!-- TAB 4: SURVIVAL -->
-    <section class="tab-pane" id="tab-survival">
+    <!-- TAB 7: POCKET CARD PRINT -->
+    <section class="tab-pane" id="tab-pocketcard">
       <div class="card">
-        <h2 class="card-title">🏕️ Manuais Práticos de Sobrevivência &amp; Resiliência</h2>
-        <p class="card-subtitle">Guias de purificação de água, canais de rádio PX e dimensionamento solar autônomo.</p>
-        <div class="protocol-grid" id="survival-list">
-          <div style="color: var(--text-muted); font-size: 0.9rem;">Carregando manuais de sobrevivência...</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h2 class="card-title">📄 Cartão Tático de Bolso (Folha A4 Dobrável)</h2>
+            <p class="card-subtitle" style="margin-bottom: 0;">Imprima em 1 folha sulfite e dobre em 4 partes para levar na carteira ou mochila.</p>
+          </div>
+          <button type="button" class="nav-btn primary" onclick="window.print()">
+            <span>🖨️</span> Imprimir Folha A4
+          </button>
+        </div>
+
+        <div class="printable-card-wrap">
+          <div class="pocket-quadrant">
+            <div class="pocket-header">
+              <span>1. SOCORRO NACIONAL</span>
+              <span>BRASIL 🇧🇷</span>
+            </div>
+            <div style="font-size: 0.75rem; line-height: 1.5; color: #111;">
+              <div>🚨 <strong>190</strong> Polícia Militar | 🚑 <strong>192</strong> SAMU</div>
+              <div>🚒 <strong>193</strong> Bombeiros | 🛡️ <strong>199</strong> Defesa Civil</div>
+              <div style="margin-top: 0.5rem; border-top: 1px solid #ccc; padding-top: 0.4rem;">
+                <strong>NOME:</strong> ________________________________<br>
+                <strong>TIPO SANGUÍNEO:</strong> [  ] &bull; <strong>DOADOR:</strong> (S/N)<br>
+                <strong>CONTATO:</strong> _____________________________
+              </div>
+            </div>
+          </div>
+
+          <div class="pocket-quadrant">
+            <div class="pocket-header">
+              <span>2. RCP &amp; DESENGASGO</span>
+              <span>SAMU/AHA</span>
+            </div>
+            <div style="font-size: 0.72rem; line-height: 1.4; color: #111;">
+              <strong>PARADA CARDÍACA:</strong><br>
+              1. Chame socorro 192/193.<br>
+              2. Vítima de costas no chão firme.<br>
+              3. 100 a 120 compressões/min no centro do tórax.<br>
+              <strong>DESENGASGO (HEIMLICH):</strong><br>
+              Punho fechado na boca do estômago, pressione para dentro e para cima em 'J'.
+            </div>
+          </div>
+
+          <div class="pocket-quadrant">
+            <div class="pocket-header">
+              <span>3. ÁGUA &amp; PEÇONHENTOS</span>
+              <span>MIN. SAÚDE</span>
+            </div>
+            <div style="font-size: 0.72rem; line-height: 1.4; color: #111;">
+              <strong>PURIFICAÇÃO DE ÁGUA:</strong><br>
+              - 2 gotas de água sanitária (2-2.5%) por litro de água límpida (4 se turva).<br>
+              - Aguardar 30 minutos antes de beber.<br>
+              <strong>PICADAS DE COBRA / ESCORPIÃO:</strong><br>
+              NÃO faça torniquete. Lave com água/sabão e hidrate até o hospital com soro.
+            </div>
+          </div>
+
+          <div class="pocket-quadrant">
+            <div class="pocket-header">
+              <span>4. RÁDIO &amp; MORSE</span>
+              <span>COMUNICAÇÃO</span>
+            </div>
+            <div style="font-size: 0.72rem; line-height: 1.4; font-family: monospace; color: #111;">
+              PX Ch 9: 27.065 MHz (Socorro)<br>
+              PX Ch 19: 27.185 MHz (Rodovias)<br>
+              VHF Ch 16: 156.800 MHz (Marítimo)<br>
+              VHF Chamada: 146.520 MHz<br>
+              QAP: Na escuta | QSL: Ciente<br>
+              QTH: Localização | QRT: Desligando<br>
+              <strong>SOS: ... --- ...</strong>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- TAB 5: OFFLINE STACK -->
+    <!-- TAB 8: OFFLINE STACK -->
     <section class="tab-pane" id="tab-offline">
       <div class="card">
         <h2 class="card-title">🛡️ A Arquitetura 100% Offline</h2>
@@ -544,6 +845,15 @@
 
   </main>
 
+  <!-- Fullscreen Optical SOS Overlay -->
+  <div id="optical-overlay" class="optical-sos-overlay" style="display: none;" onclick="toggleOpticalSosOnline(false)">
+    <div style="text-align: center; color: #000; background: rgba(255,255,255,0.9); padding: 2rem; border-radius: 12px;">
+      <h1 style="font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem;">🚨 SINAL DE SOCORRO ATIVO 🚨</h1>
+      <div style="font-size: 3rem; font-family: monospace; font-weight: 900; letter-spacing: 0.3em; margin: 1rem 0;">... --- ...</div>
+      <p style="font-size: 0.9rem; font-weight: bold;">Toque em qualquer ponto da tela para desligar</p>
+    </div>
+  </div>
+
   <footer>
     <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem;">
       <img src="logo.svg" width="20" height="20" alt="NOMAD">
@@ -554,6 +864,7 @@
 
   <script>
     let allCities = [];
+    let radioData = null;
 
     // Switch Tabs
     function switchDemoTab(tabId) {
@@ -570,13 +881,14 @@
     // Load static data
     async function initData() {
       try {
-        const [citiesRes, emergRes, survRes] = await Promise.all([
+        const [citiesRes, emergRes, radioRes] = await Promise.all([
           fetch('data/cities.json').then(r => r.json()).catch(() => []),
           fetch('data/emergencies.json').then(r => r.json()).catch(() => []),
-          fetch('data/survival.json').then(r => r.json()).catch(() => [])
+          fetch('data/radio_frequencies.json').then(r => r.json()).catch(() => null)
         ]);
 
         allCities = citiesRes;
+        radioData = radioRes;
 
         // Render emergencies
         const emergList = document.getElementById('emergencies-list');
@@ -590,21 +902,33 @@
           `).join('');
         }
 
-        // Render survival
-        const survList = document.getElementById('survival-list');
-        if (survList && survRes.length) {
-          survList.innerHTML = survRes.map(item => `
-            <div class="protocol-card">
-              <span class="protocol-badge" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7;">MANUAL</span>
-              <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.4rem;">${item.title}</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;">${item.summary || item.description || ''}</p>
-            </div>
-          `).join('');
+        // Render radio
+        if (radioData && radioData.bands) {
+          const rList = document.getElementById('telecom-cards-list');
+          if (rList) {
+            rList.innerHTML = radioData.bands.map(b => `
+              <div style="background: #090e1a; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.25rem;">${b.name}</h4>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">${b.description}</div>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                  ${b.channels.map(c => `
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.25rem 0;">
+                      <span style="font-weight: 700; color: #fff;">${c.channel} (${c.freq})</span>
+                      <span style="color: #34d399;">${c.usage}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('');
+          }
         }
 
         // Default city
         const def = allCities.find(c => c.name === 'Louveira') || allCities[0];
         if (def) displayCityIntel(def);
+
+        calcRationingOnline();
+        calcDipoleOnline();
 
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
@@ -650,6 +974,152 @@
       document.getElementById('intel-city-dist').textContent = city.distCapital ? `${city.distCapital} km` : '0 km (Capital)';
       document.getElementById('intel-city-coords').textContent = `${Number(city.lat).toFixed(4)}, ${Number(city.lng).toFixed(4)}`;
       document.getElementById('intel-city-regiao').textContent = city.regiao || 'Brasil';
+    }
+
+    // Online Rationing Calculator
+    function setDaysOnline(d) {
+      document.getElementById('calc-days').value = d;
+      document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('chip-highlight'));
+      const btn = document.getElementById(`btn-d-${d}`);
+      if (btn) btn.classList.add('chip-highlight');
+      calcRationingOnline();
+    }
+
+    function calcRationingOnline() {
+      const adults = parseInt(document.getElementById('calc-adults')?.value || '2', 10);
+      const children = parseInt(document.getElementById('calc-children')?.value || '1', 10);
+      const days = parseInt(document.getElementById('calc-days')?.value || '15', 10);
+      const totalPeople = adults + children;
+
+      const dailyKcal = Math.round(((adults * 2200) + (children * 1500)) * 1.2);
+      const totalKcal = dailyKcal * days;
+      const waterTotal = Math.round(((adults * 2.5) + (children * 1.8)) * days);
+      const hygieneTotal = Math.round(totalPeople * 2.0 * days);
+      const fuelTotal = Math.round(days * 4 * 0.6);
+
+      document.getElementById('res-water').textContent = `${waterTotal} L`;
+      document.getElementById('res-hygiene').textContent = `${hygieneTotal} L`;
+      document.getElementById('res-kcal').textContent = `${totalKcal.toLocaleString('pt-BR')} kcal`;
+      document.getElementById('res-fuel').textContent = `${fuelTotal} L`;
+
+      const food = [
+        { name: 'Arroz Branco', factor: 0.12, unit: 'kg', life: '2 a 5 anos' },
+        { name: 'Feijão', factor: 0.08, unit: 'kg', life: '1 a 3 anos' },
+        { name: 'Aveia / Farinha', factor: 0.06, unit: 'kg', life: '1 a 2 anos' },
+        { name: 'Sardinha em Óleo', factor: 0.4, unit: 'latas', life: '3 a 5 anos' },
+        { name: 'Óleo Vegetal', factor: 0.025, unit: 'L', life: '1 a 2 anos' },
+        { name: 'Sal Refinado', factor: 0.012, unit: 'kg', life: 'Indeterminada' }
+      ];
+
+      const tbody = document.getElementById('rationing-tbody');
+      if (tbody) {
+        tbody.innerHTML = food.map(f => `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 0.35rem 0.6rem; color: #fff; font-weight: 700;">${f.name}</td>
+            <td style="padding: 0.35rem 0.6rem; color: #34d399; font-family: monospace; font-weight: 800;">${(f.factor * totalPeople * days).toFixed(f.unit === 'latas' ? 0 : 1)} ${f.unit}</td>
+            <td style="padding: 0.35rem 0.6rem; color: #94a3b8;">${f.life}</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Dipole Calculator
+    function calcDipoleOnline() {
+      const f = parseFloat(document.getElementById('calc-dipole-freq')?.value || '146.520');
+      if (isNaN(f) || f <= 0) return;
+      const totM = 142.5 / f;
+      const legCm = (totM / 2) * 100;
+      document.getElementById('res-dipole-tot').textContent = `${totM.toFixed(2)} metros`;
+      document.getElementById('res-dipole-leg').textContent = `${legCm.toFixed(1)} cm cada perna`;
+    }
+
+    function setDipoleFreqOnline(f) {
+      document.getElementById('calc-dipole-freq').value = f;
+      calcDipoleOnline();
+    }
+
+    // Morse & SOS Audio/Optical Online
+    let isOptActive = false;
+    let optInterval = null;
+    let isAudActive = false;
+    let audioCtx = null;
+
+    function toggleOpticalSosOnline(force) {
+      const overlay = document.getElementById('optical-overlay');
+      isOptActive = force !== undefined ? force : !isOptActive;
+      const btn = document.getElementById('btn-opt-sos');
+
+      if (isOptActive) {
+        overlay.style.display = 'flex';
+        if (btn) btn.innerHTML = `<span>⏹️</span> PARAR FAROL VISUAL`;
+        runFlash();
+      } else {
+        overlay.style.display = 'none';
+        if (btn) btn.innerHTML = `<span>🚨</span> INICIAR SINALIZADOR VISUAL`;
+      }
+    }
+
+    async function runFlash() {
+      const overlay = document.getElementById('optical-overlay');
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+      async function blink(ms) {
+        overlay.classList.add('flash-white');
+        await sleep(ms);
+        overlay.classList.remove('flash-white');
+        await sleep(150);
+      }
+      while (isOptActive) {
+        for (let i = 0; i < 3; i++) { if (!isOptActive) return; await blink(150); }
+        await sleep(300);
+        for (let i = 0; i < 3; i++) { if (!isOptActive) return; await blink(450); }
+        await sleep(300);
+        for (let i = 0; i < 3; i++) { if (!isOptActive) return; await blink(150); }
+        await sleep(1500);
+      }
+    }
+
+    function toggleAudioSosOnline() {
+      isAudActive = !isAudActive;
+      const btn = document.getElementById('btn-aud-sos');
+      if (isAudActive) {
+        btn.innerHTML = `<span>⏹️</span> PARAR BIPE SONORO`;
+        btn.style.background = '#ef4444';
+        runAudioSos();
+      } else {
+        btn.innerHTML = `<span>🔊</span> INICIAR BIPE SONORO (SOS)`;
+        btn.style.background = '';
+      }
+    }
+
+    async function runAudioSos() {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      function tone(ms) {
+        return new Promise(res => {
+          try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.value = 800;
+            gain.gain.value = 0.2;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            setTimeout(() => { osc.stop(); res(); }, ms);
+          } catch(e) { res(); }
+        });
+      }
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+      while (isAudActive) {
+        for (let i = 0; i < 3; i++) { if (!isAudActive) return; await tone(120); await sleep(120); }
+        await sleep(250);
+        for (let i = 0; i < 3; i++) { if (!isAudActive) return; await tone(360); await sleep(120); }
+        await sleep(250);
+        for (let i = 0; i < 3; i++) { if (!isAudActive) return; await tone(120); await sleep(120); }
+        await sleep(1400);
+      }
     }
 
     initData();
