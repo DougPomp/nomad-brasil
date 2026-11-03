@@ -8,127 +8,355 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-  
+
   <style>
     :root {
-      --bg: #070a12;
-      --bg-card: rgba(15, 23, 42, 0.75);
-      --border: rgba(16, 185, 129, 0.2);
-      --border-focus: #10b981;
-      --accent-green: #10b981;
-      --accent-cyan: #06b6d4;
-      --accent-amber: #f59e0b;
-      --accent-red: #ef4444;
-      --text-main: #f8fafc;
+      --bg-dark: #090d10;
+      --bg-darker: #06090b;
+      --bg-panel: #0f141a;
+      --bg-card: #151c24;
+      --bg-card-hover: #1c2631;
+      --bg-input: #0b1015;
+
+      --text-main: #f1f5f9;
+      --text-secondary: #cbd5e1;
       --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --accent-green: #10b981;
+      --accent-green-dim: rgba(16, 185, 129, 0.14);
+      --accent-amber: #f59e0b;
+      --accent-amber-dim: rgba(245, 158, 11, 0.14);
+      --accent-red: #ef4444;
+      --accent-red-dim: rgba(239, 68, 68, 0.14);
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-cyan-dim: rgba(6, 182, 212, 0.14);
+
+      --border: #1e293b;
+      --border-light: #334155;
+
+      --sidebar-width: 265px;
+      --mobile-header-height: 58px;
+      --mobile-bottom-nav-height: 62px;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+
+      --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
+      --shadow-drawer: 0 16px 40px rgba(0, 0, 0, 0.75);
+
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background-color: var(--bg);
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background-color: var(--bg-dark);
       color: var(--text-main);
-      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-      line-height: 1.6;
-      background-image: 
-        radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
-      min-height: 100vh;
+      font-family: var(--font-sans);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    button, input, select { font-family: inherit; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .font-mono { font-family: var(--font-mono); }
 
-    /* Tactical Navigation */
-    .nav-bar {
-      position: sticky;
+    /* ==========================================================================
+       APP SHELL (FIXED LEFT SIDEBAR ON DESKTOP + RESPONSIVE DRAWER ON MOBILE)
+       ========================================================================== */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .app-sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
       top: 0;
-      z-index: 100;
-      background: rgba(7, 10, 18, 0.85);
-      backdrop-filter: blur(12px);
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+
+    .sidebar-header {
+      padding: 1.15rem 1.25rem;
       border-bottom: 1px solid var(--border);
-      padding: 0.75rem 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 0.75rem;
     }
 
-    .nav-brand {
+    .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      text-decoration: none;
-      color: #fff;
+      gap: 0.65rem;
     }
 
-    .nav-brand img { width: 32px; height: 32px; }
-    .brand-tag {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #000;
-      font-size: 0.7rem;
-      font-weight: 800;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      letter-spacing: 0.05em;
+    .brand img {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
     }
 
-    .brand-name {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-    }
-
-    .nav-links {
+    .brand-title-row {
       display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .nav-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      color: var(--text-main);
-      text-decoration: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
-      display: inline-flex;
       align-items: center;
       gap: 0.4rem;
     }
 
-    .nav-btn:hover {
-      background: rgba(16, 185, 129, 0.15);
-      border-color: var(--accent-green);
-      transform: translateY(-1px);
-    }
-
-    .nav-btn.primary {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #000;
+    .brand-title {
+      font-size: 1.05rem;
       font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      color: #04130d;
+      font-weight: 800;
+      font-size: 0.62rem;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: block;
+    }
+
+    .sidebar-close-btn {
+      display: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.85rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .nav-group-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      padding: 0 0.65rem 0.3rem;
+    }
+
+    .demo-tab-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+
+    .demo-tab-btn .tab-icon {
+      font-size: 1.05rem;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .demo-tab-btn:hover {
+      color: var(--text-main);
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .demo-tab-btn.active {
+      color: #34d399;
+      background-color: var(--accent-green-dim);
+      border-color: rgba(16, 185, 129, 0.35);
+      font-weight: 700;
+    }
+
+    .sidebar-footer {
+      padding: 0.95rem 1rem;
+      border-top: 1px solid var(--border);
+      background-color: rgba(6, 9, 11, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-sidebar-action {
+      width: 100%;
+      padding: 0.55rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-sidebar-action.primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #04130d;
+      font-weight: 800;
+    }
+
+    .btn-sidebar-action.secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      color: var(--text-main);
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 995;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .sidebar-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Mobile Header (< 1024px) */
+    .mobile-topbar {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--mobile-header-height);
+      background: rgba(15, 20, 26, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1rem;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 900;
+    }
+
+    .mobile-menu-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      color: var(--text-main);
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      cursor: pointer;
+    }
+
+    /* Mobile Bottom Quick Bar (< 768px) */
+    .mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--mobile-bottom-nav-height);
+      background: rgba(15, 20, 26, 0.98);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      z-index: 900;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 0.25rem;
+    }
+
+    .mobile-bottom-btn {
+      background: transparent;
       border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      font-size: 0.65rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .mobile-bottom-btn.active {
+      color: var(--accent-green);
+      font-weight: 700;
     }
 
-    .nav-btn.primary:hover {
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* Container */
     .container {
-      max-width: 1140px;
+      max-width: 1120px;
+      width: 100%;
       margin: 0 auto;
-      padding: 2rem 1.5rem;
+      padding: 1.75rem 1.75rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
     }
 
-    /* Hero */
     .hero-banner {
       width: 100%;
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       overflow: hidden;
-      margin-bottom: 2rem;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: var(--shadow-card);
     }
 
     .hero-banner img {
@@ -137,82 +365,29 @@
       display: block;
     }
 
-    /* Tactical Segmented Control / Tabs */
-    .demo-tabs {
-      display: flex;
-      gap: 0.35rem;
-      background: rgba(11, 17, 32, 0.85);
-      padding: 0.4rem;
-      border-radius: 12px;
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      margin-bottom: 2rem;
-      backdrop-filter: blur(16px);
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .demo-tabs::-webkit-scrollbar { display: none; }
-
-    .demo-tab-btn {
-      flex: 1;
-      min-width: 115px;
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      padding: 0.7rem 0.5rem;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.82rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
-      white-space: nowrap;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .demo-tab-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .demo-tab-btn.active {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.16) 100%);
-      border: 1px solid var(--accent-green);
-      color: #34d399;
-      box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
-    }
-
-    .demo-tab-btn .tab-icon {
-      font-size: 1rem;
-      line-height: 1;
-    }
-
     /* Tab Panes */
     .tab-pane { display: none; }
-    .tab-pane.active { display: block; animation: fadeIn 0.25s ease-out; }
+    .tab-pane.active { display: flex; flex-direction: column; gap: 1.25rem; animation: fadeIn 0.2s ease-out; }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Card Panels */
+    /* Cards & Grids */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      backdrop-filter: blur(12px);
-      margin-bottom: 1.5rem;
+      border-radius: var(--radius-md);
+      padding: 1.35rem;
+      box-shadow: var(--shadow-card);
     }
 
     .card-title {
       font-size: 1.25rem;
       font-weight: 800;
-      color: #fff;
-      margin-bottom: 0.5rem;
+      color: #ffffff;
+      margin-bottom: 0.35rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -220,223 +395,218 @@
 
     .card-subtitle {
       color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 1.25rem;
+      font-size: 0.88rem;
+      margin-bottom: 1.15rem;
     }
 
-    /* Forms & Inputs */
-    .route-input {
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.15rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    /* Inputs & Buttons */
+    .route-input, .search-input {
       width: 100%;
-      background: #090e1a;
-      border: 1px solid var(--border);
+      background: var(--bg-input);
+      border: 1px solid var(--border-light);
       padding: 0.65rem 0.85rem;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 0.9rem;
+      border-radius: var(--radius-sm);
+      color: #ffffff;
+      font-size: 0.88rem;
       outline: none;
     }
-    .route-input:focus {
+    .route-input:focus, .search-input:focus {
       border-color: var(--accent-green);
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
     }
 
-    /* City Search */
+    .stat-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-light);
+      color: var(--text-secondary);
+      padding: 0.38rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chip-btn:hover { color: #fff; border-color: var(--accent-green); }
+    .chip-btn.chip-highlight {
+      background: var(--accent-green-dim);
+      border-color: var(--accent-green);
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    /* Search Dropdown */
     .search-box { position: relative; margin-bottom: 1rem; }
-    .search-input {
-      width: 100%;
-      background: #090e1a;
-      border: 1px solid var(--border);
-      padding: 0.85rem 1.2rem;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 1rem;
-      outline: none;
-      transition: border 0.2s;
-    }
-    .search-input:focus {
-      border-color: var(--accent-green);
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
-    }
-
     .city-dropdown {
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
-      background: #0c1424;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
       margin-top: 4px;
-      max-height: 280px;
+      max-height: 260px;
       overflow-y: auto;
       z-index: 50;
       display: none;
+      box-shadow: var(--shadow-drawer);
     }
-
     .city-item {
-      padding: 0.65rem 1rem;
+      padding: 0.65rem 0.9rem;
       cursor: pointer;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.9rem;
+      font-size: 0.86rem;
     }
-    .city-item:hover {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-    }
+    .city-item:hover { background: var(--bg-card-hover); color: #34d399; }
 
-    /* Intel Box */
+    /* Intel & Metric Cards */
     .intel-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
+      gap: 0.85rem;
     }
-    .intel-card {
-      background: #090e1a;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 1rem;
-      border-radius: 8px;
-    }
-    .intel-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      font-weight: 700;
-      letter-spacing: 0.05em;
-    }
-    .intel-val {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: #fff;
-      margin-top: 0.2rem;
-    }
-
-    .chip-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: var(--text-muted);
-      padding: 0.4rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .chip-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
-    .chip-btn.chip-highlight {
-      background: rgba(16, 185, 129, 0.2);
-      border-color: var(--accent-green);
-      color: #34d399;
-    }
-
-    /* Quick Install Block */
-    .install-box {
-      background: #060911;
+    .intel-card, .metric-card {
+      background: rgba(9, 13, 16, 0.65);
       border: 1px solid var(--border);
-      padding: 1.25rem;
-      border-radius: 8px;
-      font-family: 'JetBrains Mono', monospace;
-      color: #34d399;
-      font-size: 0.9rem;
-      overflow-x: auto;
-      margin: 1rem 0;
-    }
-
-    /* Metrics Grid */
-    .route-metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem;
-    }
-    .metric-card {
-      background: #090e1a;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 0.75rem;
+      padding: 0.85rem;
+      border-radius: var(--radius-sm);
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
     }
-    .metric-title {
+    .intel-label, .metric-title {
       font-size: 0.65rem;
+      color: var(--text-dim);
       font-weight: 700;
-      color: var(--text-muted);
       letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
-    .metric-value { font-size: 1.15rem; font-weight: 800; }
+    .intel-val, .metric-value {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
 
-    /* Protocol Cards */
+    .route-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.65rem;
+    }
+
+    .install-box {
+      background: var(--bg-darker);
+      border: 1px solid var(--border);
+      padding: 1rem 1.15rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      color: #34d399;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+
     .protocol-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 0.9rem;
     }
     .protocol-card {
-      background: #090e1a;
+      background: rgba(9, 13, 16, 0.65);
       border: 1px solid var(--border);
-      padding: 1.25rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .protocol-card:hover {
-      border-color: var(--accent-green);
-      transform: translateY(-2px);
+      padding: 1.1rem;
+      border-radius: var(--radius-sm);
     }
     .protocol-badge {
       display: inline-block;
-      padding: 0.2rem 0.5rem;
-      font-size: 0.65rem;
+      padding: 0.18rem 0.5rem;
+      font-size: 0.63rem;
       font-weight: 800;
       border-radius: 4px;
-      margin-bottom: 0.5rem;
-      background: rgba(239, 68, 68, 0.2);
-      color: #fca5a5;
+      margin-bottom: 0.45rem;
+      background: var(--accent-red-dim);
+      color: #f87171;
+      text-transform: uppercase;
     }
 
-    /* Printable Card */
+    /* Tables */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .tactical-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.8rem;
+    }
+    .tactical-table th {
+      background: rgba(9, 13, 16, 0.75);
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0.65rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .tactical-table td {
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+    }
+
+    /* Printable A4 Card */
     .printable-card-wrap {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1.25rem;
-      background: #fff;
-      color: #000;
+      background: #ffffff;
+      color: #000000;
       padding: 1.75rem;
-      border-radius: 8px;
+      border-radius: var(--radius-md);
     }
     .pocket-quadrant {
-      border: 2px dashed #333;
+      border: 2px dashed #334155;
       padding: 1rem;
       border-radius: 6px;
-      background: #fafafa;
-      min-height: 280px;
+      background: #f8fafc;
+      min-height: 270px;
     }
     .pocket-header {
       display: flex;
       justify-content: space-between;
-      border-bottom: 2px solid #000;
+      border-bottom: 2px solid #0f172a;
       padding-bottom: 0.35rem;
       margin-bottom: 0.5rem;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 800;
-      color: #000;
-    }
-
-    @media print {
-      body * { visibility: hidden; }
-      .printable-card-wrap, .printable-card-wrap * { visibility: visible; }
-      .printable-card-wrap {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        margin: 0;
-        padding: 1cm;
-        background: #fff !important;
-        color: #000 !important;
-      }
+      color: #0f172a;
     }
 
     /* Optical SOS Overlay */
@@ -451,434 +621,573 @@
       cursor: pointer;
     }
     .flash-white { background: #fff !important; }
-    .flash-black { background: #000 !important; }
 
-    /* Footer */
     footer {
       border-top: 1px solid var(--border);
-      padding: 2.5rem 1.5rem;
+      padding: 1.75rem 1.5rem;
       text-align: center;
       color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-top: 4rem;
+      font-size: 0.82rem;
+      margin-top: auto;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 1024px) {
+      .app-sidebar {
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-drawer);
+      }
+      .app-sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar-close-btn {
+        display: flex;
+      }
+      .mobile-topbar {
+        display: flex;
+      }
+      .main-content {
+        margin-left: 0;
+        padding-top: var(--mobile-header-height);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mobile-bottom-nav {
+        display: grid;
+      }
+      .main-content {
+        padding-bottom: var(--mobile-bottom-nav-height);
+      }
+      .container {
+        padding: 1.15rem 1rem 2rem;
+      }
+      .grid-2, .grid-3, .printable-card-wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      .app-sidebar, .mobile-topbar, .mobile-bottom-nav, footer { display: none !important; }
+      .main-content { margin: 0 !important; padding: 0 !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .printable-card-wrap { padding: 0; grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
-  <header class="nav-bar">
-    <a href="#" class="nav-brand">
-      <img src="logo.svg" alt="NOMAD Logo">
-      <span class="brand-tag">BRASIL 🇧🇷</span>
-      <span class="brand-name">NOMAD</span>
-    </a>
+  <div class="app-shell">
 
-    <div class="nav-links">
-      <a href="https://github.com/DougPomp/nomad-brasil" target="_blank" class="nav-btn">
-        <span>⭐</span> GitHub
-      </a>
-      <a href="https://github.com/DougPomp/nomad-brasil/archive/refs/heads/main.zip" class="nav-btn primary">
-        <span>📥</span> Baixar Projeto
-      </a>
-    </div>
-  </header>
+    <!-- Mobile Backdrop -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleMobileSidebar(false)"></div>
 
-  <main class="container">
-    
-    <!-- Hero Banner -->
-    <div class="hero-banner">
-      <img src="banner.svg" alt="NOMAD Brasil - Central de Sobrevivência, Mapas e Conhecimento 100% Offline">
-    </div>
-
-    <!-- Live Demo Navigation Tabs (Single Line Segmented Control) -->
-    <div class="demo-tabs" role="tablist">
-      <button class="demo-tab-btn active" onclick="switchDemoTab('quickstart')">
-        <span class="tab-icon">⚡</span>
-        <span>Instalação</span>
-      </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('cities')">
-        <span class="tab-icon">📊</span>
-        <span>Cidades (IBGE)</span>
-      </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('rationing')">
-        <span class="tab-icon">🎒</span>
-        <span>Racionamento</span>
-      </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('telecom')">
-        <span class="tab-icon">📻</span>
-        <span>Rádio &amp; Antenas</span>
-      </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('morse')">
-        <span class="tab-icon">🚨</span>
-        <span>Morse &amp; SOS</span>
-      </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('emergencies')">
-        <span class="tab-icon">🚑</span>
-        <span>Socorros</span>
-      </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('pocketcard')">
-        <span class="tab-icon">📄</span>
-        <span>Cartão A4</span>
-      </button>
-      <button class="demo-tab-btn" onclick="switchDemoTab('offline')">
-        <span class="tab-icon">🛡️</span>
-        <span>Arquitetura</span>
-      </button>
-    </div>
-
-    <!-- TAB 1: QUICKSTART -->
-    <section class="tab-pane active" id="tab-quickstart">
-      <div class="card">
-        <h2 class="card-title">🚀 Como Rodar o NOMAD Brasil no seu Computador</h2>
-        <p class="card-subtitle">
-          O NOMAD Brasil foi feito para funcionar <strong>100% desconectado da internet</strong> através do Docker no seu HD externo ou notebook.
-        </p>
-
-        <h3 style="color: #34d399; font-size: 1rem; margin-top: 1rem;">No Windows (Instalador Automático de 1 Clique):</h3>
-        <ol style="padding-left: 1.25rem; color: #cbd5e1; margin-top: 0.5rem; font-size: 0.95rem;">
-          <li>Baixe o repositório ou clone via terminal:</li>
-          <div class="install-box">git clone https://github.com/DougPomp/nomad-brasil.git<br>cd nomad-brasil</div>
-          <li>Dê dois cliques no instalador: <strong><code>setup-nomad-brasil.bat</code></strong></li>
-          <li>O instalador baixa o mapa vetorial nacional (1,57 GB), a Wikipédia e inicia tudo sozinho em:</li>
-          <div style="margin-top: 0.5rem;">
-            🌐 <strong>Portal Tático:</strong> <a href="http://localhost:8000" target="_blank" style="color: #38bdf8;">http://localhost:8000</a> | 
-            📚 <strong>Kiwix Wikipédia:</strong> <a href="http://localhost:8090" target="_blank" style="color: #38bdf8;">http://localhost:8090</a>
-          </div>
-        </ol>
-
-        <h3 style="color: #34d399; font-size: 1rem; margin-top: 1.5rem;">No Linux / macOS / Raspberry Pi:</h3>
-        <div class="install-box">chmod +x setup-nomad-brasil.sh<br>./setup-nomad-brasil.sh</div>
-      </div>
-    </section>
-
-    <!-- TAB 2: CITY INTEL -->
-    <section class="tab-pane" id="tab-cities">
-      <div class="card">
-        <h2 class="card-title">🔍 Busca Municipal em Tempo Real</h2>
-        <p class="card-subtitle">
-          Base completa de dados geodésicos e administrativos de <strong>todos os 5.571 municípios do Brasil (IBGE)</strong>.
-        </p>
-
-        <div class="search-box">
-          <input type="text" id="city-search-input" class="search-input" placeholder="Digite o nome de uma cidade (ex: Louveira, Vinhedo, Manaus, Curitiba)..." oninput="filterCities()">
-          <div id="city-dropdown" class="city-dropdown"></div>
-        </div>
-
-        <div id="city-intel-result" style="display: none;">
-          <div class="intel-grid">
-            <div class="intel-card">
-              <span class="intel-label">MUNICÍPIO / UF</span>
-              <div class="intel-val" id="intel-city-name">-</div>
-            </div>
-            <div class="intel-card">
-              <span class="intel-label">CÓDIGO IBGE</span>
-              <div class="intel-val font-mono" id="intel-city-ibge">-</div>
-            </div>
-            <div class="intel-card">
-              <span class="intel-label">DDD TELEFÔNICO</span>
-              <div class="intel-val font-mono text-emerald-400" id="intel-city-ddd">-</div>
-            </div>
-            <div class="intel-card">
-              <span class="intel-label">DISTÂNCIA DA CAPITAL</span>
-              <div class="intel-val font-mono text-amber-400" id="intel-city-dist">-</div>
-            </div>
-            <div class="intel-card">
-              <span class="intel-label">COORDENADAS GPS</span>
-              <div class="intel-val font-mono" style="font-size: 0.9rem;" id="intel-city-coords">-</div>
-            </div>
-            <div class="intel-card">
-              <span class="intel-label">REGIÃO DO PAÍS</span>
-              <div class="intel-val" id="intel-city-regiao">-</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 3: RATIONING -->
-    <section class="tab-pane" id="tab-rationing">
-      <div class="card">
-        <h2 class="card-title">🎒 Calculadora Tática de Racionamento &amp; Estoque</h2>
-        <p class="card-subtitle">Dimensionamento de água vital, calorias e cesta de alimentos não-perecíveis no padrão brasileiro.</p>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
-          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-            <div class="stat-label" style="margin-bottom: 0.35rem;">NÚMERO DE ADULTOS</div>
-            <input type="number" id="calc-adults" class="route-input font-mono font-bold" value="2" min="1" max="50" onchange="calcRationingOnline()">
-            
-            <div class="stat-label" style="margin-top: 0.75rem; margin-bottom: 0.35rem;">NÚMERO DE CRIANÇAS</div>
-            <input type="number" id="calc-children" class="route-input font-mono font-bold" value="1" min="0" max="50" onchange="calcRationingOnline()">
-
-            <div class="stat-label" style="margin-top: 0.75rem; margin-bottom: 0.35rem;">DIAS DE ISOLAMENTO</div>
-            <div style="display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
-              <button class="chip-btn" onclick="setDaysOnline(3)">3d</button>
-              <button class="chip-btn" onclick="setDaysOnline(7)">7d</button>
-              <button class="chip-btn chip-highlight" id="btn-d-15" onclick="setDaysOnline(15)">15d</button>
-              <button class="chip-btn" onclick="setDaysOnline(30)">30d</button>
-              <button class="chip-btn" onclick="setDaysOnline(60)">60d</button>
-            </div>
-            <input type="number" id="calc-days" class="route-input font-mono font-bold" value="15" min="1" max="365" onchange="calcRationingOnline()">
-          </div>
-
-          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-            <h4 style="color: #38bdf8; font-size: 0.9rem; margin-bottom: 0.75rem;">DEMANDAS VITAIS ESTIMADAS</h4>
-            <div class="route-metrics-grid" style="grid-template-columns: repeat(2, 1fr);">
-              <div class="metric-card">
-                <span class="metric-title">ÁGUA TOTAL CONSUMO</span>
-                <span class="metric-value font-mono text-cyan-400" id="res-water">102 L</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-title">ÁGUA HIGIENE</span>
-                <span class="metric-value font-mono text-blue-400" id="res-hygiene">90 L</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-title">CALORIAS TOTAIS</span>
-                <span class="metric-value font-mono text-amber-400" id="res-kcal">106.200 kcal</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-title">GERADOR (GASOLINA)</span>
-                <span class="metric-value font-mono text-emerald-400" id="res-fuel">36 L</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <h4 style="color: #fff; font-size: 0.95rem; margin-bottom: 0.5rem;">Cesta Não-Perecível Recomendada:</h4>
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse; text-align: left;">
-            <thead>
-              <tr style="border-bottom: 1px solid var(--border); color: #94a3b8;">
-                <th style="padding: 0.4rem 0.6rem;">ITEM</th>
-                <th style="padding: 0.4rem 0.6rem;">QUANTIDADE</th>
-                <th style="padding: 0.4rem 0.6rem;">VALIDADE SECA</th>
-              </tr>
-            </thead>
-            <tbody id="rationing-tbody">
-              <!-- Injected by script -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: TELECOM -->
-    <section class="tab-pane" id="tab-telecom">
-      <div class="card">
-        <h2 class="card-title">📻 Telecomunicações Táticas &amp; Antenas de Emergência</h2>
-        <p class="card-subtitle">Frequências de socorro do Brasil e calculadora de corte de fio para antenas dipolo.</p>
-
-        <div style="background: #090e1a; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--accent-cyan); margin-bottom: 1.5rem;">
-          <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.35rem;">Calculadora de Antena Dipolo (Meia Onda 1/2 λ)</h3>
-          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Calcule o tamanho exato de fio comum de luz para falar no rádio no mato.</p>
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            <input type="number" id="calc-dipole-freq" class="route-input font-mono" style="width: 180px;" value="146.520" step="0.005" oninput="calcDipoleOnline()">
-            <button class="chip-btn" onclick="setDipoleFreqOnline(27.065)">PX Ch 9 (27 MHz)</button>
-            <button class="chip-btn" onclick="setDipoleFreqOnline(146.520)">VHF 2m (146 MHz)</button>
-            <button class="chip-btn" onclick="setDipoleFreqOnline(156.800)">Marítimo Ch 16</button>
-          </div>
-          <div class="route-metrics-grid" style="margin-top: 1rem; grid-template-columns: repeat(2, 1fr);">
-            <div class="metric-card">
-              <span class="metric-title">COMPRIMENTO TOTAL DO FIO</span>
-              <span class="metric-value font-mono text-cyan-400" id="res-dipole-tot">0.97 metros</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-title">CADA PERNA (POLO A / POLO B)</span>
-              <span class="metric-value font-mono text-emerald-400" id="res-dipole-leg">48.6 cm cada</span>
-            </div>
-          </div>
-        </div>
-
-        <div id="telecom-cards-list">
-          <div style="color: #94a3b8; font-size: 0.85rem;">Carregando frequências e Código Q...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 5: MORSE & SOS -->
-    <section class="tab-pane" id="tab-morse">
-      <div class="card">
-        <h2 class="card-title">🚨 Central de Sinais de Socorro &amp; Morse</h2>
-        <p class="card-subtitle">Sinalizador visual de tela, bipe de áudio sintetizado em 800 Hz e guia SAR para helicópteros.</p>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-          <div style="background: #090e1a; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--accent-red);">
-            <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.35rem;">💡 Farol Visual SOS</h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Pisca a tela no padrão internacional SOS (... --- ...) com contraste máximo para ser visto à noite.</p>
-            <button type="button" id="btn-opt-sos" class="nav-btn primary" style="background: #ef4444; color: #fff; width: 100%; justify-content: center;" onclick="toggleOpticalSosOnline()">
-              <span>🚨</span> INICIAR SINALIZADOR VISUAL
-            </button>
-          </div>
-
-          <div style="background: #090e1a; padding: 1.25rem; border-radius: 8px; border: 1px solid var(--accent-green);">
-            <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.35rem;">🔊 Bipe Sonoro (800 Hz)</h3>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Onda senoidal pura de alta penetração acústica gerada diretamente pelo seu navegador.</p>
-            <button type="button" id="btn-aud-sos" class="nav-btn primary" style="width: 100%; justify-content: center;" onclick="toggleAudioSosOnline()">
-              <span>🔊</span> INICIAR BIPE SONORO (SOS)
-            </button>
-          </div>
-        </div>
-
-        <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-          <h4 style="color: #fff; font-size: 0.9rem; margin-bottom: 0.5rem;">🚁 Sinais de Solo para Helicópteros de Resgate (ICAO / SAR)</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem; font-size: 0.8rem;">
-            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-amber-400 font-mono text-base">V</strong> &bull; Preciso de Ajuda Geral</div>
-            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-red-400 font-mono text-base">X</strong> &bull; Preciso de Médico Urgente</div>
-            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-blue-400 font-mono text-base">N</strong> &bull; Não / Negativo</div>
-            <div style="background: #000; padding: 0.5rem; border-radius: 4px;"><strong class="text-emerald-400 font-mono text-base">Y</strong> &bull; Sim / Afirmativo</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 6: EMERGENCIES -->
-    <section class="tab-pane" id="tab-emergencies">
-      <div class="card">
-        <h2 class="card-title">🚑 Protocolos de Primeiros Socorros &amp; Emergências</h2>
-        <p class="card-subtitle">Procedimentos imediatos para preservação da vida sem depender de conectividade.</p>
-        <div class="protocol-grid" id="emergencies-list">
-          <div style="color: var(--text-muted); font-size: 0.9rem;">Carregando protocolos médicos...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 7: POCKET CARD PRINT -->
-    <section class="tab-pane" id="tab-pocketcard">
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+    <!-- Mobile Top Bar (< 1024px) -->
+    <header class="mobile-topbar">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar(true)" aria-label="Abrir Menu">
+          ☰
+        </button>
+        <div class="brand">
+          <img src="logo.svg" alt="NOMAD Logo">
           <div>
-            <h2 class="card-title">📄 Cartão Tático de Bolso (Folha A4 Dobrável)</h2>
-            <p class="card-subtitle" style="margin-bottom: 0;">Imprima em 1 folha sulfite e dobre em 4 partes para levar na carteira ou mochila.</p>
+            <div class="brand-title-row">
+              <span class="brand-title">NOMAD</span>
+              <span class="brand-badge">BRASIL 🇧🇷</span>
+            </div>
           </div>
-          <button type="button" class="nav-btn primary" onclick="window.print()">
-            <span>🖨️</span> Imprimir Folha A4
+        </div>
+      </div>
+
+      <a href="https://github.com/DougPomp/nomad-brasil" target="_blank" class="chip-btn chip-highlight">
+        ⭐ GitHub
+      </a>
+    </header>
+
+    <!-- Left Sidebar (Fixed on Desktop, Drawer on Mobile) -->
+    <aside id="app-sidebar" class="app-sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="brand">
+          <img src="logo.svg" alt="NOMAD Logo">
+          <div>
+            <div class="brand-title-row">
+              <span class="brand-title">NOMAD</span>
+              <span class="brand-badge">BRASIL 🇧🇷</span>
+            </div>
+            <span class="brand-subtitle">Showcase &amp; Ferramentas</span>
+          </div>
+        </a>
+        <button type="button" class="sidebar-close-btn" onclick="toggleMobileSidebar(false)">&times;</button>
+      </div>
+
+      <nav class="sidebar-nav" role="tablist">
+        <div class="nav-group">
+          <div class="nav-group-label">Começar &amp; Acervo</div>
+          <button type="button" class="demo-tab-btn active" data-demo-tab="quickstart" onclick="switchDemoTab('quickstart')">
+            <span class="tab-icon">⚡</span>
+            <span>Instalação Rápida</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="cities" onclick="switchDemoTab('cities')">
+            <span class="tab-icon">🗺️</span>
+            <span>Cidades (5.571 IBGE)</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="offline" onclick="switchDemoTab('offline')">
+            <span class="tab-icon">🛡️</span>
+            <span>Arquitetura Offline</span>
           </button>
         </div>
 
-        <div class="printable-card-wrap">
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span>1. SOCORRO NACIONAL</span>
-              <span>BRASIL 🇧🇷</span>
-            </div>
-            <div style="font-size: 0.75rem; line-height: 1.5; color: #111;">
-              <div>🚨 <strong>190</strong> Polícia Militar | 🚑 <strong>192</strong> SAMU</div>
-              <div>🚒 <strong>193</strong> Bombeiros | 🛡️ <strong>199</strong> Defesa Civil</div>
-              <div style="margin-top: 0.5rem; border-top: 1px solid #ccc; padding-top: 0.4rem;">
-                <strong>NOME:</strong> ________________________________<br>
-                <strong>TIPO SANGUÍNEO:</strong> [  ] &bull; <strong>DOADOR:</strong> (S/N)<br>
-                <strong>CONTATO:</strong> _____________________________
+        <div class="nav-group">
+          <div class="nav-group-label">Emergência &amp; Campo</div>
+          <button type="button" class="demo-tab-btn" data-demo-tab="emergencies" onclick="switchDemoTab('emergencies')">
+            <span class="tab-icon">🚑</span>
+            <span>Primeiros Socorros</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="morse" onclick="switchDemoTab('morse')">
+            <span class="tab-icon">🚨</span>
+            <span>Morse &amp; Farol SOS</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="telecom" onclick="switchDemoTab('telecom')">
+            <span class="tab-icon">📻</span>
+            <span>Rádio &amp; Antenas</span>
+          </button>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-group-label">Logística &amp; Apoio</div>
+          <button type="button" class="demo-tab-btn" data-demo-tab="rationing" onclick="switchDemoTab('rationing')">
+            <span class="tab-icon">🎒</span>
+            <span>Racionamento &amp; Água</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="pocketcard" onclick="switchDemoTab('pocketcard')">
+            <span class="tab-icon">📄</span>
+            <span>Cartão de Bolso A4</span>
+          </button>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="https://github.com/DougPomp/nomad-brasil/archive/refs/heads/main.zip" class="btn-sidebar-action primary">
+          <span>📥</span> Baixar Projeto (.ZIP)
+        </a>
+        <a href="https://github.com/DougPomp/nomad-brasil" target="_blank" class="btn-sidebar-action secondary">
+          <span>⭐</span> Repositório GitHub
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <div class="main-content">
+      <main class="container">
+
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+          <img src="banner.svg" alt="NOMAD Brasil - Central de Sobrevivência, Mapas e Conhecimento 100% Offline">
+        </div>
+
+        <!-- TAB 1: QUICKSTART -->
+        <section class="tab-pane active" id="tab-quickstart">
+          <div class="card">
+            <h2 class="card-title">🚀 Como Rodar o NOMAD Brasil 100% Offline</h2>
+            <p class="card-subtitle">
+              Projetado para funcionar <strong>totalmente desconectado da internet</strong> via Docker no seu computador ou HD externo de 1 TB.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.35rem;">🪟 Windows (Setup de 1 Clique)</h3>
+                <ol style="padding-left: 1.15rem; color: var(--text-secondary); font-size: 0.85rem;">
+                  <li>Clone ou baixe o projeto:</li>
+                </ol>
+                <div class="install-box">git clone https://github.com/DougPomp/nomad-brasil.git<br>cd nomad-brasil</div>
+                <div style="font-size: 0.84rem; color: var(--text-secondary);">
+                  Execute <strong><code>setup-nomad-brasil.bat</code></strong>. Ele baixa os mapas vetoriais do Brasil (1,57 GB), a Wikipédia em Português e sobe os contêineres automaticamente.
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.35rem;">🐧 Linux / macOS / Raspberry Pi</h3>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                  Torne o instalador executável e inicie o provisionamento automático:
+                </div>
+                <div class="install-box">chmod +x setup-nomad-brasil.sh<br>./setup-nomad-brasil.sh</div>
+                <div style="font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.35rem;">
+                  🌐 <strong>Portal Tático:</strong> <code>http://localhost:8000</code><br>
+                  📚 <strong>Servidor Kiwix:</strong> <code>http://localhost:8090</code>
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span>2. RCP &amp; DESENGASGO</span>
-              <span>SAMU/AHA</span>
+        <!-- TAB 2: CITY INTEL -->
+        <section class="tab-pane" id="tab-cities">
+          <div class="card">
+            <h2 class="card-title">🔍 Consulta Geodésica Municipal (5.571 Cidades IBGE)</h2>
+            <p class="card-subtitle">
+              Experimente a busca instantânea com coordenadas GPS, código IBGE, prefixo DDD e distância até a capital estadual.
+            </p>
+
+            <div class="search-box">
+              <input type="text" id="city-search-input" class="search-input" placeholder="Digite o nome de qualquer município brasileiro (ex: Louveira, Vinhedo, Manaus, Curitiba)..." oninput="filterCities()">
+              <div id="city-dropdown" class="city-dropdown"></div>
             </div>
-            <div style="font-size: 0.72rem; line-height: 1.4; color: #111;">
-              <strong>PARADA CARDÍACA:</strong><br>
-              1. Chame socorro 192/193.<br>
-              2. Vítima de costas no chão firme.<br>
-              3. 100 a 120 compressões/min no centro do tórax.<br>
-              <strong>DESENGASGO (HEIMLICH):</strong><br>
-              Punho fechado na boca do estômago, pressione para dentro e para cima em 'J'.
+
+            <div id="city-intel-result" style="display: none;">
+              <div class="intel-grid">
+                <div class="intel-card">
+                  <span class="intel-label">MUNICÍPIO / UF</span>
+                  <div class="intel-val" id="intel-city-name">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">CÓDIGO IBGE</span>
+                  <div class="intel-val font-mono" id="intel-city-ibge">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">PREFIXO DDD</span>
+                  <div class="intel-val font-mono" style="color: #34d399;" id="intel-city-ddd">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">DISTÂNCIA CAPITAL</span>
+                  <div class="intel-val font-mono" style="color: #fbbf24;" id="intel-city-dist">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">COORDENADAS GPS</span>
+                  <div class="intel-val font-mono" style="font-size: 0.92rem;" id="intel-city-coords">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">REGIÃO</span>
+                  <div class="intel-val" id="intel-city-regiao">-</div>
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span>3. ÁGUA &amp; PEÇONHENTOS</span>
-              <span>MIN. SAÚDE</span>
+        <!-- TAB 3: RATIONING -->
+        <section class="tab-pane" id="tab-rationing">
+          <div class="card">
+            <h2 class="card-title">🎒 Calculadora Tática de Racionamento &amp; Estoque</h2>
+            <p class="card-subtitle">Dimensionamento de água potável, meta calórica e cesta de alimentos não-perecíveis no padrão brasileiro.</p>
+
+            <div class="grid-2" style="margin-bottom: 1.25rem;">
+              <div class="metric-card" style="gap: 0.65rem;">
+                <div>
+                  <span class="stat-label">NÚMERO DE ADULTOS (2.200 kcal/dia)</span>
+                  <input type="number" id="calc-adults" class="route-input font-mono" value="2" min="1" max="50" oninput="calcRationingOnline()">
+                </div>
+
+                <div>
+                  <span class="stat-label">NÚMERO DE CRIANÇAS (1.500 kcal/dia)</span>
+                  <input type="number" id="calc-children" class="route-input font-mono" value="1" min="0" max="50" oninput="calcRationingOnline()">
+                </div>
+
+                <div>
+                  <span class="stat-label">DIAS DE ISOLAMENTO / AUTONOMIA</span>
+                  <div style="display: flex; gap: 0.35rem; margin-bottom: 0.45rem; flex-wrap: wrap;">
+                    <button type="button" class="chip-btn" onclick="setDaysOnline(3)">3 dias</button>
+                    <button type="button" class="chip-btn" onclick="setDaysOnline(7)">7 dias</button>
+                    <button type="button" class="chip-btn chip-highlight" id="btn-d-15" onclick="setDaysOnline(15)">15 dias</button>
+                    <button type="button" class="chip-btn" onclick="setDaysOnline(30)">30 dias</button>
+                    <button type="button" class="chip-btn" onclick="setDaysOnline(60)">60 dias</button>
+                  </div>
+                  <input type="number" id="calc-days" class="route-input font-mono" value="15" min="1" max="365" oninput="calcRationingOnline()">
+                </div>
+              </div>
+
+              <div class="metric-card" style="justify-content: space-between;">
+                <span class="stat-label" style="color: #38bdf8;">DEMANDA VITAL TOTAL DO PERÍODO</span>
+                <div class="route-metrics-grid">
+                  <div class="metric-card">
+                    <span class="metric-title">ÁGUA CONSUMO</span>
+                    <span class="metric-value font-mono" style="color: #22d3ee;" id="res-water">102 L</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">ÁGUA HIGIENE</span>
+                    <span class="metric-value font-mono" style="color: #60a5fa;" id="res-hygiene">90 L</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">CALORIAS TOTAIS</span>
+                    <span class="metric-value font-mono" style="color: #fbbf24;" id="res-kcal">106.200 kcal</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">COMBUSTÍVEL GERADOR</span>
+                    <span class="metric-value font-mono" style="color: #34d399;" id="res-fuel">36 L</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div style="font-size: 0.72rem; line-height: 1.4; color: #111;">
-              <strong>PURIFICAÇÃO DE ÁGUA:</strong><br>
-              - 2 gotas de água sanitária (2-2.5%) por litro de água límpida (4 se turva).<br>
-              - Aguardar 30 minutos antes de beber.<br>
-              <strong>PICADAS DE COBRA / ESCORPIÃO:</strong><br>
-              NÃO faça torniquete. Lave com água/sabão e hidrate até o hospital com soro.
+
+            <div class="table-responsive">
+              <table class="tactical-table">
+                <thead>
+                  <tr>
+                    <th>Alimento Durável</th>
+                    <th>Quantidade Recomendada</th>
+                    <th>Validade em Local Seco</th>
+                  </tr>
+                </thead>
+                <tbody id="rationing-tbody"></tbody>
+              </table>
             </div>
           </div>
+        </section>
 
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span>4. RÁDIO &amp; MORSE</span>
-              <span>COMUNICAÇÃO</span>
+        <!-- TAB 4: TELECOM -->
+        <section class="tab-pane" id="tab-telecom">
+          <div class="card">
+            <h2 class="card-title">📻 Rádio &amp; Calculadora de Antena Dipolo</h2>
+            <p class="card-subtitle">Frequências oficiais de socorro no Brasil e dimensionamento de antena de emergência com fio comum.</p>
+
+            <div class="metric-card" style="border-left: 3px solid var(--accent-cyan); margin-bottom: 1.25rem; gap: 0.65rem;">
+              <div style="font-weight: 800; color: #fff; font-size: 0.95rem;">📡 Calculadora de Antena Dipolo de Meia Onda (1/2 λ)</div>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="number" id="calc-dipole-freq" class="route-input font-mono" style="max-width: 180px;" value="146.520" step="0.005" oninput="calcDipoleOnline()">
+                <button type="button" class="chip-btn" onclick="setDipoleFreqOnline(27.065)">PX Ch 9 (27.065 MHz)</button>
+                <button type="button" class="chip-btn chip-highlight" onclick="setDipoleFreqOnline(146.520)">VHF 2m (146.52 MHz)</button>
+                <button type="button" class="chip-btn" onclick="setDipoleFreqOnline(156.800)">Marítimo Ch 16</button>
+              </div>
+              <div class="route-metrics-grid">
+                <div class="metric-card">
+                  <span class="metric-title">COMPRIMENTO TOTAL DO FIO</span>
+                  <span class="metric-value font-mono" style="color: #22d3ee;" id="res-dipole-tot">0.97 metros</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">CADA PERNA (POLO A / POLO B)</span>
+                  <span class="metric-value font-mono" style="color: #34d399;" id="res-dipole-leg">48.6 cm cada</span>
+                </div>
+              </div>
             </div>
-            <div style="font-size: 0.72rem; line-height: 1.4; font-family: monospace; color: #111;">
-              PX Ch 9: 27.065 MHz (Socorro)<br>
-              PX Ch 19: 27.185 MHz (Rodovias)<br>
-              VHF Ch 16: 156.800 MHz (Marítimo)<br>
-              VHF Chamada: 146.520 MHz<br>
-              QAP: Na escuta | QSL: Ciente<br>
-              QTH: Localização | QRT: Desligando<br>
-              <strong>SOS: ... --- ...</strong>
+
+            <div id="telecom-cards-list" class="grid-2">
+              <div style="color: var(--text-muted); font-size: 0.85rem;">Carregando frequências de rádio...</div>
             </div>
           </div>
+        </section>
+
+        <!-- TAB 5: MORSE & SOS -->
+        <section class="tab-pane" id="tab-morse">
+          <div class="card">
+            <h2 class="card-title">🚨 Central de Sinais de Socorro &amp; Morse</h2>
+            <p class="card-subtitle">Farol óptico de tela cheia, sintetizador sonoro de 800 Hz e tabela de sinais Terra-Ar SAR.</p>
+
+            <div class="grid-2" style="margin-bottom: 1.25rem;">
+              <div class="metric-card" style="border-color: rgba(239, 68, 68, 0.4); gap: 0.6rem;">
+                <h3 style="color: #fff; font-size: 1rem;">💡 Farol Visual SOS (Tela Cheia)</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Pisca a tela no padrão internacional SOS (... --- ...) com contraste máximo para sinalização noturna.</p>
+                <button type="button" id="btn-opt-sos" class="btn-sidebar-action primary" style="background: #ef4444; color: #fff; border: none; cursor: pointer;" onclick="toggleOpticalSosOnline()">
+                  <span>🚨</span> INICIAR SINALIZADOR VISUAL
+                </button>
+              </div>
+
+              <div class="metric-card" style="border-color: rgba(16, 185, 129, 0.4); gap: 0.6rem;">
+                <h3 style="color: #fff; font-size: 1rem;">🔊 Alarme Sonoro SOS (800 Hz)</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Onda senoidal pura de 800 Hz gerada em tempo real pelo navegador para orientar equipes de busca.</p>
+                <button type="button" id="btn-aud-sos" class="btn-sidebar-action primary" style="border: none; cursor: pointer;" onclick="toggleAudioSosOnline()">
+                  <span>🔊</span> INICIAR BIPE SONORO (SOS)
+                </button>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <h4 style="color: #fff; font-size: 0.9rem; margin-bottom: 0.5rem;">🚁 Sinais Terra-Ar para Aeronaves de Resgate (ICAO / SAR)</h4>
+              <div class="intel-grid">
+                <div class="intel-card"><strong class="font-mono" style="color: #fbbf24; font-size: 1.2rem;">V</strong><span>Preciso de Assistência</span></div>
+                <div class="intel-card"><strong class="font-mono" style="color: #f87171; font-size: 1.2rem;">X</strong><span>Socorro Médico Urgente</span></div>
+                <div class="intel-card"><strong class="font-mono" style="color: #60a5fa; font-size: 1.2rem;">N</strong><span>Não / Negativo</span></div>
+                <div class="intel-card"><strong class="font-mono" style="color: #34d399; font-size: 1.2rem;">Y</strong><span>Sim / Afirmativo</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: EMERGENCIES -->
+        <section class="tab-pane" id="tab-emergencies">
+          <div class="card">
+            <h2 class="card-title">🚑 Protocolos de Primeiros Socorros &amp; Triagem</h2>
+            <p class="card-subtitle">Procedimentos imediatos para preservação da vida em situações críticas.</p>
+            <div class="protocol-grid" id="emergencies-list">
+              <div style="color: var(--text-muted); font-size: 0.9rem;">Carregando protocolos médicos...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 7: POCKET CARD PRINT -->
+        <section class="tab-pane" id="tab-pocketcard">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.15rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <h2 class="card-title" style="margin-bottom: 0.2rem;">📄 Cartão Tático de Bolso (Folha A4 Dobrável)</h2>
+                <p class="card-subtitle" style="margin-bottom: 0;">Imprima em 1 folha A4 e dobre em 4 partes para levar na carteira ou mochila de 72h.</p>
+              </div>
+              <button type="button" class="btn-sidebar-action primary" style="width: auto; border: none; cursor: pointer; padding: 0.65rem 1.25rem;" onclick="window.print()">
+                <span>🖨️</span> Imprimir Folha A4
+              </button>
+            </div>
+
+            <div class="printable-card-wrap">
+              <div class="pocket-quadrant">
+                <div class="pocket-header">
+                  <span>1. SOCORRO NACIONAL</span>
+                  <span>BRASIL 🇧🇷</span>
+                </div>
+                <div style="font-size: 0.76rem; line-height: 1.5; color: #111;">
+                  <div>🚨 <strong>190</strong> Polícia Militar | 🚑 <strong>192</strong> SAMU</div>
+                  <div>🚒 <strong>193</strong> Bombeiros | 🛡️ <strong>199</strong> Defesa Civil</div>
+                  <div style="margin-top: 0.5rem; border-top: 1px solid #cbd5e1; padding-top: 0.45rem;">
+                    <strong>NOME:</strong> ________________________________<br>
+                    <strong>TIPO SANGUÍNEO:</strong> [ ___ ] &bull; <strong>DOADOR:</strong> (S/N)<br>
+                    <strong>ALERGIAS:</strong> ____________________________<br>
+                    <strong>CONTATO:</strong> _____________________________
+                  </div>
+                </div>
+              </div>
+
+              <div class="pocket-quadrant">
+                <div class="pocket-header">
+                  <span>2. RCP &amp; DESENGASGO</span>
+                  <span>SAMU/AHA</span>
+                </div>
+                <div style="font-size: 0.75rem; line-height: 1.45; color: #111;">
+                  <strong>PARADA CARDÍACA (RCP):</strong><br>
+                  1. Acione 192 ou 193.<br>
+                  2. Vítima de costas em superfície firme.<br>
+                  3. 100 a 120 compressões/min no centro do tórax.<br>
+                  <strong>DESENGASGO (HEIMLICH):</strong><br>
+                  Punho fechado acima do umbigo, comprima para dentro e para cima em "J".
+                </div>
+              </div>
+
+              <div class="pocket-quadrant">
+                <div class="pocket-header">
+                  <span>3. ÁGUA &amp; PEÇONHENTOS</span>
+                  <span>MIN. SAÚDE</span>
+                </div>
+                <div style="font-size: 0.75rem; line-height: 1.45; color: #111;">
+                  <strong>PURIFICAÇÃO DE ÁGUA:</strong><br>
+                  - 2 gotas de água sanitária (2-2,5%) por litro de água limpa (4 gotas se turva).<br>
+                  - Aguardar 30 minutos antes de beber.<br>
+                  <strong>PICADAS DE SERPENTE / ESCORPIÃO:</strong><br>
+                  NÃO faça torniquete. Lave com água e sabão e leve ao hospital com soro.
+                </div>
+              </div>
+
+              <div class="pocket-quadrant">
+                <div class="pocket-header">
+                  <span>4. RÁDIO &amp; MORSE</span>
+                  <span>TELECOM</span>
+                </div>
+                <div style="font-size: 0.74rem; line-height: 1.45; font-family: monospace; color: #111;">
+                  PX Ch 9: 27.065 MHz (Emergência)<br>
+                  PX Ch 19: 27.185 MHz (Rodovias)<br>
+                  VHF Ch 16: 156.800 MHz (Marítimo)<br>
+                  VHF Chamada: 146.520 MHz<br>
+                  QAP: Na escuta | QSL: Confirmado<br>
+                  QTH: Localização | QRT: Desligando<br>
+                  <strong>SOS: ... --- ...</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 8: OFFLINE STACK -->
+        <section class="tab-pane" id="tab-offline">
+          <div class="card">
+            <h2 class="card-title">🛡️ Arquitetura 100% Offline</h2>
+            <p class="card-subtitle">Desenvolvido para operar sem internet em cenários de apagão, desastres naturais e expedições remotas.</p>
+
+            <div class="grid-3">
+              <div class="metric-card">
+                <h4 style="color: #34d399; margin-bottom: 0.35rem;">🗺️ Mapas PMTiles Locais</h4>
+                <p style="font-size: 0.83rem; color: var(--text-secondary);">1,57 GB contendo malha viária, rios, relevo e municípios do Brasil servidos via HTTP Range 206 com fontes PBF locais.</p>
+              </div>
+              <div class="metric-card">
+                <h4 style="color: #38bdf8; margin-bottom: 0.35rem;">📚 Wikipédia em Português</h4>
+                <p style="font-size: 0.83rem; color: var(--text-secondary);">Mais de 1 milhão de artigos ilustrados e enciclopédia médica em formato ZIM servidos pelo contêiner Kiwix na porta 8090.</p>
+              </div>
+              <div class="metric-card">
+                <h4 style="color: #fbbf24; margin-bottom: 0.35rem;">🧭 Rotas &amp; Exportação GPX</h4>
+                <p style="font-size: 0.83rem; color: var(--text-secondary);">Cálculo de deslocamento veicular, 4x4 e marcha a pé com estimativa de combustível/água e download GPX para GPS Garmin/OsmAnd.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+          <img src="logo.svg" width="20" height="20" alt="NOMAD">
+          <strong style="color: #fff;">NOMAD Brasil</strong> — Projeto Open Source sob Licença MIT
         </div>
-      </div>
-    </section>
+        <p>Criado por <a href="https://github.com/DougPomp" target="_blank" style="color: #34d399; font-weight: bold;">DougPomp</a> • Publicado via GitHub Pages</p>
+      </footer>
+    </div>
 
-    <!-- TAB 8: OFFLINE STACK -->
-    <section class="tab-pane" id="tab-offline">
-      <div class="card">
-        <h2 class="card-title">🛡️ A Arquitetura 100% Offline</h2>
-        <p class="card-subtitle">Projetado para resistir a cenários de blecaute de rede, desastres e áreas remotas.</p>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem;">
-          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-            <h4 style="color: #34d399; margin-bottom: 0.4rem;">🗺️ Mapas PMTiles Locais</h4>
-            <p style="font-size: 0.85rem; color: #cbd5e1;">1,57 GB contendo todas as ruas do Brasil em vetor, servidos por streaming Range 206 pelo backend em Node.js com tipografia Noto Sans offline.</p>
-          </div>
-          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-            <h4 style="color: #38bdf8; margin-bottom: 0.4rem;">📚 Wikipédia em Português</h4>
-            <p style="font-size: 0.85rem; color: #cbd5e1;">Mais de 1 milhão de artigos com imagens e enciclopédia médica completa em formato ZIM através do servidor Kiwix embutido.</p>
-          </div>
-          <div style="background: #090e1a; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-            <h4 style="color: #f59e0b; margin-bottom: 0.4rem;">🚗 Traçado de Rotas &amp; GPX</h4>
-            <p style="font-size: 0.85rem; color: #cbd5e1;">Cálculo de evacuação com cache em disco vitalício, ritmo de marcha a pé, cálculo de litros de água/calorias e exportação para aparelhos GPS Garmin.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Mobile Bottom Quick Navigation (< 768px) -->
+    <nav class="mobile-bottom-nav">
+      <button type="button" class="mobile-bottom-btn active" data-demo-tab="quickstart" onclick="switchDemoTab('quickstart')">
+        <span style="font-size: 1.1rem;">⚡</span>
+        <span>Início</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" data-demo-tab="cities" onclick="switchDemoTab('cities')">
+        <span style="font-size: 1.1rem;">🗺️</span>
+        <span>Cidades</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" data-demo-tab="emergencies" onclick="switchDemoTab('emergencies')">
+        <span style="font-size: 1.1rem;">🚑</span>
+        <span>Socorros</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" data-demo-tab="morse" onclick="switchDemoTab('morse')">
+        <span style="font-size: 1.1rem;">🚨</span>
+        <span>SOS</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" onclick="toggleMobileSidebar(true)">
+        <span style="font-size: 1.1rem;">☰</span>
+        <span>Menu</span>
+      </button>
+    </nav>
 
-  </main>
+  </div>
 
   <!-- Fullscreen Optical SOS Overlay -->
   <div id="optical-overlay" class="optical-sos-overlay" style="display: none;" onclick="toggleOpticalSosOnline(false)">
     <div style="text-align: center; color: #000; background: rgba(255,255,255,0.9); padding: 2rem; border-radius: 12px;">
-      <h1 style="font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem;">🚨 SINAL DE SOCORRO ATIVO 🚨</h1>
-      <div style="font-size: 3rem; font-family: monospace; font-weight: 900; letter-spacing: 0.3em; margin: 1rem 0;">... --- ...</div>
-      <p style="font-size: 0.9rem; font-weight: bold;">Toque em qualquer ponto da tela para desligar</p>
+      <h1 style="font-size: 1.75rem; font-weight: 900; margin-bottom: 0.5rem;">🚨 SINAL DE SOCORRO ATIVO 🚨</h1>
+      <div style="font-size: 2.75rem; font-family: monospace; font-weight: 900; letter-spacing: 0.25em; margin: 0.75rem 0;">... --- ...</div>
+      <p style="font-size: 0.85rem; font-weight: bold;">Toque em qualquer ponto da tela para desligar</p>
     </div>
   </div>
-
-  <footer>
-    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-      <img src="logo.svg" width="20" height="20" alt="NOMAD">
-      <strong style="color: #fff;">NOMAD Brasil</strong> — Projeto Open Source sob Licença MIT
-    </div>
-    <p>Criado por <a href="https://github.com/DougPomp" target="_blank" style="color: #34d399; text-decoration: none; font-weight: bold;">DougPomp</a> • Hospedado via GitHub Pages</p>
-  </footer>
 
   <script>
     let allCities = [];
     let radioData = null;
 
-    // Switch Tabs
-    function switchDemoTab(tabId) {
-      document.querySelectorAll('.demo-tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-      
-      const activeBtn = Array.from(document.querySelectorAll('.demo-tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
-      if (activeBtn) activeBtn.classList.add('active');
-      
-      const pane = document.getElementById(`tab-${tabId}`);
-      if (pane) pane.classList.add('active');
+    function toggleMobileSidebar(force) {
+      const sb = document.getElementById('app-sidebar');
+      const bd = document.getElementById('sidebar-backdrop');
+      if (!sb) return;
+      const isOpen = sb.classList.contains('open');
+      const next = typeof force === 'boolean' ? force : !isOpen;
+      sb.classList.toggle('open', next);
+      if (bd) bd.classList.toggle('open', next);
     }
 
-    // Load static data
+    function switchDemoTab(tabId) {
+      toggleMobileSidebar(false);
+
+      document.querySelectorAll('[data-demo-tab]').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-demo-tab') === tabId);
+      });
+
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.toggle('active', pane.id === `tab-${tabId}`);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     async function initData() {
       try {
         const [citiesRes, emergRes, radioRes] = await Promise.all([
@@ -890,31 +1199,29 @@
         allCities = citiesRes;
         radioData = radioRes;
 
-        // Render emergencies
         const emergList = document.getElementById('emergencies-list');
         if (emergList && emergRes.length) {
           emergList.innerHTML = emergRes.map(item => `
             <div class="protocol-card">
-              <span class="protocol-badge">${item.category || 'EMERGÊNCIA'}</span>
-              <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.4rem;">${item.title}</h3>
-              <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;">${item.summary || (item.steps ? item.steps[0] : '')}</p>
+              <span class="protocol-badge">${item.severity || item.category || 'EMERGÊNCIA'}</span>
+              <h3 style="color: #fff; font-size: 1rem; margin-bottom: 0.35rem;">${item.title}</h3>
+              <p style="color: var(--text-muted); font-size: 0.83rem; line-height: 1.45;">${item.summary || (item.steps ? item.steps[0] : '')}</p>
             </div>
           `).join('');
         }
 
-        // Render radio
         if (radioData && radioData.bands) {
           const rList = document.getElementById('telecom-cards-list');
           if (rList) {
             rList.innerHTML = radioData.bands.map(b => `
-              <div style="background: #090e1a; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-                <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.25rem;">${b.name}</h4>
-                <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">${b.description}</div>
-                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <div class="metric-card">
+                <h4 style="color: #38bdf8; font-size: 0.92rem; margin-bottom: 0.2rem;">${b.name}</h4>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">${b.description}</div>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
                   ${b.channels.map(c => `
-                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.25rem 0;">
+                    <div style="display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.25rem 0;">
                       <span style="font-weight: 700; color: #fff;">${c.channel} (${c.freq})</span>
-                      <span style="color: #34d399;">${c.usage}</span>
+                      <span style="color: #34d399; text-align: right;">${c.usage}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -923,13 +1230,11 @@
           }
         }
 
-        // Default city
         const def = allCities.find(c => c.name === 'Louveira') || allCities[0];
         if (def) displayCityIntel(def);
 
         calcRationingOnline();
         calcDipoleOnline();
-
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
       }
@@ -950,36 +1255,35 @@
       }
 
       dd.innerHTML = matches.map(c => `
-        <div class="city-item" onclick="selectCity('${c.ibge || c.name}')">
-          <span>${c.name} - ${c.uf}</span>
-          <span class="font-mono text-xs text-gray-400">DDD ${c.ddd || 'N/A'}</span>
+        <div class="city-item" onclick="selectCity('${c.codigo_ibge || c.ibge || c.name}')">
+          <span><strong>${c.name}</strong> - ${c.state || c.uf}</span>
+          <span class="font-mono" style="font-size:0.75rem; color: var(--accent-green);">DDD ${c.ddd || 'N/A'}</span>
         </div>
       `).join('');
       dd.style.display = 'block';
     }
 
     function selectCity(identifier) {
-      const city = allCities.find(c => c.ibge == identifier || c.name === identifier);
+      const city = allCities.find(c => (c.codigo_ibge || c.ibge) == identifier || c.name === identifier);
       if (!city) return;
-      document.getElementById('city-search-input').value = `${city.name} - ${city.uf}`;
+      document.getElementById('city-search-input').value = `${city.name} - ${city.state || city.uf}`;
       document.getElementById('city-dropdown').style.display = 'none';
       displayCityIntel(city);
     }
 
     function displayCityIntel(city) {
       document.getElementById('city-intel-result').style.display = 'block';
-      document.getElementById('intel-city-name').textContent = `${city.name} / ${city.uf}`;
-      document.getElementById('intel-city-ibge').textContent = city.ibge || 'N/A';
+      document.getElementById('intel-city-name').textContent = `${city.name} / ${city.state || city.uf}`;
+      document.getElementById('intel-city-ibge').textContent = city.codigo_ibge || city.ibge || 'N/A';
       document.getElementById('intel-city-ddd').textContent = city.ddd ? `(${city.ddd})` : 'N/A';
-      document.getElementById('intel-city-dist').textContent = city.distCapital ? `${city.distCapital} km` : '0 km (Capital)';
+      document.getElementById('intel-city-dist').textContent = city.distCapital ? `${city.distCapital} km` : (city.capital ? 'Capital Estadual' : 'Município');
       document.getElementById('intel-city-coords').textContent = `${Number(city.lat).toFixed(4)}, ${Number(city.lng).toFixed(4)}`;
-      document.getElementById('intel-city-regiao').textContent = city.regiao || 'Brasil';
+      document.getElementById('intel-city-regiao').textContent = city.region || city.regiao || 'Brasil';
     }
 
-    // Online Rationing Calculator
     function setDaysOnline(d) {
       document.getElementById('calc-days').value = d;
-      document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('chip-highlight'));
+      document.querySelectorAll('#tab-rationing .chip-btn').forEach(b => b.classList.remove('chip-highlight'));
       const btn = document.getElementById(`btn-d-${d}`);
       if (btn) btn.classList.add('chip-highlight');
       calcRationingOnline();
@@ -1003,27 +1307,26 @@
       document.getElementById('res-fuel').textContent = `${fuelTotal} L`;
 
       const food = [
-        { name: 'Arroz Branco', factor: 0.12, unit: 'kg', life: '2 a 5 anos' },
-        { name: 'Feijão', factor: 0.08, unit: 'kg', life: '1 a 3 anos' },
-        { name: 'Aveia / Farinha', factor: 0.06, unit: 'kg', life: '1 a 2 anos' },
-        { name: 'Sardinha em Óleo', factor: 0.4, unit: 'latas', life: '3 a 5 anos' },
+        { name: 'Arroz Branco / Parboilizado', factor: 0.12, unit: 'kg', life: '2 a 5 anos' },
+        { name: 'Feijão Carioca / Preto', factor: 0.08, unit: 'kg', life: '1 a 3 anos' },
+        { name: 'Aveia em Flocos / Farinha', factor: 0.06, unit: 'kg', life: '1 a 2 anos' },
+        { name: 'Sardinha / Atum em Lata', factor: 0.4, unit: 'latas', life: '3 a 5 anos' },
         { name: 'Óleo Vegetal', factor: 0.025, unit: 'L', life: '1 a 2 anos' },
-        { name: 'Sal Refinado', factor: 0.012, unit: 'kg', life: 'Indeterminada' }
+        { name: 'Sal Refinado Iodado', factor: 0.012, unit: 'kg', life: 'Indeterminada' }
       ];
 
       const tbody = document.getElementById('rationing-tbody');
       if (tbody) {
         tbody.innerHTML = food.map(f => `
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <td style="padding: 0.35rem 0.6rem; color: #fff; font-weight: 700;">${f.name}</td>
-            <td style="padding: 0.35rem 0.6rem; color: #34d399; font-family: monospace; font-weight: 800;">${(f.factor * totalPeople * days).toFixed(f.unit === 'latas' ? 0 : 1)} ${f.unit}</td>
-            <td style="padding: 0.35rem 0.6rem; color: #94a3b8;">${f.life}</td>
+          <tr>
+            <td style="color: #fff; font-weight: 700;">${f.name}</td>
+            <td style="color: #34d399; font-family: monospace; font-weight: 800;">${(f.factor * totalPeople * days).toFixed(f.unit === 'latas' ? 0 : 1)} ${f.unit}</td>
+            <td>${f.life}</td>
           </tr>
         `).join('');
       }
     }
 
-    // Dipole Calculator
     function calcDipoleOnline() {
       const f = parseFloat(document.getElementById('calc-dipole-freq')?.value || '146.520');
       if (isNaN(f) || f <= 0) return;
@@ -1038,9 +1341,7 @@
       calcDipoleOnline();
     }
 
-    // Morse & SOS Audio/Optical Online
     let isOptActive = false;
-    let optInterval = null;
     let isAudActive = false;
     let audioCtx = null;
 
@@ -1084,10 +1385,12 @@
       if (isAudActive) {
         btn.innerHTML = `<span>⏹️</span> PARAR BIPE SONORO`;
         btn.style.background = '#ef4444';
+        btn.style.color = '#fff';
         runAudioSos();
       } else {
         btn.innerHTML = `<span>🔊</span> INICIAR BIPE SONORO (SOS)`;
         btn.style.background = '';
+        btn.style.color = '';
       }
     }
 

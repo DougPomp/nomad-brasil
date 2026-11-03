@@ -12,15 +12,33 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
   setupMapSearch();
   setupRouteSearch();
+  loadPoisData();
+  loadUserWaypoints();
+  calculateRationing();
+  loadRadioData();
+  calculateAntennaDipole();
 });
+
+// Mobile Sidebar Drawer Toggle
+window.toggleMobileSidebar = function(force) {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.contains('open');
+  const nextState = typeof force === 'boolean' ? force : !isOpen;
+  sidebar.classList.toggle('open', nextState);
+  if (backdrop) backdrop.classList.toggle('open', nextState);
+};
 
 // Clock
 function initClock() {
   const clockEl = document.getElementById('system-clock-time');
+  const sideClockEl = document.getElementById('sidebar-clock-time');
   function update() {
     const now = new Date();
     const timeStr = now.toLocaleTimeString('pt-BR', { hour12: false });
     if (clockEl) clockEl.textContent = timeStr;
+    if (sideClockEl) sideClockEl.textContent = timeStr;
   }
   update();
   setInterval(update, 1000);
@@ -39,6 +57,11 @@ function initTabs() {
 
 function switchTab(tabId) {
   currentTab = tabId;
+
+  // Close mobile sidebar if open
+  if (typeof window.toggleMobileSidebar === 'function') {
+    window.toggleMobileSidebar(false);
+  }
 
   // Update nav buttons
   document.querySelectorAll('[data-tab-target]').forEach(btn => {
@@ -362,6 +385,10 @@ function initMap() {
     mapInstance.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
     mapInstance.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
 
+    // Render POIs & User Waypoints once map is ready
+    if (typeof renderPoiMarkers === 'function') renderPoiMarkers();
+    if (typeof renderUserWptMarkers === 'function') renderUserWptMarkers();
+
     mapInstance.on('mousemove', (e) => {
       const coordsEl = document.getElementById('hud-coordinates');
       if (coordsEl) {
@@ -678,12 +705,19 @@ let currentRouteData = null;
 window.toggleRoutePlanner = function(forceState) {
   const panel = document.getElementById('route-planner-panel');
   const btn = document.getElementById('btn-toggle-route-panel');
+  const wptDrawer = document.getElementById('waypoints-drawer');
+  const wptBtn = document.getElementById('layer-btn-waypoints');
   if (!panel) return;
 
   const isOpen = panel.classList.contains('open');
   const targetState = typeof forceState === 'boolean' ? forceState : !isOpen;
 
   if (targetState) {
+    // Close waypoints drawer so left drawers never collide
+    if (wptDrawer) wptDrawer.classList.remove('open');
+    if (wptBtn) wptBtn.classList.remove('active');
+    if (window.innerWidth <= 900) closeCityDrawer();
+
     panel.classList.add('open');
     if (btn) btn.classList.add('active');
     if (currentTab !== 'map') switchTab('map');
@@ -1322,14 +1356,23 @@ function updateWaypointsBadges() {
 
 window.toggleWaypointsDrawer = function(force) {
   const drawer = document.getElementById('waypoints-drawer');
+  const btn = document.getElementById('layer-btn-waypoints');
+  const routePanel = document.getElementById('route-planner-panel');
+  const routeBtn = document.getElementById('btn-toggle-route-panel');
   if (!drawer) return;
-  const isHidden = drawer.style.display === 'none';
-  const shouldOpen = force !== undefined ? force : isHidden;
-  drawer.style.display = shouldOpen ? 'flex' : 'none';
+
+  const isOpen = drawer.classList.contains('open');
+  const shouldOpen = typeof force === 'boolean' ? force : !isOpen;
+
   if (shouldOpen) {
-    // close route planner if open to prevent screen clutter
-    const routePanel = document.getElementById('route-planner-panel');
     if (routePanel) routePanel.classList.remove('open');
+    if (routeBtn) routeBtn.classList.remove('active');
+    if (window.innerWidth <= 900) closeCityDrawer();
+    drawer.classList.add('open');
+    if (btn) btn.classList.add('active');
+  } else {
+    drawer.classList.remove('open');
+    if (btn) btn.classList.remove('active');
   }
 };
 

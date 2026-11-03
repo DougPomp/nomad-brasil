@@ -3,1036 +3,1192 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NOMAD Brasil - Central de Sobrevivência & Conhecimento Offline</title>
-  <link rel="stylesheet" href="/styles.css?v=2.4">
+  <title>NOMAD Brasil — Central de Sobrevivência & Conhecimento Offline</title>
+  <link rel="stylesheet" href="/styles.css?v=3.0">
   <link rel="stylesheet" href="/vendor/maplibre-gl.css">
   <script src="/vendor/maplibre-gl.js"></script>
   <script src="/vendor/pmtiles.js"></script>
 </head>
 <body>
 
-  <!-- Top Tactical Navbar -->
-  <header class="tactical-nav">
-    <div class="brand">
-      <span class="brand-badge">BRASIL 🇧🇷</span>
-      <span class="brand-title">NOMAD</span>
-    </div>
+  <div class="app-shell">
 
-    <!-- Navigation Tabs -->
-    <nav class="nav-tabs">
-      <button class="nav-tab-btn active" data-tab-target="dashboard">
-        <span>🏠</span> Painel
-      </button>
-      <button class="nav-tab-btn" data-tab-target="map">
-        <span>🗺️</span> Mapas &amp; Rotas
-      </button>
-      <button class="nav-tab-btn" data-tab-target="rationing">
-        <span>🎒</span> Racionamento
-      </button>
-      <button class="nav-tab-btn" data-tab-target="telecom">
-        <span>📻</span> Rádio &amp; Telecom
-      </button>
-      <button class="nav-tab-btn" data-tab-target="morse">
-        <span>🚨</span> Morse &amp; Socorro
-      </button>
-      <button class="nav-tab-btn" data-tab-target="emergencies">
-        <span>🚑</span> Socorros
-      </button>
-      <button class="nav-tab-btn" data-tab-target="survival">
-        <span>🏕️</span> Manuais
-      </button>
-      <button class="nav-tab-btn" data-tab-target="pocketcard">
-        <span>📄</span> Cartão A4
-      </button>
-      <button class="nav-tab-btn" data-tab-target="wiki">
-        <span>📚</span> Wikipédia
-      </button>
-    </nav>
+    <!-- Mobile Backdrop Overlay -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleMobileSidebar(false)"></div>
 
-    <!-- Offline Status Indicator -->
-    <div class="status-pill">
-      <span class="status-dot"></span>
-      <span>100% OFFLINE</span>
-    </div>
-  </header>
-
-  <!-- Main Content Areas -->
-  <main class="main-content">
-
-    <!-- 1. TAB: Dashboard -->
-    <section class="tab-view active" id="tab-dashboard">
-      <div class="dashboard-container">
-        
-        <!-- Hero Banner -->
-        <div class="hero-banner">
-          <div>
-            <h1 class="hero-title">Central Operacional NOMAD Brasil</h1>
-            <p class="hero-subtitle">
-              Ambiente de sobrevivência e preservação de conhecimento 100% independente da internet. Mapas nacionais, milhões de artigos enciclopédicos e protocolos médicos de campo gravados com segurança no seu HD externo de 1 TB.
-            </p>
-          </div>
-          <div class="system-clock">
-            <div id="system-clock-time">--:--:--</div>
-            <div class="clock-sub">Brasília (UTC-3)</div>
+    <!-- Mobile Top Header (< 1024px) -->
+    <header class="mobile-topbar">
+      <div class="flex items-center gap-3">
+        <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar(true)" aria-label="Abrir Menu">
+          ☰
+        </button>
+        <div class="brand">
+          <div class="brand-logo-box">🧭</div>
+          <div class="brand-text-wrap">
+            <div class="brand-title-row">
+              <span class="brand-title">NOMAD</span>
+              <span class="brand-badge">BRASIL 🇧🇷</span>
+            </div>
           </div>
         </div>
-
-        <!-- Quick Access Tactical Cards -->
-        <div class="grid-cards">
-          
-          <!-- Card: Mapas -->
-          <div class="tactical-card" onclick="switchTab('map')">
-            <div class="card-icon green">🗺️</div>
-            <div class="card-title">
-              <span>Mapas Nacionais</span>
-              <span class="card-tag tag-active">Offline</span>
-            </div>
-            <p class="card-desc">
-              Navegação vetorial com busca instantânea de capitais e cidades brasileiras, cálculo de distância e coordenadas geográficas de emergência.
-            </p>
-          </div>
-
-          <!-- Card: Wikipédia Completa -->
-          <div class="tactical-card" onclick="switchTab('wiki')">
-            <div class="card-icon blue">📚</div>
-            <div class="card-title">
-              <span>Wikipédia em Português</span>
-              <span class="card-tag tag-wiki">23 GB</span>
-            </div>
-            <p class="card-desc">
-              Mais de 1 milhão de artigos completos com fotos e diagramas. Enciclopédia médica, guias de cidades e livros didáticos salvos em formato ZIM.
-            </p>
-          </div>
-
-          <!-- Card: Primeiros Socorros -->
-          <div class="tactical-card" onclick="switchTab('emergencies')">
-            <div class="card-icon red">🚑</div>
-            <div class="card-title">
-              <span>Primeiros Socorros</span>
-              <span class="card-tag tag-alert">Triagem</span>
-            </div>
-            <p class="card-desc">
-              Protocolos de ação rápida para Parada Cardíaca (RCP), Desengasgo (Heimlich), Hemorragias e Picadas de Serpentes e Escorpiões do Brasil.
-            </p>
-          </div>
-
-          <!-- Card: Manuais de Sobrevivência -->
-          <div class="tactical-card" onclick="switchTab('survival')">
-            <div class="card-icon amber">🏕️</div>
-            <div class="card-title">
-              <span>Manuais de Resiliência</span>
-              <span class="card-tag tag-active">Campo</span>
-            </div>
-            <p class="card-desc">
-              Técnicas de purificação de água, frequências do Rádio PX (Canais 9 e 19), código Q, dimensionamento de energia solar 12V e estocagem de alimentos.
-            </p>
-          </div>
-
-          <!-- Card: Kiwix Servidor Externo -->
-          <div class="tactical-card" onclick="window.open('http://localhost:8090', '_blank')">
-            <div class="card-icon blue">📖</div>
-            <div class="card-title">
-              <span>Estante Kiwix (Porta 8090)</span>
-              <span class="card-tag tag-wiki">Acervo</span>
-            </div>
-            <p class="card-desc">
-              Acesso direto ao catálogo nativo do Kiwix Serve com todos os 13 livros e coleções científicas organizados por categoria.
-            </p>
-          </div>
-
-          <!-- Card: Telefones de Emergência -->
-          <div class="tactical-card" style="border-left: 4px solid var(--accent-red);">
-            <div class="card-icon red">📞</div>
-            <div class="card-title">
-              <span>Socorro Nacional</span>
-              <span class="card-tag tag-alert">Brasil</span>
-            </div>
-            <div class="card-desc" style="font-family: monospace; font-size: 0.95rem; line-height: 1.8;">
-              <div>🚨 <strong>190</strong> &bull; Polícia Militar</div>
-              <div>🚑 <strong>192</strong> &bull; SAMU (Urgência Médica)</div>
-              <div>🚒 <strong>193</strong> &bull; Corpo de Bombeiros</div>
-              <div>🛡️ <strong>199</strong> &bull; Defesa Civil</div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- System Stats Footer -->
-        <div class="bg-card border border-border p-4 rounded-lg flex items-center justify-between text-xs text-gray-400">
-          <div>
-            <strong>Status do Acervo:</strong> <span id="status-summary">Carregando dados...</span>
-          </div>
-          <div>
-            Armazenamento: <strong>HD Externo 1 TB (E:\)</strong> &bull; Engine: <strong>Docker Engine</strong>
-          </div>
-        </div>
-
       </div>
-    </section>
 
-    <!-- 2. TAB: Mapas do Brasil -->
-    <section class="tab-view" id="tab-map">
-      <div class="map-view-container">
-        
-        <!-- Tactical Map Search HUD -->
-        <div class="map-hud">
-          <div class="map-search-row">
-            <div class="map-search-box">
-              <span class="text-emerald-400 font-bold">🔍</span>
-              <input 
-                type="text" 
-                id="map-city-search" 
-                class="map-search-input" 
-                placeholder="Buscar cidade brasileira ou coordenadas (ex: Louveira, Vinhedo, São Paulo, Brasília)..."
-                autocomplete="off"
-              >
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span>OFFLINE</span>
+      </div>
+    </header>
+
+    <!-- Left Sidebar Navigation (Fixed on Desktop, Slide-Over on Mobile/Tablet) -->
+    <aside id="app-sidebar" class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-logo-box">🧭</div>
+          <div class="brand-text-wrap">
+            <div class="brand-title-row">
+              <span class="brand-title">NOMAD</span>
+              <span class="brand-badge">BRASIL 🇧🇷</span>
             </div>
-            <button type="button" class="btn-toggle-routes" id="btn-toggle-route-panel" onclick="toggleRoutePlanner()">
-              <span>🧭</span> Traçar Rota
-            </button>
-          </div>
-          <div id="map-search-results" class="search-results-dropdown"></div>
-
-          <!-- Quick Navigation Pills -->
-          <div class="map-quick-chips">
-            <button type="button" class="chip-btn chip-highlight" onclick="flyToCity('sp-louveira')">📍 Louveira (SP)</button>
-            <button type="button" class="chip-btn" onclick="flyToCity('sp-vinhedo')">Vinhedo</button>
-            <button type="button" class="chip-btn" onclick="flyToCity('sp-campinas')">Campinas</button>
-            <button type="button" class="chip-btn" onclick="flyToCity('sp-sao-paulo')">São Paulo</button>
-            <button type="button" class="chip-btn" onclick="flyToCity('df-brasilia')">Brasília</button>
-            <button type="button" class="chip-btn" onclick="flyToCity('rj-rio-de-janeiro')">Rio de Janeiro</button>
-            <button type="button" class="chip-btn" onclick="flyToCity('pr-curitiba')">Curitiba</button>
-            <button type="button" class="chip-btn" onclick="flyToCity('ba-salvador')">Salvador</button>
-          </div>
-
-          <!-- Tactical Layer Toggles & Waypoints Button -->
-          <div class="map-layer-toggles">
-            <span class="layer-toggle-title">CAMADAS:</span>
-            <button type="button" class="layer-chip active" id="layer-btn-hospital" onclick="togglePoiCategory('hospital')">
-              <span>🏥</span> Hospitais
-            </button>
-            <button type="button" class="layer-chip active" id="layer-btn-rescue" onclick="togglePoiCategory('rescue')">
-              <span>🚒</span> Bombeiros
-            </button>
-            <button type="button" class="layer-chip active" id="layer-btn-police" onclick="togglePoiCategory('police')">
-              <span>🛡️</span> Polícia/PRF
-            </button>
-            <button type="button" class="layer-chip active" id="layer-btn-water" onclick="togglePoiCategory('water')">
-              <span>💧</span> Água Doce
-            </button>
-            <button type="button" class="layer-chip active" id="layer-btn-fuel" onclick="togglePoiCategory('fuel')">
-              <span>⛽</span> Postos 24h
-            </button>
-            <button type="button" class="layer-chip highlight" id="layer-btn-waypoints" onclick="toggleWaypointsDrawer()">
-              <span>📌</span> Marcadores (<span id="user-wpt-badge">0</span>)
-            </button>
+            <span class="brand-subtitle">Central Tática Offline</span>
           </div>
         </div>
+        <button type="button" class="sidebar-close-btn" onclick="toggleMobileSidebar(false)" title="Fechar Menu">&times;</button>
+      </div>
 
-        <!-- Coordinates HUD -->
-        <div class="map-coordinates-bar" id="hud-coordinates">
-          LAT: -15.7975° | LNG: -47.8919° | ZOOM: 4.2 (Brasil Central)
+      <nav class="sidebar-nav">
+        <!-- Group 1: Principal -->
+        <div class="nav-group">
+          <div class="nav-group-label">Principal &amp; Acervo</div>
+          <button type="button" class="nav-tab-btn active" data-tab-target="dashboard">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Painel Geral</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="map">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-label">Mapa &amp; Rotas</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="wiki">
+            <span class="nav-icon">📚</span>
+            <span class="nav-label">Wikipédia Offline</span>
+          </button>
         </div>
 
-        <!-- Tactical Route Planner Panel -->
-        <div id="route-planner-panel" class="route-planner-panel">
-          <div class="route-panel-header">
-            <div class="flex items-center gap-2">
-              <span class="route-badge">ROTA TÁTICA</span>
-              <span class="text-sm font-bold text-white">Planejador de Deslocamento</span>
-            </div>
-            <button type="button" class="drawer-close-btn" onclick="toggleRoutePlanner(false)" title="Fechar Painel">&times;</button>
-          </div>
-
-          <div class="route-panel-body">
-            <!-- Inputs Origin & Dest -->
-            <div class="route-inputs-card">
-              <!-- Origin -->
-              <div class="route-input-group">
-                <div class="route-input-label">
-                  <span class="dot-origin">A</span>
-                  <span>Ponto de Partida (Origem)</span>
-                </div>
-                <div class="route-field-wrap">
-                  <input type="text" id="route-from-input" class="route-input" placeholder="Buscar cidade de saída..." autocomplete="off">
-                  <button type="button" class="btn-input-action" onclick="enableMapPick('origin')" title="Definir clicando no mapa">📍 Mapa</button>
-                </div>
-                <div id="route-from-dropdown" class="search-results-dropdown route-dropdown"></div>
-              </div>
-
-              <!-- Swap Button -->
-              <div class="route-swap-row">
-                <button type="button" class="btn-swap-points" onclick="swapRoutePoints()" title="Inverter Origem e Destino">
-                  ⇅ Inverter Pontos
-                </button>
-              </div>
-
-              <!-- Destination -->
-              <div class="route-input-group">
-                <div class="route-input-label">
-                  <span class="dot-dest">B</span>
-                  <span>Ponto de Chegada (Destino)</span>
-                </div>
-                <div class="route-field-wrap">
-                  <input type="text" id="route-to-input" class="route-input" placeholder="Buscar cidade de destino..." autocomplete="off">
-                  <button type="button" class="btn-input-action" onclick="enableMapPick('dest')" title="Definir clicando no mapa">📍 Mapa</button>
-                </div>
-                <div id="route-to-dropdown" class="search-results-dropdown route-dropdown"></div>
-              </div>
-            </div>
-
-            <!-- Profiles -->
-            <div class="route-profiles">
-              <button type="button" class="profile-option active" id="prof-driving" onclick="selectProfile('driving')">
-                <span class="profile-icon">🚗</span>
-                <span class="profile-name">Veículo</span>
-              </button>
-              <button type="button" class="profile-option" id="prof-tactical" onclick="selectProfile('tactical')">
-                <span class="profile-icon">🛞</span>
-                <span class="profile-name">4x4 Tático</span>
-              </button>
-              <button type="button" class="profile-option" id="prof-walking" onclick="selectProfile('walking')">
-                <span class="profile-icon">🥾</span>
-                <span class="profile-name">Marcha a Pé</span>
-              </button>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="route-actions-row">
-              <button type="button" class="btn-clear-route" onclick="clearCurrentRoute()">
-                <span>🗑️</span> Limpar Rota
-              </button>
-            </div>
-
-            <!-- Pick mode alert banner -->
-            <div id="map-pick-banner" class="map-pick-banner" style="display: none;">
-              <span>📍 Clique em qualquer ponto do mapa para definir: <strong id="map-pick-target-name">Origem</strong></span>
-              <button type="button" onclick="cancelMapPick()" class="text-xs text-red-400 font-bold underline ml-2">Cancelar</button>
-            </div>
-
-            <!-- Route Loading Indicator -->
-            <div id="route-loading-indicator" class="route-loading-indicator" style="display: none;">
-              <div class="route-loading-bar-wrap">
-                <div class="route-loading-bar-fill"></div>
-              </div>
-              <div class="route-loading-text">
-                <span class="pulse-icon">📡</span> Calculando rota tática...
-              </div>
-            </div>
-
-            <!-- Route Result Container -->
-            <div id="route-result-container" class="route-result-container" style="display: none;">
-              <!-- Metrics -->
-              <div class="route-metrics-grid">
-                <div class="metric-card">
-                  <span class="metric-title">DISTÂNCIA</span>
-                  <span class="metric-value font-mono text-emerald-400" id="route-metric-dist">0 km</span>
-                </div>
-                <div class="metric-card">
-                  <span class="metric-title">TEMPO ESTIMADO</span>
-                  <span class="metric-value font-mono text-white" id="route-metric-dur">0 min</span>
-                </div>
-                <div class="metric-card">
-                  <span class="metric-title" id="route-metric-fuel-title">COMBUSTÍVEL</span>
-                  <span class="metric-value font-mono text-amber-400" id="route-metric-fuel">0 L</span>
-                </div>
-                <div class="metric-card">
-                  <span class="metric-title">MODO DE REDE</span>
-                  <span class="metric-badge" id="route-metric-source">OSRM</span>
-                </div>
-              </div>
-
-              <!-- Steps List -->
-              <div class="route-steps-section">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-bold text-gray-300 uppercase tracking-wider">Passo a Passo da Rota</span>
-                  <span class="text-[11px] text-gray-500 font-mono" id="route-steps-count">0 etapas</span>
-                </div>
-                <div class="route-steps-list" id="route-steps-list"></div>
-              </div>
-
-              <!-- Export GPX -->
-              <div class="route-export-row">
-                <button type="button" class="btn-export-gpx" onclick="downloadCurrentRouteGpx()">
-                  <span>📥</span> Baixar GPX (Garmin / OsmAnd)
-                </button>
-              </div>
-            </div>
-
-          </div>
+        <!-- Group 2: Emergência & Campo -->
+        <div class="nav-group">
+          <div class="nav-group-label">Emergência &amp; Campo</div>
+          <button type="button" class="nav-tab-btn" data-tab-target="emergencies">
+            <span class="nav-icon">🚑</span>
+            <span class="nav-label">Primeiros Socorros</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="morse">
+            <span class="nav-icon">🚨</span>
+            <span class="nav-label">Sinais &amp; Morse SOS</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="telecom">
+            <span class="nav-icon">📻</span>
+            <span class="nav-label">Rádio &amp; Telecom</span>
+          </button>
         </div>
 
-        <!-- Personal Waypoints Drawer -->
-        <div id="waypoints-drawer" class="route-planner-panel" style="display: none;">
-          <div class="route-panel-header">
-            <div class="flex items-center gap-2">
-              <span class="route-badge" style="background: var(--accent-cyan); color: #000;">WAYPOINTS</span>
-              <span class="text-sm font-bold text-white">Meus Marcadores Pessoais</span>
-            </div>
-            <button type="button" class="drawer-close-btn" onclick="toggleWaypointsDrawer(false)" title="Fechar">&times;</button>
-          </div>
-
-          <div class="route-panel-body">
-            <!-- Add Waypoint Form -->
-            <div class="route-inputs-card">
-              <div class="text-xs font-bold text-gray-300 uppercase mb-2">Novo Marcador Tático</div>
-              <input type="text" id="wpt-name-input" class="route-input mb-2" placeholder="Nome do ponto (ex: Minha Residência, Ponto de Encontro)...">
-              
-              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <select id="wpt-cat-select" class="route-input" style="flex: 1;">
-                  <option value="base">🏠 Base / Residência</option>
-                  <option value="rendezvous">🤝 Ponto de Encontro</option>
-                  <option value="shelter">🏕️ Refúgio / Sítio</option>
-                  <option value="water">💧 Fonte de Água</option>
-                  <option value="danger">⚠️ Perigo / Bloqueio</option>
-                </select>
-                <button type="button" class="btn-input-action" onclick="setWptFromMapCenter()" title="Usar centro do mapa">🎯 Centro</button>
-              </div>
-
-              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
-                <input type="text" id="wpt-lat-input" class="route-input font-mono text-xs" placeholder="Latitude (-23.0847)">
-                <input type="text" id="wpt-lng-input" class="route-input font-mono text-xs" placeholder="Longitude (-46.9535)">
-              </div>
-
-              <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="btn-export-gpx" style="flex: 1;" onclick="saveNewWaypoint()">
-                  <span>💾</span> Salvar Ponto
-                </button>
-                <button type="button" class="btn-clear-route" onclick="enableMapPick('waypoint')" title="Clique no mapa para marcar">
-                  <span>📍</span> No Mapa
-                </button>
-              </div>
-            </div>
-
-            <!-- Waypoint List Header -->
-            <div class="flex items-center justify-between mt-3 mb-2">
-              <span class="text-xs font-bold text-gray-400 uppercase">Pontos Salvos (<span id="user-wpt-total">0</span>)</span>
-              <div style="display: flex; gap: 0.35rem;">
-                <button type="button" class="chip-btn" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="exportWaypointsGpx()" title="Baixar GPX">📥 GPX</button>
-                <button type="button" class="chip-btn" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="exportWaypointsJson()" title="Baixar JSON">💾 JSON</button>
-                <button type="button" class="chip-btn" style="padding: 0.25rem 0.5rem; font-size: 0.7rem;" onclick="document.getElementById('wpt-file-import').click()" title="Restaurar backup">📤 Importar</button>
-                <input type="file" id="wpt-file-import" style="display: none;" accept=".json,.gpx" onchange="handleImportWaypoints(event)">
-              </div>
-            </div>
-
-            <div id="wpt-list-items" class="route-steps-list" style="max-height: 240px;">
-              <div class="text-xs text-gray-500 py-3 text-center">Nenhum marcador cadastrado ainda.</div>
-            </div>
-          </div>
+        <!-- Group 3: Logística & Apoio -->
+        <div class="nav-group">
+          <div class="nav-group-label">Logística &amp; Apoio</div>
+          <button type="button" class="nav-tab-btn" data-tab-target="rationing">
+            <span class="nav-icon">🎒</span>
+            <span class="nav-label">Racionamento &amp; Estoque</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="survival">
+            <span class="nav-icon">🏕️</span>
+            <span class="nav-label">Manuais de Resiliência</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="pocketcard">
+            <span class="nav-icon">📄</span>
+            <span class="nav-label">Cartão de Bolso A4</span>
+          </button>
         </div>
+      </nav>
 
-        <!-- Tactical City Intel Drawer -->
-        <div id="city-intel-drawer" class="city-intel-drawer">
-          <div class="drawer-header">
-            <div class="drawer-header-left">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="drawer-badge" id="drawer-badge-region">SUDESTE</span>
-                <span class="drawer-badge drawer-badge-state" id="drawer-badge-uf">SP</span>
-              </div>
-              <h3 id="drawer-city-name" class="drawer-title">Louveira</h3>
-              <span id="drawer-state-name" class="drawer-subtitle">São Paulo</span>
+      <div class="sidebar-footer">
+        <div class="sidebar-status-row">
+          <div class="status-pill">
+            <span class="status-dot"></span>
+            <span>100% OFFLINE</span>
+          </div>
+          <span class="sidebar-clock" id="sidebar-clock-time">--:--:--</span>
+        </div>
+        <div class="sidebar-meta">
+          <span>HD Externo 1 TB</span>
+          <a href="http://localhost:8090" target="_blank" class="text-emerald-400 font-bold">Kiwix :8090 ↗</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Viewport Content -->
+    <main class="main-content">
+
+      <!-- =================================================================
+           1. TAB: DASHBOARD (PAINEL GERAL)
+           ================================================================= -->
+      <section class="tab-view active" id="tab-dashboard">
+        <div class="page-container">
+
+          <!-- Hero Banner -->
+          <div class="hero-banner">
+            <div>
+              <span class="page-eyebrow">SISTEMA AUTÔNOMO DE CONHECIMENTO E RESILIÊNCIA</span>
+              <h1 class="hero-title">Central Operacional NOMAD Brasil</h1>
+              <p class="hero-subtitle">
+                Ambiente 100% independente de internet. Mapas vetoriais do Brasil com rotas táticas, milhões de artigos da Wikipédia, calculadora de racionamento, rádio de emergência e protocolos médicos gravados localmente.
+              </p>
             </div>
-            <button class="drawer-close-btn" onclick="closeCityDrawer()" title="Fechar Painel">&times;</button>
+            <div class="system-clock">
+              <div id="system-clock-time">--:--:--</div>
+              <div class="clock-sub">Brasília (UTC-3)</div>
+            </div>
           </div>
 
-          <div class="drawer-body">
-            <!-- Key Municipal Indicators -->
-            <div class="drawer-grid">
-              <div class="drawer-stat-card">
-                <span class="stat-label">CÓDIGO IBGE</span>
-                <span class="stat-value font-mono" id="drawer-ibge">3527306</span>
+          <!-- Quick Access Grid (All Modules) -->
+          <div class="grid-cards">
+
+            <!-- Mapas & Rotas -->
+            <div class="tactical-card interactive" onclick="switchTab('map')">
+              <div class="card-top-row">
+                <div class="card-icon green">🗺️</div>
+                <span class="card-tag tag-active">5.571 Cidades</span>
               </div>
-              <div class="drawer-stat-card">
-                <span class="stat-label">PREFIXO DDD</span>
-                <span class="stat-value font-mono" id="drawer-ddd">(19)</span>
-              </div>
-              <div class="drawer-stat-card">
-                <span class="stat-label">STATUS</span>
-                <span class="stat-value" id="drawer-capital-status">Município</span>
-              </div>
-              <div class="drawer-stat-card">
-                <span class="stat-label">DISTÂNCIA CAPITAL</span>
-                <span class="stat-value font-mono" id="drawer-distance">-- km</span>
-              </div>
+              <div class="card-title">Mapa Tático &amp; Rotas</div>
+              <p class="card-desc">
+                Navegação vetorial offline do Brasil, cálculo de rotas com estimativa de combustível/água, camadas de hospitais/bombeiros e marcadores GPX.
+              </p>
             </div>
 
-            <!-- Geographic Coordinates Box -->
-            <div class="drawer-section">
-              <div class="drawer-section-title">📍 Coordenadas Geográficas</div>
-              <div class="coords-box">
-                <div>
-                  <div class="text-[11px] text-gray-400">LATITUDE / LONGITUDE</div>
-                  <div class="text-sm font-mono text-emerald-400 font-bold" id="drawer-coords">-23.0856°, -46.9484°</div>
-                </div>
-                <button type="button" class="btn-copy-coords" onclick="copyCityCoords()" id="btn-copy-coords" title="Copiar coordenadas">
-                  📋 Copiar
-                </button>
+            <!-- Wikipédia Completa -->
+            <div class="tactical-card interactive" onclick="switchTab('wiki')">
+              <div class="card-top-row">
+                <div class="card-icon blue">📚</div>
+                <span class="card-tag tag-wiki">Acervo ZIM</span>
               </div>
+              <div class="card-title">Wikipédia em Português</div>
+              <p class="card-desc">
+                Mais de 1 milhão de artigos ilustrados, enciclopédia médica, história, geografia dos municípios brasileiros e ciência sem precisar de rede.
+              </p>
             </div>
 
-            <!-- Quick Zoom & Routing Actions -->
-            <div class="drawer-section">
-              <div class="drawer-section-title">🔍 Visualização Tática & Navegação</div>
-              <div class="drawer-actions-row">
-                <button type="button" class="btn-drawer-action" onclick="zoomCity(14)">
-                  <span>🏘️</span> Nível de Ruas (Zoom 14)
-                </button>
-                <button type="button" class="btn-drawer-action" onclick="zoomCity(11.5)">
-                  <span>🗺️</span> Visão Regional (Zoom 11.5)
-                </button>
-                <button type="button" class="btn-drawer-action btn-route-city-action" onclick="planRouteToSelectedCity()">
-                  <span>🧭</span> Traçar Rota até esta Cidade
-                </button>
+            <!-- Primeiros Socorros -->
+            <div class="tactical-card interactive" onclick="switchTab('emergencies')">
+              <div class="card-top-row">
+                <div class="card-icon red">🚑</div>
+                <span class="card-tag tag-alert">Triagem Rápida</span>
               </div>
+              <div class="card-title">Primeiros Socorros</div>
+              <p class="card-desc">
+                Protocolos diretos para Parada Cardíaca (RCP), Desengasgo (Heimlich), Controle de Hemorragias e Acidentes com Animais Peçonhentos.
+              </p>
             </div>
 
-            <!-- Offline Wikipedia Integration -->
-            <div class="drawer-section">
-              <div class="drawer-section-title">📚 Enciclopédia Offline (ZIM Kiwix)</div>
-              <a href="#" id="drawer-wiki-link" target="_blank" class="btn-wiki-open">
-                <span class="text-2xl">📖</span>
-                <div class="text-left">
-                  <div class="font-bold text-sm text-white">Artigo Completo na Wikipédia</div>
-                  <div class="text-xs text-emerald-300">História, demografia, relevo, hidrografia e economia</div>
-                </div>
-              </a>
+            <!-- Racionamento & Estoque -->
+            <div class="tactical-card interactive" onclick="switchTab('rationing')">
+              <div class="card-top-row">
+                <div class="card-icon amber">🎒</div>
+                <span class="card-tag tag-amber">Logística</span>
+              </div>
+              <div class="card-title">Calculadora de Racionamento</div>
+              <p class="card-desc">
+                Dimensionamento automático de litros de água, calorias diárias, cesta de alimentos não-perecíveis e autonomia de bateria/gerador.
+              </p>
             </div>
 
-            <!-- Direct Emergency Lines -->
-            <div class="drawer-section">
-              <div class="drawer-section-title">🚨 Linhas Nacionais de Socorro</div>
-              <div class="emergency-grid">
+            <!-- Rádio & Telecom -->
+            <div class="tactical-card interactive" onclick="switchTab('telecom')">
+              <div class="card-top-row">
+                <div class="card-icon cyan">📻</div>
+                <span class="card-tag tag-active">VHF / PX / HF</span>
+              </div>
+              <div class="card-title">Rádio &amp; Telecomunicações</div>
+              <p class="card-desc">
+                Tabela de frequências de socorro no Brasil (PX Canal 9, Marítimo 16, Defesa Civil), Código Q, Alfabeto Fonético e calculadora de antena dipolo.
+              </p>
+            </div>
+
+            <!-- Sinais & Morse SOS -->
+            <div class="tactical-card interactive" onclick="switchTab('morse')">
+              <div class="card-top-row">
+                <div class="card-icon red">🚨</div>
+                <span class="card-tag tag-alert">Sinalizador</span>
+              </div>
+              <div class="card-title">Sinais &amp; Morse SOS</div>
+              <p class="card-desc">
+                Farol óptico de tela cheia para resgate noturno, sintetizador sonoro de 800 Hz em tempo real, tradutor Morse e sinais Terra-Ar SAR.
+              </p>
+            </div>
+
+            <!-- Manuais de Resiliência -->
+            <div class="tactical-card interactive" onclick="switchTab('survival')">
+              <div class="card-top-row">
+                <div class="card-icon green">🏕️</div>
+                <span class="card-tag tag-active">Manual de Campo</span>
+              </div>
+              <div class="card-title">Manuais de Resiliência</div>
+              <p class="card-desc">
+                Purificação química e filtragem de água, conservação de alimentos a longo prazo, sistemas solares 12V Off-Grid e nós de salvamento.
+              </p>
+            </div>
+
+            <!-- Cartão de Bolso A4 -->
+            <div class="tactical-card interactive" onclick="switchTab('pocketcard')">
+              <div class="card-top-row">
+                <div class="card-icon blue">📄</div>
+                <span class="card-tag tag-wiki">Imprimível</span>
+              </div>
+              <div class="card-title">Cartão Tático de Bolso A4</div>
+              <p class="card-desc">
+                Resumo de emergência em folha única dobrável para levar na carteira, porta-luvas ou mochila de evacuação (72h).
+              </p>
+            </div>
+
+            <!-- Telefones Nacionais de Emergência -->
+            <div class="tactical-card" style="border-left: 3px solid var(--accent-red);">
+              <div class="card-top-row">
+                <div class="card-icon red">📞</div>
+                <span class="card-tag tag-alert">Socorro Nacional</span>
+              </div>
+              <div class="card-title">Telefones de Emergência</div>
+              <div class="emergency-grid mt-1">
                 <div class="emergency-pill"><span class="em-num text-red-400">190</span><span class="em-name">Polícia Militar</span></div>
-                <div class="emergency-pill"><span class="em-num text-red-400">192</span><span class="em-name">SAMU Emergência</span></div>
-                <div class="emergency-pill"><span class="em-num text-red-400">193</span><span class="em-name">Corpo de Bombeiros</span></div>
+                <div class="emergency-pill"><span class="em-num text-red-400">192</span><span class="em-name">SAMU Médico</span></div>
+                <div class="emergency-pill"><span class="em-num text-red-400">193</span><span class="em-name">Bombeiros</span></div>
                 <div class="emergency-pill"><span class="em-num text-amber-400">199</span><span class="em-name">Defesa Civil</span></div>
               </div>
             </div>
 
           </div>
-        </div>
 
-        <!-- Map Canvas -->
-        <div id="map-container"></div>
-      </div>
-    </section>
-
-    <!-- 3. TAB: Wikipédia & Acervo Kiwix -->
-    <section class="tab-view" id="tab-wiki">
-      <div class="kiwix-frame-container">
-        <!-- Floating Action Bar -->
-        <div style="position: absolute; top: 12px; right: 12px; z-index: 50; display: flex; gap: 8px;">
-          <a href="http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05" target="_blank" class="nav-tab-btn" style="background: rgba(15,20,26,0.9); border: 1px solid var(--border); color: #fff;">
-            ↗️ Abrir Wikipédia em Nova Aba
-          </a>
-          <a href="http://localhost:8090" target="_blank" class="nav-tab-btn" style="background: rgba(15,20,26,0.9); border: 1px solid var(--border); color: #fff;">
-            📚 Estante de Livros
-          </a>
-        </div>
-        <iframe id="kiwix-iframe" class="kiwix-iframe" src=""></iframe>
-      </div>
-    </section>
-
-    <!-- 4. TAB: Primeiros Socorros -->
-    <section class="tab-view" id="tab-emergencies">
-      <div class="content-detail-view">
-        <div class="mb-6">
-          <h2 class="text-2xl font-extrabold text-white mb-2">Protocolos de Primeiros Socorros & Triagem</h2>
-          <p class="text-gray-400 text-sm">
-            Guias de intervenção imediata para salvar vidas em situações de desastre, acidentes ou isolamento hospitalar.
-          </p>
-        </div>
-        <div id="emergencies-container">
-          <!-- Populated by app.js -->
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. TAB: Manuais de Sobrevivência -->
-    <section class="tab-view" id="tab-survival">
-      <div class="content-detail-view">
-        <div class="mb-6">
-          <h2 class="text-2xl font-extrabold text-white mb-2">Manuais Práticos de Sobrevivência & Resiliência</h2>
-          <p class="text-gray-400 text-sm">
-            Instruções técnicas para obtenção de água potável, telecomunicações de emergência, energia solar e armazenamento seguro de alimentos.
-          </p>
-        </div>
-        <div id="survival-container">
-          <!-- Populated by app.js -->
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. TAB: Calculadora de Racionamento & Estoque -->
-    <section class="tab-view" id="tab-rationing">
-      <div class="content-detail-view">
-        <div class="mb-6 flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h2 class="text-2xl font-extrabold text-white mb-2">Calculadora Tática de Racionamento &amp; Estoque</h2>
-            <p class="text-gray-400 text-sm">
-              Dimensionamento logístico de água, calorias, cesta de alimentos duráveis e autonomia energética para sobrevivência em grupo.
-            </p>
-          </div>
-          <button type="button" class="btn-export-gpx" onclick="printRationingList()">
-            <span>🖨️</span> Imprimir Lista de Suprimentos
-          </button>
-        </div>
-
-        <div class="drawer-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
-          <!-- Controls Panel -->
-          <div class="tactical-card" style="padding: 1.25rem;">
-            <h3 class="text-base font-bold text-emerald-400 mb-3 flex items-center gap-2">
-              <span>⚙️</span> Parâmetros da Equipe / Família
-            </h3>
-            
-            <div class="mb-4">
-              <label class="stat-label">NÚMERO DE ADULTOS</label>
-              <div class="flex items-center gap-3 mt-1">
-                <input type="number" id="calc-adults" class="route-input font-mono text-center font-bold" value="2" min="1" max="50" onchange="calculateRationing()">
-                <span class="text-xs text-gray-400">(Necessidade calórica base: 2.200 kcal/dia)</span>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <label class="stat-label">NÚMERO DE CRIANÇAS (&lt; 12 ANOS)</label>
-              <div class="flex items-center gap-3 mt-1">
-                <input type="number" id="calc-children" class="route-input font-mono text-center font-bold" value="1" min="0" max="50" onchange="calculateRationing()">
-                <span class="text-xs text-gray-400">(Necessidade calórica base: 1.500 kcal/dia)</span>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <label class="stat-label">DURAÇÃO DO ISOLAMENTO / CONTINGÊNCIA</label>
-              <div class="map-quick-chips mt-1 mb-2">
-                <button type="button" class="chip-btn" onclick="setRationingDays(3)">3 dias</button>
-                <button type="button" class="chip-btn" onclick="setRationingDays(7)">7 dias</button>
-                <button type="button" class="chip-btn chip-highlight" id="btn-days-15" onclick="setRationingDays(15)">15 dias</button>
-                <button type="button" class="chip-btn" onclick="setRationingDays(30)">30 dias</button>
-                <button type="button" class="chip-btn" onclick="setRationingDays(60)">60 dias</button>
-                <button type="button" class="chip-btn" onclick="setRationingDays(90)">90 dias</button>
-              </div>
-              <input type="number" id="calc-days" class="route-input font-mono text-center font-bold" value="15" min="1" max="365" onchange="calculateRationing()">
-            </div>
-
+          <!-- System Status Footer -->
+          <div class="status-footer-bar">
             <div>
-              <label class="stat-label">NÍVEL DE ATIVIDADE FÍSICA</label>
-              <select id="calc-activity" class="route-input mt-1" onchange="calculateRationing()">
-                <option value="1.0">Baixo / Repouso em Abrigo (Base calórica mínima)</option>
-                <option value="1.2" selected>Moderado / Tarefas do Campo e Guarda (+20%)</option>
-                <option value="1.5">Intenso / Marcha de Evacuação ou Reconstrução (+50%)</option>
-              </select>
+              <strong>Status do Acervo Local:</strong> <span id="status-summary">Carregando dados...</span>
+            </div>
+            <div>
+              Armazenamento: <strong class="text-white">HD Externo 1 TB (E:\)</strong> &bull; Servidor: <strong class="text-emerald-400">Docker Offline</strong>
             </div>
           </div>
 
-          <!-- Vital Outputs Summary -->
-          <div class="tactical-card" style="padding: 1.25rem;">
-            <h3 class="text-base font-bold text-cyan-400 mb-3 flex items-center gap-2">
-              <span>📊</span> Demanda Vital Total do Período
-            </h3>
-            
-            <div class="route-metrics-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 1rem;">
-              <div class="metric-card">
-                <span class="metric-title">ÁGUA TOTAL DE CONSUMO</span>
-                <span class="metric-value font-mono text-cyan-400" id="res-water-total">0 L</span>
-                <span class="text-[11px] text-gray-500" id="res-water-sub">Consumo + Cozimento</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-title">ÁGUA HIGIENE MÍNIMA</span>
-                <span class="metric-value font-mono text-blue-400" id="res-water-hygiene">0 L</span>
-                <span class="text-[11px] text-gray-500">2 L / pessoa / dia</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-title">CALORIAS TOTAIS</span>
-                <span class="metric-value font-mono text-amber-400" id="res-calories-total">0 kcal</span>
-                <span class="text-[11px] text-gray-500" id="res-calories-daily">0 kcal / dia</span>
-              </div>
-              <div class="metric-card">
-                <span class="metric-title">ESTIMATIVA PESO SECO</span>
-                <span class="metric-value font-mono text-emerald-400" id="res-food-weight">0 kg</span>
-                <span class="text-[11px] text-gray-500">Alimentos sem água</span>
-              </div>
-            </div>
-
-            <!-- Energy & Fuel Autonomy -->
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;">
-              <div class="text-xs font-bold text-gray-300 uppercase mb-2">⚡ Autonomia de Energia &amp; Comunicação</div>
-              <div class="text-xs space-y-1 text-gray-300">
-                <div>🔋 <strong>Bateria 12V 100Ah:</strong> <span id="res-battery-days" class="text-emerald-400 font-mono font-bold">0 dias</span> de rádio PX e iluminação LED básica.</div>
-                <div>⛽ <strong>Combustível Gerador (4h/dia):</strong> <span id="res-fuel-generator" class="text-amber-400 font-mono font-bold">0 L</span> de gasolina/diesel.</div>
-                <div>🔦 <strong>Pilhas AA / AAA:</strong> <span id="res-batteries-count" class="text-cyan-400 font-mono font-bold">0 un</span> recomendadas para lanternas/rádios.</div>
-              </div>
-            </div>
-          </div>
         </div>
+      </section>
 
-        <!-- Food Supplies Breakdown Table -->
-        <div class="tactical-card mt-5" style="padding: 1.25rem;">
-          <h3 class="text-base font-bold text-white mb-3 flex items-center justify-between">
-            <span>🍲 Cesta Tática de Estocagem Não-Perecível (Padrão Brasil)</span>
-            <span class="text-xs text-gray-400 font-mono" id="res-group-desc">3 pessoas / 15 dias</span>
-          </h3>
-          <div style="overflow-x: auto;">
-            <table class="w-full text-left text-xs text-gray-300 border-collapse" style="width: 100%;">
-              <thead>
-                <tr style="border-bottom: 1px solid var(--border); color: #94a3b8;">
-                  <th style="padding: 0.6rem 0.8rem;">ALIMENTO DURÁVEL</th>
-                  <th style="padding: 0.6rem 0.8rem;">QUANTIDADE RECOMENDADA</th>
-                  <th style="padding: 0.6rem 0.8rem;">VALOR CALÓRICO TOTAL</th>
-                  <th style="padding: 0.6rem 0.8rem;">DURABILIDADE EM LOCAL SECO</th>
-                </tr>
-              </thead>
-              <tbody id="rationing-table-body">
-                <!-- Injected via JavaScript -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
+      <!-- =================================================================
+           2. TAB: MAPA & ROTAS DO BRASIL
+           ================================================================= -->
+      <section class="tab-view" id="tab-map">
+        <div class="map-view-container">
 
-    <!-- 7. TAB: Telecomunicações, Rádio & Frequências -->
-    <section class="tab-view" id="tab-telecom">
-      <div class="content-detail-view">
-        <div class="mb-6">
-          <h2 class="text-2xl font-extrabold text-white mb-2">Telecomunicações Táticas &amp; Rádio de Campo</h2>
-          <p class="text-gray-400 text-sm">
-            Frequências oficiais brasileiras de socorro (PX, Marítimo, Radioamador, Aeronáutico), Código Q, Alfabeto Fonético e Calculadora de Antenas de Emergência.
-          </p>
-        </div>
-
-        <!-- Interactive Antenna Calculator -->
-        <div class="tactical-card mb-6" style="padding: 1.25rem; border-left: 4px solid var(--accent-cyan);">
-          <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <span>📡</span> Calculadora de Antena Dipolo de Emergência (Meia Onda 1/2 λ)
-            </h3>
-            <span class="card-tag tag-active">Fio de Luz Comum</span>
-          </div>
-          <p class="text-xs text-gray-400 mb-3">
-            Crie uma antena de alta eficiência no mato ou em apagões usando apenas fio comum de luz (1,5mm a 2,5mm) e cabo coaxial de 50 ohms.
-          </p>
-          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
-              <label class="stat-label">FREQUÊNCIA DESEJADA (MHz)</label>
-              <input type="number" id="calc-antenna-freq" class="route-input font-mono mt-1" value="146.520" step="0.005" oninput="calculateAntennaDipole()">
-            </div>
-            <div style="flex: 1; min-width: 200px;">
-              <label class="stat-label">ATALHOS RÁPIDOS</label>
-              <div class="flex gap-2 mt-1">
-                <button type="button" class="chip-btn" onclick="setAntennaPreset(27.065)">PX Ch 9 (27 MHz)</button>
-                <button type="button" class="chip-btn" onclick="setAntennaPreset(146.520)">VHF 2m (146 MHz)</button>
-                <button type="button" class="chip-btn" onclick="setAntennaPreset(156.800)">Marítimo Ch 16</button>
+          <!-- Clean Floating Map HUD -->
+          <div class="map-hud">
+            <!-- Row 1: Search Input + Route & Waypoint Drawer Toggles -->
+            <div class="map-search-row">
+              <div class="map-search-box">
+                <span class="text-emerald-400">🔍</span>
+                <input
+                  type="text"
+                  id="map-city-search"
+                  class="map-search-input"
+                  placeholder="Buscar município ou coordenadas (ex: Louveira, São Paulo, Brasília)..."
+                  autocomplete="off"
+                >
               </div>
+              <button type="button" class="btn-toggle-routes" id="btn-toggle-route-panel" onclick="toggleRoutePlanner()">
+                <span>🧭</span> <span class="btn-text-hide-sm">Rotas</span>
+              </button>
+              <button type="button" class="btn-toggle-wpts" id="layer-btn-waypoints" onclick="toggleWaypointsDrawer()">
+                <span>📌</span> <span class="btn-text-hide-sm">Pontos</span> (<span id="user-wpt-badge">0</span>)
+              </button>
             </div>
-          </div>
-          <div class="route-metrics-grid mt-4" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="metric-card">
-              <span class="metric-title">COMPRIMENTO TOTAL DA ANTENA</span>
-              <span class="metric-value font-mono text-cyan-400" id="antenna-res-total">0.97 m</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-title">CADA PERNA DE FIO (POLO A E POLO B)</span>
-              <span class="metric-value font-mono text-emerald-400" id="antenna-res-leg">48.6 cm</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-title">FÓRMULA EMPÍRICA</span>
-              <span class="metric-value font-mono text-white" style="font-size: 0.85rem;">L = 142.5 / f (MHz)</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- Radio Bands Table -->
-        <div class="tactical-card mb-6" style="padding: 1.25rem;">
-          <h3 class="text-base font-bold text-white mb-3">📻 Frequências Estratégicas de Emergência do Brasil</h3>
-          <div id="telecom-bands-container" class="space-y-4">
-            <!-- Populated via JavaScript from /api/radio -->
-          </div>
-        </div>
+            <!-- Autocomplete Dropdown -->
+            <div id="map-search-results" class="search-results-dropdown"></div>
 
-        <!-- Q-Code & Phonetic Alphabet Grid -->
-        <div class="drawer-grid" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem;">
-          <!-- Q-Code Table -->
-          <div class="tactical-card" style="padding: 1.25rem;">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-base font-bold text-white flex items-center gap-2">
-                <span>📑</span> Código Q Operacional
-              </h3>
-              <input type="text" id="qcode-search-input" class="route-input font-mono text-xs" style="width: 140px; padding: 0.35rem 0.5rem;" placeholder="Filtrar (ex: QTH)..." oninput="filterQCode()">
-            </div>
-            <div id="qcode-list-container" class="route-steps-list" style="max-height: 380px;">
-              <!-- Populated via JavaScript -->
-            </div>
-          </div>
-
-          <!-- NATO Phonetic Alphabet -->
-          <div class="tactical-card" style="padding: 1.25rem;">
-            <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2">
-              <span>🗣️</span> Alfabeto Fonético Internacional (ICAO)
-            </h3>
-            <div id="phonetic-list-container" class="route-steps-list" style="max-height: 380px;">
-              <!-- Populated via JavaScript -->
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 8. TAB: Sinais de Socorro, Morse Óptico & Sonoro -->
-    <section class="tab-view" id="tab-morse">
-      <div class="content-detail-view">
-        <div class="mb-6">
-          <h2 class="text-2xl font-extrabold text-white mb-2">Central de Sinais de Socorro &amp; Código Morse</h2>
-          <p class="text-gray-400 text-sm">
-            Transmissor visual de alta luminosidade na tela, sintetizador sonoro de 800 Hz em tempo real (100% offline via Web Audio) e convenções internacionais de resgate.
-          </p>
-        </div>
-
-        <!-- Emergency SOS Beacons Control Panel -->
-        <div class="drawer-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
-          <!-- Optical SOS Flasher -->
-          <div class="tactical-card" style="padding: 1.25rem; border: 1px solid var(--accent-red);">
-            <div class="flex items-center justify-between mb-2">
-              <span class="card-tag tag-alert">ÓPTICO NOTURNO</span>
-              <span class="text-xl">💡</span>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-1">Farol de SOS Visual (Tela Cheia)</h3>
-            <p class="text-xs text-gray-400 mb-4">
-              Coloca a tela do dispositivo para piscar ciclicamente no padrão internacional de socorro <strong>SOS (... --- ...)</strong> em contraste máximo de branco e preto.
-            </p>
-            <button type="button" id="btn-toggle-optical-sos" class="btn-calc-route" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #fff;" onclick="toggleOpticalSos()">
-              <span>🚨</span> INICIAR SINALIZADOR VISUAL (SOS)
-            </button>
-          </div>
-
-          <!-- Audio 800Hz Morse Beacon -->
-          <div class="tactical-card" style="padding: 1.25rem; border: 1px solid var(--accent-green);">
-            <div class="flex items-center justify-between mb-2">
-              <span class="card-tag tag-active">ÁUDIO SINTETIZADO</span>
-              <span class="text-xl">🔊</span>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-1">Sinal Sonoro Contínuo (800 Hz)</h3>
-            <p class="text-xs text-gray-400 mb-4">
-              Sintetizador de onda senoidal de 800 Hz (frequência de máxima audibilidade humana) transmitindo o código SOS audível a longas distâncias.
-            </p>
-            <button type="button" id="btn-toggle-audio-sos" class="btn-calc-route" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #000;" onclick="toggleAudioSos()">
-              <span>🔊</span> INICIAR BIPE SONORO (SOS)
-            </button>
-          </div>
-        </div>
-
-        <!-- Text to Morse Translator -->
-        <div class="tactical-card mb-6" style="padding: 1.25rem;">
-          <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
-            <span>🔤</span> Tradutor e Transmissor de Mensagem Livre em Morse
-          </h3>
-          <p class="text-xs text-gray-400 mb-3">
-            Digite qualquer texto, coordenadas ou nome de cidade para gerar e reproduzir a sequência em código Morse.
-          </p>
-          <div class="flex gap-2 mb-3">
-            <input type="text" id="morse-custom-input" class="route-input" placeholder="Digite uma mensagem (ex: PRECISAMOS DE AGUA EM LOUVEIRA)..." value="SOS NOMAD BRASIL">
-            <button type="button" class="chip-btn chip-highlight" onclick="convertAndPlayCustomMorse()">
-              <span>▶️</span> Transmitir
-            </button>
-          </div>
-          <div style="background: #000; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem;">
-            <div class="text-[11px] text-gray-500 font-mono mb-1">CÓDIGO MORSE GERADO:</div>
-            <div id="morse-output-display" class="font-mono text-emerald-400 font-bold text-lg tracking-widest break-all">
-              ... --- ... / -. --- -- .- -.. / -... .-. .- ... .. .-..
-            </div>
-          </div>
-        </div>
-
-        <!-- Ground-to-Air Signals (SAR) & Whistle Code -->
-        <div class="drawer-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
-          <!-- Ground-to-Air Symbols -->
-          <div class="tactical-card" style="padding: 1.25rem;">
-            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
-              <span>🚁</span> Sinais Terra-Ar para Helicópteros e Aviões (SAR / ICAO)
-            </h3>
-            <p class="text-xs text-gray-400 mb-3">
-              Desenhe no chão com galhos, pedras, tecidos ou cavando valas de alto contraste com no mínimo 3 metros de tamanho.
-            </p>
-            <div class="space-y-2 text-xs text-gray-300">
-              <div class="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5">
-                <span class="font-mono text-xl font-black text-amber-400 w-10 text-center">V</span>
-                <span class="flex-1 font-bold">Preciso de Assistência / Auxílio Geral</span>
+            <!-- Row 2: Compact Layer Filters & Quick Cities -->
+            <div class="map-filters-bar">
+              <div class="map-layer-toggles">
+                <span class="layer-toggle-title">POIs:</span>
+                <button type="button" class="layer-chip active" id="layer-btn-hospital" onclick="togglePoiCategory('hospital')">
+                  <span>🏥</span> Hospitais
+                </button>
+                <button type="button" class="layer-chip active" id="layer-btn-rescue" onclick="togglePoiCategory('rescue')">
+                  <span>🚒</span> Bombeiros
+                </button>
+                <button type="button" class="layer-chip active" id="layer-btn-police" onclick="togglePoiCategory('police')">
+                  <span>🛡️</span> PRF
+                </button>
+                <button type="button" class="layer-chip active" id="layer-btn-water" onclick="togglePoiCategory('water')">
+                  <span>💧</span> Água
+                </button>
+                <button type="button" class="layer-chip active" id="layer-btn-fuel" onclick="togglePoiCategory('fuel')">
+                  <span>⛽</span> Postos
+                </button>
               </div>
-              <div class="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5">
-                <span class="font-mono text-xl font-black text-red-400 w-10 text-center">X</span>
-                <span class="flex-1 font-bold">Preciso de Assistência Médica Urgente</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5">
-                <span class="font-mono text-xl font-black text-blue-400 w-10 text-center">N</span>
-                <span class="flex-1 font-bold">Não / Negativo</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5">
-                <span class="font-mono text-xl font-black text-emerald-400 w-10 text-center">Y</span>
-                <span class="flex-1 font-bold">Sim / Afirmativo</span>
-              </div>
-              <div class="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5">
-                <span class="font-mono text-xl font-black text-cyan-400 w-10 text-center">&rarr;</span>
-                <span class="flex-1 font-bold">Avançando / Deslocando nesta direção indicada</span>
+
+              <div class="map-quick-chips">
+                <span class="layer-toggle-title">IR PARA:</span>
+                <button type="button" class="chip-btn chip-highlight" onclick="flyToCity('sp-louveira')">📍 Louveira</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('sp-vinhedo')">Vinhedo</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('sp-campinas')">Campinas</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('sp-sao-paulo')">São Paulo</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('df-brasilia')">Brasília</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('rj-rio-de-janeiro')">Rio de Janeiro</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('pr-curitiba')">Curitiba</button>
+                <button type="button" class="chip-btn" onclick="flyToCity('ba-salvador')">Salvador</button>
               </div>
             </div>
           </div>
 
-          <!-- Whistle Code & Mirror -->
-          <div class="tactical-card" style="padding: 1.25rem;">
-            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
-              <span>📯</span> Código Internacional do Apito &amp; Espelho
-            </h3>
-            <p class="text-xs text-gray-400 mb-3">
-              O som do apito corta a chuva e o vento onde a voz humana falha em poucos minutos.
-            </p>
-            <div class="space-y-3 text-xs text-gray-300">
-              <div class="p-2 rounded bg-black/40 border border-red-500/30">
-                <div class="text-red-400 font-bold mb-1">🚨 3 SILVOS FORTES (1 minuto de pausa, repita):</div>
-                <div>Código universal de socorro ("Estou em perigo, venham até mim"). Qualquer equipe de resgate reconhece de imediato.</div>
-              </div>
-              <div class="p-2 rounded bg-black/40 border border-white/5">
-                <div class="text-emerald-400 font-bold mb-1">✅ 1 SILVO LONGO:</div>
-                <div>Resposta dos socorristas ("Onde você está?"). Responda de volta com 3 silvos.</div>
-              </div>
-              <div class="p-2 rounded bg-black/40 border border-white/5">
-                <div class="text-cyan-400 font-bold mb-1">🪞 Espelho Sinalizador (Heliógrafo):</div>
-                <div>Faça um 'V' com os dedos da mão livre apontando para a aeronave ou morro distante. Alinhe o reflexo do sol passando pelo centro dos dedos para emitir flashes precisos.</div>
-              </div>
-            </div>
+          <!-- Coordinates HUD -->
+          <div class="map-coordinates-bar" id="hud-coordinates">
+            LAT: -15.7975° | LNG: -47.8919° | ZOOM: 4.2
           </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- 9. TAB: Cartão Tático de Bolso (Folha A4 Imprimível) -->
-    <section class="tab-view" id="tab-pocketcard">
-      <div class="content-detail-view">
-        <div class="mb-6 flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h2 class="text-2xl font-extrabold text-white mb-2">Cartão Tático de Bolso (Folha A4 Dobrável)</h2>
-            <p class="text-gray-400 text-sm">
-              Documento condensado de alta densidade pronto para impressão. Dobre em 4 partes para levar na carteira, kit EDC ou mochila de emergência.
-            </p>
-          </div>
-          <button type="button" class="btn-calc-route" style="width: auto; padding: 0.75rem 1.5rem;" onclick="window.print()">
-            <span>🖨️</span> Imprimir Folha A4 Agora
-          </button>
-        </div>
-
-        <!-- Printable Container -->
-        <div id="printable-pocket-card" class="printable-card-wrap">
-          <!-- Quadrant 1: Emergency Contacts & ID -->
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span class="font-bold">1. SOCORRO NACIONAL &amp; DADOS PESSOAIS</span>
-              <span class="text-xs">BRASIL 🇧🇷</span>
-            </div>
-            <div class="pocket-body text-xs">
-              <div class="grid grid-cols-2 gap-1 mb-2 font-bold font-mono">
-                <div>🚨 190 PM</div>
-                <div>🚑 192 SAMU</div>
-                <div>🚒 193 Bombeiros</div>
-                <div>🛡️ 199 Defesa Civil</div>
-                <div>🛣️ 191 PRF</div>
-                <div>👶 100 Direitos Humanos</div>
+          <!-- Drawer 1: Tactical Route Planner Panel -->
+          <div id="route-planner-panel" class="route-planner-panel">
+            <div class="route-panel-header">
+              <div class="flex items-center gap-2">
+                <span class="route-badge">ROTA TÁTICA</span>
+                <span class="text-sm font-bold text-white">Planejador de Deslocamento</span>
               </div>
-              <div class="border-t border-gray-600 pt-2 space-y-1">
-                <div><strong>NOME:</strong> _________________________________</div>
-                <div class="flex justify-between">
-                  <span><strong>TIPO SANGUÍNEO:</strong> [  ]</span>
-                  <span><strong>DOADOR:</strong> (S/N)</span>
+              <button type="button" class="drawer-close-btn" onclick="toggleRoutePlanner(false)" title="Fechar">&times;</button>
+            </div>
+
+            <div class="route-panel-body">
+              <div class="route-inputs-card">
+                <!-- Origin -->
+                <div class="route-input-group">
+                  <div class="route-input-label">
+                    <span class="dot-origin">A</span>
+                    <span>Ponto de Partida (Origem)</span>
+                  </div>
+                  <div class="route-field-wrap">
+                    <input type="text" id="route-from-input" class="route-input" placeholder="Cidade de saída..." autocomplete="off">
+                    <button type="button" class="btn-input-action" onclick="enableMapPick('origin')" title="Clicar no mapa">📍 Mapa</button>
+                  </div>
+                  <div id="route-from-dropdown" class="search-results-dropdown route-dropdown"></div>
                 </div>
-                <div><strong>ALERGIAS:</strong> ______________________________</div>
-                <div><strong>CONTATO 1:</strong> _____________________________</div>
-                <div><strong>CONTATO 2:</strong> _____________________________</div>
+
+                <!-- Swap -->
+                <div class="route-swap-row">
+                  <button type="button" class="btn-swap-points" onclick="swapRoutePoints()">
+                    ⇅ Inverter Origem e Destino
+                  </button>
+                </div>
+
+                <!-- Destination -->
+                <div class="route-input-group">
+                  <div class="route-input-label">
+                    <span class="dot-dest">B</span>
+                    <span>Ponto de Chegada (Destino)</span>
+                  </div>
+                  <div class="route-field-wrap">
+                    <input type="text" id="route-to-input" class="route-input" placeholder="Cidade de destino..." autocomplete="off">
+                    <button type="button" class="btn-input-action" onclick="enableMapPick('dest')" title="Clicar no mapa">📍 Mapa</button>
+                  </div>
+                  <div id="route-to-dropdown" class="search-results-dropdown route-dropdown"></div>
+                </div>
+              </div>
+
+              <!-- Transport Profiles -->
+              <div class="route-profiles">
+                <button type="button" class="profile-option active" id="prof-driving" onclick="selectProfile('driving')">
+                  <span>🚗</span>
+                  <span>Veículo</span>
+                </button>
+                <button type="button" class="profile-option" id="prof-tactical" onclick="selectProfile('tactical')">
+                  <span>🛞</span>
+                  <span>4x4 Tático</span>
+                </button>
+                <button type="button" class="profile-option" id="prof-walking" onclick="selectProfile('walking')">
+                  <span>🥾</span>
+                  <span>Marcha a Pé</span>
+                </button>
+              </div>
+
+              <div class="route-actions-row">
+                <button type="button" class="btn-clear-route" onclick="clearCurrentRoute()">
+                  <span>🗑️</span> Limpar Rota
+                </button>
+              </div>
+
+              <!-- Map Pick Banner -->
+              <div id="map-pick-banner" class="map-pick-banner" style="display: none;">
+                <span>📍 Clique no mapa: <strong id="map-pick-target-name">Origem</strong></span>
+                <button type="button" onclick="cancelMapPick()" class="text-xs text-red-400 font-bold" style="background:none;border:none;cursor:pointer;text-decoration:underline;">Cancelar</button>
+              </div>
+
+              <!-- Loading Bar -->
+              <div id="route-loading-indicator" class="route-loading-indicator" style="display: none;">
+                <div class="route-loading-bar-wrap">
+                  <div class="route-loading-bar-fill"></div>
+                </div>
+                <div class="route-loading-text">
+                  <span>📡</span> Calculando rota tática...
+                </div>
+              </div>
+
+              <!-- Route Results -->
+              <div id="route-result-container" class="route-result-container" style="display: none;">
+                <div class="route-metrics-grid">
+                  <div class="metric-card">
+                    <span class="metric-title">DISTÂNCIA</span>
+                    <span class="metric-value text-emerald-400" id="route-metric-dist">0 km</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">TEMPO ESTIMADO</span>
+                    <span class="metric-value text-white" id="route-metric-dur">0 min</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title" id="route-metric-fuel-title">COMBUSTÍVEL</span>
+                    <span class="metric-value text-amber-400" id="route-metric-fuel">0 L</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">MODO DE REDE</span>
+                    <span class="metric-badge" id="route-metric-source">OSRM</span>
+                  </div>
+                </div>
+
+                <div class="route-steps-section">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-gray-300 uppercase">Passo a Passo</span>
+                    <span class="text-xs text-gray-500 font-mono" id="route-steps-count">0 etapas</span>
+                  </div>
+                  <div class="route-steps-list" id="route-steps-list"></div>
+                </div>
+
+                <button type="button" class="btn-export-gpx" onclick="downloadCurrentRouteGpx()">
+                  <span>📥</span> Baixar GPX (Garmin / OsmAnd)
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Quadrant 2: CPR & Heimlich -->
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span class="font-bold">2. PROTOCOLOS VITAIS IMEDIATOS</span>
-              <span class="text-xs">SAMU / AHA</span>
+          <!-- Drawer 2: Personal Waypoints Drawer -->
+          <div id="waypoints-drawer" class="route-planner-panel">
+            <div class="route-panel-header">
+              <div class="flex items-center gap-2">
+                <span class="route-badge" style="background: var(--accent-cyan-dim); color: #38bdf8; border-color: rgba(6,182,212,0.4);">WAYPOINTS</span>
+                <span class="text-sm font-bold text-white">Meus Marcadores Pessoais</span>
+              </div>
+              <button type="button" class="drawer-close-btn" onclick="toggleWaypointsDrawer(false)" title="Fechar">&times;</button>
             </div>
-            <div class="pocket-body text-xs space-y-2">
+
+            <div class="route-panel-body">
+              <div class="route-inputs-card">
+                <div class="text-xs font-bold text-gray-300 uppercase mb-1">Novo Marcador Tático</div>
+                <input type="text" id="wpt-name-input" class="route-input" placeholder="Nome (ex: Base Familiar, Abrigo, Fonte)...">
+
+                <div class="route-field-wrap">
+                  <select id="wpt-cat-select" class="route-input" style="flex: 1;">
+                    <option value="base">🏠 Base / Residência</option>
+                    <option value="rendezvous">🤝 Ponto de Encontro</option>
+                    <option value="shelter">🏕️ Refúgio / Sítio</option>
+                    <option value="water">💧 Fonte de Água</option>
+                    <option value="danger">⚠️ Perigo / Bloqueio</option>
+                  </select>
+                  <button type="button" class="btn-input-action" onclick="setWptFromMapCenter()" title="Usar centro do mapa">🎯 Centro</button>
+                </div>
+
+                <div class="route-field-wrap">
+                  <input type="text" id="wpt-lat-input" class="route-input font-mono text-xs" placeholder="Latitude (-23.0847)">
+                  <input type="text" id="wpt-lng-input" class="route-input font-mono text-xs" placeholder="Longitude (-46.9535)">
+                </div>
+
+                <div class="route-field-wrap">
+                  <button type="button" class="btn-export-gpx" style="flex: 1;" onclick="saveNewWaypoint()">
+                    <span>💾</span> Salvar Ponto
+                  </button>
+                  <button type="button" class="btn-clear-route" onclick="enableMapPick('waypoint')">
+                    <span>📍</span> Clicar Mapa
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase">Salvos (<span id="user-wpt-total">0</span>)</span>
+                <div class="flex gap-1">
+                  <button type="button" class="chip-btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem;" onclick="exportWaypointsGpx()">📥 GPX</button>
+                  <button type="button" class="chip-btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem;" onclick="exportWaypointsJson()">💾 JSON</button>
+                  <button type="button" class="chip-btn" style="padding: 0.2rem 0.5rem; font-size: 0.68rem;" onclick="document.getElementById('wpt-file-import').click()">📤 Importar</button>
+                  <input type="file" id="wpt-file-import" style="display: none;" accept=".json,.gpx" onchange="handleImportWaypoints(event)">
+                </div>
+              </div>
+
+              <div id="wpt-list-items" class="route-steps-list" style="max-height: 240px;">
+                <div class="text-xs text-gray-500 text-center">Nenhum marcador cadastrado ainda.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drawer 3: City Intel Drawer -->
+          <div id="city-intel-drawer" class="city-intel-drawer">
+            <div class="drawer-header">
               <div>
-                <strong class="text-red-400">PARADA CARDÍACA (RCP):</strong>
-                <ol class="list-decimal pl-4 mt-1">
-                  <li>Chame ajuda (192 ou 193) imediatamente.</li>
-                  <li>Vítima deitada de costas no chão firme.</li>
-                  <li>Mãos entrelaçadas no centro do peito.</li>
-                  <li><strong>100 a 120 compressões por minuto</strong> (afundar 5 a 6 cm).</li>
-                  <li>Não interrompa até o socorro chegar.</li>
-                </ol>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="drawer-badge" id="drawer-badge-region">SUDESTE</span>
+                  <span class="drawer-badge drawer-badge-state" id="drawer-badge-uf">SP</span>
+                </div>
+                <h3 id="drawer-city-name" class="drawer-title">Louveira</h3>
+                <span id="drawer-state-name" class="drawer-subtitle">São Paulo</span>
               </div>
-              <div class="border-t border-gray-600 pt-1">
-                <strong class="text-amber-400">DESENGASGO (HEIMLICH):</strong>
-                <div>Posicione-se atrás, punho fechado na boca do estômago (acima do umbigo). Pressione para dentro e para cima em forma de 'J' até expelir.</div>
+              <button type="button" class="drawer-close-btn" onclick="closeCityDrawer()" title="Fechar">&times;</button>
+            </div>
+
+            <div class="drawer-body">
+              <div class="drawer-grid">
+                <div class="drawer-stat-card">
+                  <span class="stat-label">CÓDIGO IBGE</span>
+                  <span class="stat-value font-mono" id="drawer-ibge">3527306</span>
+                </div>
+                <div class="drawer-stat-card">
+                  <span class="stat-label">PREFIXO DDD</span>
+                  <span class="stat-value font-mono" id="drawer-ddd">(19)</span>
+                </div>
+                <div class="drawer-stat-card">
+                  <span class="stat-label">STATUS</span>
+                  <span class="stat-value" id="drawer-capital-status">Município</span>
+                </div>
+                <div class="drawer-stat-card">
+                  <span class="stat-label">DISTÂNCIA CAPITAL</span>
+                  <span class="stat-value font-mono" id="drawer-distance">-- km</span>
+                </div>
+              </div>
+
+              <div class="drawer-section">
+                <div class="drawer-section-title">📍 Coordenadas Geográficas</div>
+                <div class="coords-box">
+                  <div>
+                    <div class="text-xs text-gray-400">LATITUDE / LONGITUDE</div>
+                    <div class="text-sm font-mono text-emerald-400 font-bold" id="drawer-coords">-23.0856°, -46.9484°</div>
+                  </div>
+                  <button type="button" class="btn-copy-coords" onclick="copyCityCoords()" id="btn-copy-coords">
+                    📋 Copiar
+                  </button>
+                </div>
+              </div>
+
+              <div class="drawer-section">
+                <div class="drawer-section-title">🔍 Navegação Tática</div>
+                <div class="drawer-actions-row">
+                  <button type="button" class="btn-drawer-action" onclick="zoomCity(14)">
+                    <span>🏘️</span> Zoom Ruas (14)
+                  </button>
+                  <button type="button" class="btn-drawer-action" onclick="zoomCity(11.5)">
+                    <span>🗺️</span> Regional (11.5)
+                  </button>
+                  <button type="button" class="btn-drawer-action btn-route-city-action" onclick="planRouteToSelectedCity()">
+                    <span>🧭</span> Traçar Rota até esta Cidade
+                  </button>
+                </div>
+              </div>
+
+              <div class="drawer-section">
+                <div class="drawer-section-title">📚 Enciclopédia Offline (ZIM Kiwix)</div>
+                <a href="#" id="drawer-wiki-link" target="_blank" class="btn-wiki-open">
+                  <span class="text-2xl">📖</span>
+                  <div>
+                    <div class="font-bold text-sm text-white">Artigo na Wikipédia Offline</div>
+                    <div class="text-xs text-emerald-400">História, demografia, relevo e economia</div>
+                  </div>
+                </a>
+              </div>
+
+              <div class="drawer-section">
+                <div class="drawer-section-title">🚨 Telefones de Emergência</div>
+                <div class="emergency-grid">
+                  <div class="emergency-pill"><span class="em-num text-red-400">190</span><span class="em-name">Polícia Militar</span></div>
+                  <div class="emergency-pill"><span class="em-num text-red-400">192</span><span class="em-name">SAMU</span></div>
+                  <div class="emergency-pill"><span class="em-num text-red-400">193</span><span class="em-name">Bombeiros</span></div>
+                  <div class="emergency-pill"><span class="em-num text-amber-400">199</span><span class="em-name">Defesa Civil</span></div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Quadrant 3: Water & Venomous Animals -->
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span class="font-bold">3. ÁGUA POTÁVEL &amp; PICADAS PEÇONHENTAS</span>
-              <span class="text-xs">MIN. SAÚDE</span>
+          <!-- Map Canvas -->
+          <div id="map-container"></div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           3. TAB: WIKIPÉDIA & ACERVO KIWIX
+           ================================================================= -->
+      <section class="tab-view" id="tab-wiki">
+        <div class="kiwix-frame-container">
+          <div class="kiwix-toolbar">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📚</span>
+              <span class="text-sm font-bold text-white">Wikipédia em Português &amp; Biblioteca Kiwix (Offline)</span>
             </div>
-            <div class="pocket-body text-xs space-y-2">
-              <div>
-                <strong class="text-cyan-400">DESINFECÇÃO QUÍMICA DE ÁGUA:</strong>
-                <ul class="list-disc pl-4 mt-1">
-                  <li>Água sanitária (2 a 2.5% hipoclorito sem alvejante).</li>
-                  <li><strong>2 gotas por 1 Litro</strong> de água límpida.</li>
-                  <li><strong>4 gotas por 1 Litro</strong> se turva/escura.</li>
-                  <li>Aguardar <strong>30 minutos</strong> antes de consumir.</li>
-                  <li>Fervura: 1 a 3 minutos borbulhando.</li>
-                </ul>
+            <div class="flex items-center gap-2">
+              <a href="http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05" target="_blank" class="chip-btn chip-highlight">
+                ↗️ Abrir Wikipédia em Nova Aba
+              </a>
+              <a href="http://localhost:8090" target="_blank" class="chip-btn">
+                📖 Estante de Livros (:8090)
+              </a>
+            </div>
+          </div>
+          <iframe id="kiwix-iframe" class="kiwix-iframe" src=""></iframe>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           4. TAB: PRIMEIROS SOCORROS
+           ================================================================= -->
+      <section class="tab-view" id="tab-emergencies">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">MEDICINA OPERACIONAL &amp; TRIAGEM</span>
+              <h2 class="page-title">Protocolos de Primeiros Socorros</h2>
+              <p class="page-subtitle">
+                Guias passo a passo de intervenção imediata para salvar vidas em acidentes, desastres naturais ou ausência de resgate médico próximo.
+              </p>
+            </div>
+          </div>
+
+          <div id="emergencies-container">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           5. TAB: MANUAIS DE SOBREVIVÊNCIA
+           ================================================================= -->
+      <section class="tab-view" id="tab-survival">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">ENGENHARIA DE CAMPO &amp; AUTONOMIA</span>
+              <h2 class="page-title">Manuais de Sobrevivência &amp; Resiliência</h2>
+              <p class="page-subtitle">
+                Procedimentos técnicos para captação e purificação de água, comunicações de contingência, energia solar 12V e estocagem alimentar.
+              </p>
+            </div>
+          </div>
+
+          <div id="survival-container">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           6. TAB: CALCULADORA DE RACIONAMENTO & ESTOQUE
+           ================================================================= -->
+      <section class="tab-view" id="tab-rationing">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">PLANEJAMENTO LOGÍSTICO FAMILIAR E DE GRUPO</span>
+              <h2 class="page-title">Calculadora de Racionamento &amp; Estoque</h2>
+              <p class="page-subtitle">
+                Dimensionamento exato de água potável, meta calórica, cesta de alimentos não-perecíveis e reservas de energia.
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="printRationingList()">
+              <span>🖨️</span> Imprimir Lista de Suprimentos
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Left Card: Parameters -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⚙️</span> Parâmetros da Equipe / Família
               </div>
-              <div class="border-t border-gray-600 pt-1">
-                <strong class="text-emerald-400">SERPENTES / ESCORPIÕES:</strong>
-                <div>NÃO fazer torniquete. NÃO chupar o veneno. Lave com água e sabão, mantenha membro elevado e hidratado até o hospital com soro.</div>
+
+              <div class="form-group">
+                <label class="form-label" for="calc-adults">Número de Adultos (Base: 2.200 kcal/dia)</label>
+                <input type="number" id="calc-adults" class="form-input font-mono font-bold" value="2" min="1" max="50" oninput="calculateRationing()">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="calc-children">Número de Crianças &lt; 12 anos (Base: 1.500 kcal/dia)</label>
+                <input type="number" id="calc-children" class="form-input font-mono font-bold" value="1" min="0" max="50" oninput="calculateRationing()">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="calc-days">Duração do Isolamento / Contingência (Dias)</label>
+                <div class="form-row mb-2">
+                  <button type="button" class="chip-btn" id="btn-days-3" onclick="setRationingDays(3)">3 dias</button>
+                  <button type="button" class="chip-btn" id="btn-days-7" onclick="setRationingDays(7)">7 dias</button>
+                  <button type="button" class="chip-btn chip-highlight" id="btn-days-15" onclick="setRationingDays(15)">15 dias</button>
+                  <button type="button" class="chip-btn" id="btn-days-30" onclick="setRationingDays(30)">30 dias</button>
+                  <button type="button" class="chip-btn" id="btn-days-60" onclick="setRationingDays(60)">60 dias</button>
+                  <button type="button" class="chip-btn" id="btn-days-90" onclick="setRationingDays(90)">90 dias</button>
+                </div>
+                <input type="number" id="calc-days" class="form-input font-mono font-bold" value="15" min="1" max="365" oninput="calculateRationing()">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="calc-activity">Nível de Esforço Físico</label>
+                <select id="calc-activity" class="form-select" onchange="calculateRationing()">
+                  <option value="1.0">Baixo / Repouso em Abrigo (Meta calórica padrão)</option>
+                  <option value="1.2" selected>Moderado / Tarefas de Campo e Vigília (+20%)</option>
+                  <option value="1.5">Intenso / Deslocamento a Pé ou Trabalho Pesado (+50%)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Right Card: Vital Outputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📊</span> Demanda Vital Total do Período
+              </div>
+
+              <div class="route-metrics-grid">
+                <div class="metric-card">
+                  <span class="metric-title">ÁGUA DE CONSUMO</span>
+                  <span class="metric-value text-cyan-400" id="res-water-total">0 L</span>
+                  <span class="text-xs text-gray-500" id="res-water-sub">Beber + Cozinhar</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">ÁGUA DE HIGIENE</span>
+                  <span class="metric-value text-blue-400" id="res-water-hygiene">0 L</span>
+                  <span class="text-xs text-gray-500">Mínimo 2 L/pessoa/dia</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">ENERGIA ALIMENTAR</span>
+                  <span class="metric-value text-amber-400" id="res-calories-total">0 kcal</span>
+                  <span class="text-xs text-gray-500" id="res-calories-daily">0 kcal / dia</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">PESO SECO ESTIMADO</span>
+                  <span class="metric-value text-emerald-400" id="res-food-weight">0 kg</span>
+                  <span class="text-xs text-gray-500">Alimentos desidratados/grãos</span>
+                </div>
+              </div>
+
+              <div class="metric-card mt-2">
+                <div class="text-xs font-bold text-white uppercase mb-2">⚡ Reserva Energética Recomendada</div>
+                <div class="space-y-2 text-xs text-gray-300">
+                  <div class="flex justify-between">
+                    <span>🔋 Autonomia Bateria 12V 100Ah (LED + Rádio PX):</span>
+                    <strong id="res-battery-days" class="text-emerald-400 font-mono">0 dias</strong>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>⛽ Combustível p/ Gerador Portátil (4h/dia):</span>
+                    <strong id="res-fuel-generator" class="text-amber-400 font-mono">0 L</strong>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>🔦 Pilhas Alcalinas AA / AAA de Reserva:</span>
+                    <strong id="res-batteries-count" class="text-cyan-400 font-mono">0 un</strong>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Quadrant 4: Radio & Morse Code -->
-          <div class="pocket-quadrant">
-            <div class="pocket-header">
-              <span class="font-bold">4. FREQUÊNCIAS DE RÁDIO &amp; CÓDIGO Q</span>
-              <span class="text-xs">COMUNICAÇÃO</span>
-            </div>
-            <div class="pocket-body text-xs space-y-1 font-mono">
-              <div><strong>PX Ch 9:</strong> 27.065 MHz (Emergência Nacional)</div>
-              <div><strong>PX Ch 19:</strong> 27.185 MHz (Rodovias/Trânsito)</div>
-              <div><strong>Marítimo Ch 16:</strong> 156.800 MHz (Socorro)</div>
-              <div><strong>VHF Chamada:</strong> 146.520 MHz Simplex</div>
-              <div><strong>RENER Defesa Civil:</strong> 7.060 MHz (40m)</div>
-              <div class="border-t border-gray-600 pt-1">
-                <strong>QAP:</strong> Na escuta | <strong>QSL:</strong> Entendido<br>
-                <strong>QTH:</strong> Localização | <strong>QRT:</strong> Desligando<br>
-                <strong>QRX:</strong> Aguarde | <strong>QTC:</strong> Mensagem urgente
+          <!-- Food Basket Table -->
+          <div class="tactical-card">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="section-heading" style="margin-bottom:0;">
+                <span>🍲</span> Cesta Tática de Estocagem Não-Perecível (Padrão Brasil)
               </div>
-              <div class="font-bold text-center text-red-400 pt-1">
-                SOS: &bull;&bull;&bull; &minus;&minus;&minus; &bull;&bull;&bull;
+              <span class="card-tag tag-active font-mono" id="res-group-desc">3 pessoas • 15 dias</span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="tactical-table">
+                <thead>
+                  <tr>
+                    <th>Alimento Durável</th>
+                    <th>Quantidade Recomendada</th>
+                    <th>Valor Calórico Total</th>
+                    <th>Validade em Local Seco</th>
+                  </tr>
+                </thead>
+                <tbody id="rationing-table-body">
+                  <!-- Populated by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           7. TAB: RÁDIO & TELECOMUNICAÇÕES
+           ================================================================= -->
+      <section class="tab-view" id="tab-telecom">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">ESPECTRO DE RADIOFREQUÊNCIA &amp; PROTOCOLOS</span>
+              <h2 class="page-title">Rádio &amp; Telecomunicações de Campo</h2>
+              <p class="page-subtitle">
+                Frequências oficiais de socorro no Brasil (Faixa do Cidadão PX, VHF Marítimo, Radioamador e Defesa Civil), Código Q e dimensionamento de antenas.
+              </p>
+            </div>
+          </div>
+
+          <!-- Dipole Antenna Calculator -->
+          <div class="tactical-card" style="border-left: 3px solid var(--accent-cyan);">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="section-heading" style="margin-bottom:0;">
+                <span>📡</span> Calculadora de Antena Dipolo de Emergência (Meia Onda 1/2 λ)
+              </div>
+              <span class="card-tag tag-active">Fio Elétrico Comum</span>
+            </div>
+            <p class="card-desc">
+              Construa uma antena dipolo ressonante usando fio comum (1,5 mm a 2,5 mm) para máxima eficiência de transmissão em situações de contingência.
+            </p>
+
+            <div class="grid-2">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="calc-antenna-freq">Frequência de Operação (MHz)</label>
+                <input type="number" id="calc-antenna-freq" class="form-input font-mono font-bold" value="146.520" step="0.005" oninput="calculateAntennaDipole()">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Bandas de Emergência Rápidas</label>
+                <div class="form-row">
+                  <button type="button" class="chip-btn" onclick="setAntennaPreset(27.065)">PX Ch 9 (27.065 MHz)</button>
+                  <button type="button" class="chip-btn chip-highlight" onclick="setAntennaPreset(146.520)">VHF (146.520 MHz)</button>
+                  <button type="button" class="chip-btn" onclick="setAntennaPreset(156.800)">Marítimo (156.8 MHz)</button>
+                  <button type="button" class="chip-btn" onclick="setAntennaPreset(7.060)">HF 40m (7.060 MHz)</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-3 mt-2">
+              <div class="metric-card">
+                <span class="metric-title">COMPRIMENTO TOTAL (PONTA A PONTA)</span>
+                <span class="metric-value text-cyan-400" id="antenna-res-total">0.97 m</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-title">CADA PERNA DO DIPOLO (2 FIOS IGUAIS)</span>
+                <span class="metric-value text-emerald-400" id="antenna-res-leg">48.6 cm</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-title">FÓRMULA FÍSICA APLICADA</span>
+                <span class="metric-value text-white" style="font-size: 0.9rem;">L = 142,5 / f (MHz)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Brazilian Emergency Radio Bands -->
+          <div class="tactical-card">
+            <div class="section-heading">
+              <span>📻</span> Frequências Estratégicas de Socorro e Escuta no Brasil
+            </div>
+            <div id="telecom-bands-container" class="space-y-4">
+              <!-- Populated by app.js -->
+            </div>
+          </div>
+
+          <!-- Q-Code & Phonetic Alphabet -->
+          <div class="grid-2">
+            <div class="tactical-card">
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="section-heading" style="margin-bottom:0;">
+                  <span>📑</span> Código Q Internacional
+                </div>
+                <input type="text" id="qcode-search-input" class="form-input font-mono text-xs" style="max-width: 170px;" placeholder="Filtrar (ex: QTH)..." oninput="filterQCode()">
+              </div>
+              <div id="qcode-list-container" class="route-steps-list" style="max-height: 360px;"></div>
+            </div>
+
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🗣️</span> Alfabeto Fonético OTAN / ICAO
+              </div>
+              <div id="phonetic-list-container" class="route-steps-list" style="max-height: 360px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           8. TAB: SINAIS DE SOCORRO & MORSE SOS
+           ================================================================= -->
+      <section class="tab-view" id="tab-morse">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">SINALIZAÇÃO ACÚSTICA, LUMINOSA E TERRA-AR</span>
+              <h2 class="page-title">Central de Sinais de Socorro &amp; Código Morse</h2>
+              <p class="page-subtitle">
+                Emissores de emergência ópticos e sonoros de 800 Hz gerados pelo navegador (100% offline) e padrões visuais para aeronaves de busca e salvamento.
+              </p>
+            </div>
+          </div>
+
+          <!-- SOS Beacons Row -->
+          <div class="grid-2">
+            <div class="tactical-card" style="border-color: rgba(239, 68, 68, 0.4);">
+              <div class="card-top-row">
+                <span class="card-tag tag-alert">SINALIZADOR ÓPTICO</span>
+                <span class="text-xl">💡</span>
+              </div>
+              <div class="card-title">Farol Visual SOS (Tela Cheia)</div>
+              <p class="card-desc">
+                Transforma a tela inteira em um sinalizador estroboscópico de alto contraste transmitindo o código internacional <strong>SOS (... --- ...)</strong> para localização noturna.
+              </p>
+              <button type="button" id="btn-toggle-optical-sos" class="btn-calc-route" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #fff;" onclick="toggleOpticalSos()">
+                <span>🚨</span> INICIAR SINALIZADOR VISUAL (SOS)
+              </button>
+            </div>
+
+            <div class="tactical-card" style="border-color: rgba(16, 185, 129, 0.4);">
+              <div class="card-top-row">
+                <span class="card-tag tag-active">SINTETIZADOR 800 HZ</span>
+                <span class="text-xl">🔊</span>
+              </div>
+              <div class="card-title">Alarme Sonoro Contínuo (SOS)</div>
+              <p class="card-desc">
+                Emite bipes senoidais puros em 800 Hz (faixa de máxima penetração acústica) no padrão SOS para orientar equipes de resgate sob chuva, mata fechada ou escombros.
+              </p>
+              <button type="button" id="btn-toggle-audio-sos" class="btn-calc-route" onclick="toggleAudioSos()">
+                <span>🔊</span> INICIAR BIPE SONORO (SOS)
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Morse Translator -->
+          <div class="tactical-card">
+            <div class="section-heading">
+              <span>🔤</span> Tradutor e Transmissor de Mensagens em Código Morse
+            </div>
+            <p class="card-desc">
+              Converta qualquer mensagem ou coordenada em código Morse e reproduza o áudio correspondente para transmissão via rádio.
+            </p>
+            <div class="route-field-wrap">
+              <input type="text" id="morse-custom-input" class="form-input" placeholder="Digite sua mensagem..." value="SOS NOMAD BRASIL">
+              <button type="button" class="btn-export-gpx" onclick="convertAndPlayCustomMorse()">
+                <span>▶️</span> Transmitir Áudio
+              </button>
+            </div>
+            <div class="metric-card mt-2">
+              <span class="metric-title">SEQUÊNCIA MORSE GERADA</span>
+              <div id="morse-output-display" class="font-mono text-emerald-400 font-bold text-lg" style="letter-spacing: 0.12em; word-break: break-all;">
+                ... --- ... / -. --- -- .- -.. / -... .-. .- ... .. .-..
+              </div>
+            </div>
+          </div>
+
+          <!-- SAR Ground-to-Air & Whistle Code -->
+          <div class="grid-2">
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🚁</span> Sinais Terra-Ar para Aeronaves (Padrão SAR / ICAO)
+              </div>
+              <p class="card-desc">
+                Marque no solo aberto com pedras, galhos, cal ou lonas (mínimo 3 metros de comprimento) para leitura por helicópteros:
+              </p>
+              <div class="space-y-2 text-xs">
+                <div class="metric-card flex-row items-center justify-between" style="flex-direction:row;">
+                  <span class="font-mono text-xl font-extrabold text-amber-400" style="width:36px;">V</span>
+                  <span class="flex-1 text-white font-bold">Precisamos de Assistência / Auxílio Geral</span>
+                </div>
+                <div class="metric-card flex-row items-center justify-between" style="flex-direction:row;">
+                  <span class="font-mono text-xl font-extrabold text-red-400" style="width:36px;">X</span>
+                  <span class="flex-1 text-white font-bold">Precisamos de Socorro Médico Urgente</span>
+                </div>
+                <div class="metric-card flex-row items-center justify-between" style="flex-direction:row;">
+                  <span class="font-mono text-xl font-extrabold text-blue-400" style="width:36px;">N</span>
+                  <span class="flex-1 text-white font-bold">Não / Negativo</span>
+                </div>
+                <div class="metric-card flex-row items-center justify-between" style="flex-direction:row;">
+                  <span class="font-mono text-xl font-extrabold text-emerald-400" style="width:36px;">Y</span>
+                  <span class="flex-1 text-white font-bold">Sim / Afirmativo</span>
+                </div>
+                <div class="metric-card flex-row items-center justify-between" style="flex-direction:row;">
+                  <span class="font-mono text-xl font-extrabold text-cyan-400" style="width:36px;">&rarr;</span>
+                  <span class="flex-1 text-white font-bold">Grupo deslocando na direção apontada</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📯</span> Código Internacional de Apito &amp; Espelho Solar
+              </div>
+              <p class="card-desc">
+                Um apito tático ultrapassa 110 dB e alcança mais de 1,5 km mesmo com vento forte.
+              </p>
+              <div class="space-y-2 text-xs text-gray-300">
+                <div class="metric-card" style="border-color: rgba(239,68,68,0.35);">
+                  <div class="text-red-400 font-bold">🚨 3 SILVOS LONGOS (Pausa de 1 min e repita)</div>
+                  <div>Sinal universal de pedido de socorro. Toda equipe de busca reconhece imediatamente.</div>
+                </div>
+                <div class="metric-card">
+                  <div class="text-emerald-400 font-bold">✅ 2 SILVOS CURTOS</div>
+                  <div>Sinal de confirmação dos socorristas ("Ouvimos você / Estamos indo na sua direção").</div>
+                </div>
+                <div class="metric-card">
+                  <div class="text-cyan-400 font-bold">🪞 Visada com Espelho (Heliógrafo)</div>
+                  <div>Estenda o braço fazendo um "V" com dois dedos apontados para o horizonte ou aeronave e alinhe o feixe de luz solar entre os dedos.</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- =================================================================
+           9. TAB: CARTÃO TÁTICO DE BOLSO (FOLHA A4)
+           ================================================================= -->
+      <section class="tab-view" id="tab-pocketcard">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">GUIA FÍSICO DE BOLSO PARA MOCHILA DE 72H</span>
+              <h2 class="page-title">Cartão Tático de Bolso (Folha A4 Dobrável)</h2>
+              <p class="page-subtitle">
+                Imprima em folha A4 comum e dobre ao meio duas vezes para ter os protocolos vitais sempre no bolso mesmo sem bateria.
+              </p>
+            </div>
+            <button type="button" class="btn-calc-route" style="width: auto; padding: 0.7rem 1.4rem;" onclick="window.print()">
+              <span>🖨️</span> Imprimir Folha A4 Agora
+            </button>
+          </div>
+
+          <div id="printable-pocket-card" class="printable-card-wrap">
+            <!-- Quadrant 1 -->
+            <div class="pocket-quadrant">
+              <div class="pocket-header">
+                <strong>1. SOCORRO NACIONAL &amp; IDENTIFICAÇÃO</strong>
+                <span>BRASIL 🇧🇷</span>
+              </div>
+              <div class="pocket-body space-y-2">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 4px; font-family: monospace; font-weight: 700;">
+                  <div>🚨 190 Polícia Militar</div>
+                  <div>🚑 192 SAMU Médico</div>
+                  <div>🚒 193 Bombeiros</div>
+                  <div>🛡️ 199 Defesa Civil</div>
+                  <div>🛣️ 191 PRF Rodovias</div>
+                  <div>☎️ 136 Disque Saúde</div>
+                </div>
+                <div style="border-top: 1px solid #94a3b8; padding-top: 8px;" class="space-y-1">
+                  <div><strong>NOME:</strong> ____________________________________</div>
+                  <div class="flex justify-between">
+                    <span><strong>TIPO SANGUÍNEO:</strong> [ ___ ]</span>
+                    <span><strong>DOADOR:</strong> ( S / N )</span>
+                  </div>
+                  <div><strong>ALERGIAS / REMÉDIOS:</strong> _____________________</div>
+                  <div><strong>CONTATO EMERGÊNCIA 1:</strong> ____________________</div>
+                  <div><strong>CONTATO EMERGÊNCIA 2:</strong> ____________________</div>
+                  <div><strong>PONTO DE ENCONTRO:</strong> _______________________</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quadrant 2 -->
+            <div class="pocket-quadrant">
+              <div class="pocket-header">
+                <strong>2. SUPORTE BÁSICO DE VIDA (PRIMEIROS SOCORROS)</strong>
+                <span>SAMU / AHA</span>
+              </div>
+              <div class="pocket-body space-y-2">
+                <div>
+                  <strong>PARADA CARDIORRESPIRATÓRIA (RCP):</strong>
+                  <ol style="padding-left: 1.1rem; margin-top: 4px;">
+                    <li>Acione o <strong>192</strong> (SAMU) ou <strong>193</strong> (Bombeiros).</li>
+                    <li>Deite a vítima de costas em superfície rígida.</li>
+                    <li>Posicione as mãos sobrepostas no centro do tórax.</li>
+                    <li>Comprima forte e rápido: <strong>100 a 120 compressões/min</strong> (5 a 6 cm de profundidade).</li>
+                  </ol>
+                </div>
+                <div style="border-top: 1px solid #94a3b8; padding-top: 6px;">
+                  <strong>MANOBRA DE DESENGASGO (HEIMLICH):</strong>
+                  <div>Posicione-se atrás da vítima, feche o punho acima do umbigo (boca do estômago) e comprima com força para dentro e para cima em "J".</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quadrant 3 -->
+            <div class="pocket-quadrant">
+              <div class="pocket-header">
+                <strong>3. POTABILIZAÇÃO DE ÁGUA &amp; ANIMAIS PEÇONHENTOS</strong>
+                <span>MIN. SAÚDE</span>
+              </div>
+              <div class="pocket-body space-y-2">
+                <div>
+                  <strong>DESINFECÇÃO DE ÁGUA DE EMERGÊNCIA:</strong>
+                  <ul style="padding-left: 1.1rem; margin-top: 4px;">
+                    <li>Hipoclorito / Água Sanitária pura (2% a 2,5% sem perfume).</li>
+                    <li><strong>2 gotas por Litro</strong> (água limpa) ou <strong>4 gotas/L</strong> (água turva).</li>
+                    <li>Misture bem e aguarde <strong>30 minutos</strong> antes de beber.</li>
+                    <li>Na falta de cloro: ferver em ebulição por <strong>3 minutos</strong>.</li>
+                  </ul>
+                </div>
+                <div style="border-top: 1px solid #94a3b8; padding-top: 6px;">
+                  <strong>PICADAS DE SERPENTES E ESCORPIÕES:</strong>
+                  <div>Jamais faça torniquete, não corte e não chupe o local. Lave apenas com água e sabão, mantenha a vítima em repouso e leve ao hospital de referência.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quadrant 4 -->
+            <div class="pocket-quadrant">
+              <div class="pocket-header">
+                <strong>4. FREQUÊNCIAS DE RÁDIO, CÓDIGO Q &amp; MORSE</strong>
+                <span>TELECOM</span>
+              </div>
+              <div class="pocket-body space-y-1 font-mono">
+                <div><strong>PX Canal 9:</strong> 27.065 MHz (Emergência Rodoviária)</div>
+                <div><strong>PX Canal 19:</strong> 27.185 MHz (Caminhoneiros / Estradas)</div>
+                <div><strong>VHF Marítimo Ch 16:</strong> 156.800 MHz (Socorro)</div>
+                <div><strong>VHF Radioamador:</strong> 146.520 MHz (Chamada Simplex)</div>
+                <div><strong>HF Defesa Civil:</strong> 7.060 MHz LSB (40 metros)</div>
+                <div style="border-top: 1px solid #94a3b8; padding-top: 6px;">
+                  <strong>QAP:</strong> Na escuta | <strong>QSL:</strong> Confirmado<br>
+                  <strong>QTH:</strong> Localização | <strong>QRT:</strong> Encerrando<br>
+                  <strong>QRX:</strong> Aguarde | <strong>QTC:</strong> Mensagem urgente
+                </div>
+                <div style="border-top: 1px solid #94a3b8; padding-top: 6px; text-align: center; font-weight: 900;">
+                  SOS MORSE: &bull;&bull;&bull; &minus;&minus;&minus; &bull;&bull;&bull; (3 curtos, 3 longos, 3 curtos)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fullscreen Optical SOS Overlay -->
+      <div id="optical-sos-overlay" class="optical-sos-overlay" style="display: none;" onclick="toggleOpticalSos(false)">
+        <div class="sos-overlay-content">
+          <div class="sos-beacon-text">🚨 SINAL DE SOCORRO ATIVO 🚨</div>
+          <div class="sos-morse-visual">... --- ...</div>
+          <div class="sos-tap-hint">Toque em qualquer lugar da tela para encerrar</div>
+        </div>
       </div>
-    </section>
 
-    <!-- Fullscreen Optical SOS Overlay -->
-    <div id="optical-sos-overlay" class="optical-sos-overlay" style="display: none;" onclick="toggleOpticalSos(false)">
-      <div class="sos-overlay-content">
-        <div class="sos-beacon-text">🚨 SINAL DE SOCORRO ATIVO 🚨</div>
-        <div class="sos-morse-visual">... --- ...</div>
-        <div class="sos-tap-hint">Toque em qualquer lugar da tela para encerrar</div>
-      </div>
-    </div>
+    </main>
 
-  </main>
+    <!-- Mobile Bottom Quick Navigation (< 768px) -->
+    <nav class="mobile-bottom-nav">
+      <button type="button" class="mobile-bottom-btn active" data-tab-target="dashboard">
+        <span class="mb-icon">🏠</span>
+        <span>Painel</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" data-tab-target="map">
+        <span class="mb-icon">🗺️</span>
+        <span>Mapa</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" data-tab-target="emergencies">
+        <span class="mb-icon">🚑</span>
+        <span>Socorros</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" data-tab-target="morse">
+        <span class="mb-icon">🚨</span>
+        <span>SOS</span>
+      </button>
+      <button type="button" class="mobile-bottom-btn" onclick="toggleMobileSidebar(true)">
+        <span class="mb-icon">☰</span>
+        <span>Menu</span>
+      </button>
+    </nav>
 
-  <script src="/app.js?v=2.4"></script>
+  </div>
+
+  <script src="/app.js?v=3.0"></script>
 </body>
 </html>
