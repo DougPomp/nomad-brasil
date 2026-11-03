@@ -863,7 +863,7 @@
             </p>
 
             <div class="search-box">
-              <input type="text" id="city-search-input" class="search-input" placeholder="Digite o nome de qualquer município brasileiro (ex: Louveira, Vinhedo, Manaus, Curitiba)..." oninput="filterCities()">
+              <input type="text" id="city-search-input" class="search-input" placeholder="Digite o nome de qualquer município brasileiro (ex: São Paulo, Campinas, Manaus, Curitiba)..." oninput="filterCities()">
               <div id="city-dropdown" class="city-dropdown"></div>
             </div>
 
@@ -1264,7 +1264,7 @@
           }
         }
 
-        const def = allCities.find(c => c.name === 'Louveira') || allCities[0];
+        const def = allCities.find(c => c.name === 'São Paulo') || allCities[0];
         if (def) displayCityIntel(def);
 
         calcRationingOnline();
