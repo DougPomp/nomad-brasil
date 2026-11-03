@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
   calculateRationing();
   loadRadioData();
   calculateAntennaDipole();
+  loadVenomousData();
+  calculateSolar();
+  renderBobKit();
 });
 
 // Mobile Sidebar Drawer Toggle
@@ -98,6 +101,16 @@ function switchTab(tabId) {
     if (iframe && !iframe.getAttribute('src')) {
       iframe.setAttribute('src', 'http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05');
     }
+  }
+
+  if (tabId === 'venomous') {
+    loadVenomousData();
+  }
+  if (tabId === 'solar') {
+    calculateSolar();
+  }
+  if (tabId === 'bob') {
+    renderBobKit();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1986,6 +1999,607 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
     calculateRationing();
     loadRadioData();
     calculateAntennaDipole();
+    loadVenomousData();
+    calculateSolar();
+    renderBobKit();
   }, 200);
 }
+
+// =====================================================================
+// PWA SERVICE WORKER REGISTRATION
+// =====================================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('[PWA] Service Worker registrado:', reg.scope);
+    }).catch(err => {
+      console.warn('[PWA] Falha ao registrar Service Worker:', err);
+    });
+  });
+}
+
+// =====================================================================
+// 10. ANIMAIS PEÇONHENTOS DO BRASIL
+// =====================================================================
+let venomousAnimalsData = [];
+let currentVenomousFilter = 'all';
+
+async function loadVenomousData() {
+  if (venomousAnimalsData && venomousAnimalsData.length > 0) {
+    renderVenomousList(venomousAnimalsData);
+    return;
+  }
+  try {
+    const res = await fetch('/api/venomous');
+    if (!res.ok) throw new Error('Falha HTTP ' + res.status);
+    venomousAnimalsData = await res.json();
+    renderVenomousList(venomousAnimalsData);
+  } catch (err) {
+    console.warn('Carregando fallback de animais peçonhentos:', err);
+    try {
+      const res2 = await fetch('./data/venomous_animals.json');
+      venomousAnimalsData = await res2.json();
+      renderVenomousList(venomousAnimalsData);
+    } catch (e2) {
+      console.error('Falha fatal ao carregar catálogo peçonhento:', e2);
+    }
+  }
+}
+
+window.filterVenomousGroup = function(group) {
+  currentVenomousFilter = group;
+  const section = document.getElementById('tab-venomous');
+  if (section) {
+    const chips = section.querySelectorAll('.chip-btn');
+    chips.forEach(btn => {
+      const text = btn.textContent.toLowerCase();
+      if ((group === 'all' && text.includes('todos')) ||
+          (group === 'serpente' && text.includes('serpentes')) ||
+          (group === 'escorpião' && text.includes('escorpiões')) ||
+          (group === 'aranha' && text.includes('aranhas'))) {
+        btn.classList.add('chip-highlight');
+      } else {
+        btn.classList.remove('chip-highlight');
+      }
+    });
+  }
+  renderVenomousList(venomousAnimalsData);
+};
+
+function renderVenomousList(data) {
+  const container = document.getElementById('venomous-container');
+  if (!container) return;
+
+  const filtered = (currentVenomousFilter === 'all')
+    ? data
+    : data.filter(item => (item.group || '').toLowerCase().includes(currentVenomousFilter));
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = '<div class="tactical-card text-center text-gray-400">Nenhum espécime encontrado nesta categoria.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(item => {
+    const lethality = item.lethality || item.dangerLevel || 'ALTO';
+    const dangerBadgeColor = lethality.toLowerCase().includes('muito') || lethality.toLowerCase().includes('crítico') ? 'var(--accent-red)' :
+                             lethality.toLowerCase().includes('alta') ? 'var(--accent-amber)' : 'var(--accent-cyan)';
+    const firstAidText = Array.isArray(item.firstAid)
+      ? item.firstAid.map(s => `<div>• ${s}</div>`).join('')
+      : (item.firstAid || '');
+    const warningsText = Array.isArray(item.dangerWarnings)
+      ? item.dangerWarnings.map(w => `<div>⚠️ ${w}</div>`).join('')
+      : '';
+
+    return `
+      <div class="tactical-card">
+        <div class="flex justify-between items-start gap-2 mb-2">
+          <div>
+            <div class="text-xs uppercase tracking-wider font-bold text-gray-400">${item.group}</div>
+            <h3 class="text-lg font-bold text-white">${item.name}</h3>
+          </div>
+          <span class="status-pill" style="border-color: ${dangerBadgeColor}; color: ${dangerBadgeColor}; background: rgba(0,0,0,0.4); font-size: 0.7rem; font-weight: 800;">
+            ${lethality}
+          </span>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <div class="metric-card" style="padding: 0.5rem 0.75rem;">
+            <div class="text-gray-400 text-xs font-bold uppercase">Ação do Veneno</div>
+            <div class="text-amber-300 font-medium mt-0.5">${item.venomType}</div>
+          </div>
+
+          <div class="metric-card" style="padding: 0.5rem 0.75rem;">
+            <div class="text-gray-400 text-xs font-bold uppercase">Soro Específico (SUS / Butantan / Vital Brazil)</div>
+            <div class="text-emerald-400 font-mono font-bold mt-0.5">${item.antivenom || item.antivenomSerum}</div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-cyan);">
+            <strong class="text-white">Identificação Visual:</strong>
+            <p class="text-gray-300 mt-0.5">${item.characteristics || item.identification}</p>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-amber);">
+            <strong class="text-white">Habitat &amp; Ocorrência:</strong>
+            <p class="text-gray-300 mt-0.5">${item.habitat}${item.incidence ? ` (${item.incidence})` : ''}</p>
+          </div>
+
+          <div style="background: rgba(239, 68, 68, 0.1); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-red);">
+            <strong class="text-red-300">Primeiros Socorros &amp; Conduta:</strong>
+            <div class="text-gray-200 mt-0.5 space-y-1">${firstAidText}</div>
+            ${warningsText ? `<div class="mt-2 text-red-300 font-bold space-y-1 border-t border-red-900 pt-1">${warningsText}</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// =====================================================================
+// 11. CALCULADORA DE ENERGIA SOLAR & BATERIAS 12V
+// =====================================================================
+window.calculateSolar = function() {
+  const radioH = parseFloat(document.getElementById('solar-radio-hours')?.value) || 0;
+  const ledH = parseFloat(document.getElementById('solar-led-hours')?.value) || 0;
+  const pcH = parseFloat(document.getElementById('solar-pc-hours')?.value) || 0;
+  const fridgeH = parseFloat(document.getElementById('solar-fridge-hours')?.value) || 0;
+  const phoneH = parseFloat(document.getElementById('solar-phone-hours')?.value) || 0;
+
+  const hsp = parseFloat(document.getElementById('solar-region')?.value) || 4.8;
+  const dod = parseFloat(document.getElementById('solar-battery-type')?.value) || 0.5;
+
+  const totalWh = (radioH * 25) + (ledH * 10) + (pcH * 45) + (fridgeH * 40) + (phoneH * 15);
+  const totalAh12v = totalWh / 12;
+
+  // Panel sizing: totalWh / (HSP * 0.75 performance ratio)
+  const requiredWatts = totalWh > 0 ? Math.ceil(totalWh / (hsp * 0.75)) : 0;
+  const panels150w = Math.ceil(requiredWatts / 150) || 1;
+
+  // Battery bank sizing: 1.5 days autonomy / DoD
+  const requiredAh = totalWh > 0 ? Math.ceil((totalAh12v * 1.5) / dod) : 0;
+
+  // Charge controller: Panel Watts / 12V * 1.25 safety factor
+  const controllerAmps = Math.ceil((requiredWatts / 12) * 1.25);
+  const peakWatts = Math.max(300, Math.ceil((25 + 10 + 45 + 120 + 30) * 1.3));
+
+  const elWh = document.getElementById('solar-res-wh');
+  const elAh = document.getElementById('solar-res-ah12v');
+  const elPanelsW = document.getElementById('solar-res-panels-w');
+  const elPanelsQty = document.getElementById('solar-res-panels-qty');
+  const elBatteryAh = document.getElementById('solar-res-battery-ah');
+  const elBatteryQty = document.getElementById('solar-res-battery-qty');
+  const elController = document.getElementById('solar-res-controller');
+  const elWire = document.getElementById('solar-res-wire');
+  const elInverter = document.getElementById('solar-res-inverter');
+  const elFuse = document.getElementById('solar-res-fuse');
+
+  if (elWh) elWh.textContent = `${Math.round(totalWh)} Wh/dia`;
+  if (elAh) elAh.textContent = `${totalAh12v.toFixed(1)} Ah/dia em 12V`;
+  if (elPanelsW) elPanelsW.textContent = `${requiredWatts} Wp`;
+  if (elPanelsQty) elPanelsQty.textContent = `${panels150w}x painel(éis) de 150W (${panels150w * 150}W)`;
+  if (elBatteryAh) elBatteryAh.textContent = `${requiredAh} Ah`;
+  if (elBatteryQty) {
+    const batt100Qty = Math.ceil(requiredAh / 100);
+    elBatteryQty.textContent = `Autonomia 1.5 dias (~${batt100Qty}x bat. 100Ah)`;
+  }
+  if (elController) elController.textContent = `${Math.max(10, controllerAmps)} A`;
+
+  if (elWire) {
+    elWire.textContent = controllerAmps > 20 ? '10.0 mm²' : '6.0 mm²';
+  }
+  if (elInverter) {
+    elInverter.textContent = peakWatts > 500 ? '1000W Onda Senoidal Pura' : '600W Onda Senoidal Pura';
+  }
+  if (elFuse) {
+    elFuse.textContent = `${Math.max(40, Math.ceil(controllerAmps * 1.5))}A`;
+  }
+};
+
+// =====================================================================
+// 12. CHECKLIST TÁTICO DE MOCHILA 72H (BUG-OUT BAG - BOB)
+// =====================================================================
+const BOB_KITS = {
+  bob: {
+    name: 'Mochila 72h (Evacuação)',
+    maxWeight: 12.0,
+    categories: [
+      {
+        category: '💧 Água & Hidratação',
+        items: [
+          { id: 'b_water1', name: 'Cantil militar com caneco inox 1L cheio', weight: 1.25, checked: true },
+          { id: 'b_water2', name: 'Filtro portátil de água de campo (tipo canudo)', weight: 0.12, checked: true },
+          { id: 'b_water3', name: 'Pastilhas de cloro Clorin 1mg (blister c/ 20)', weight: 0.02, checked: true },
+          { id: 'b_water4', name: 'Bolsa de hidratação dobrável 2L vazia', weight: 0.08, checked: false }
+        ]
+      },
+      {
+        category: '🔥 Alimentação & Fogo',
+        items: [
+          { id: 'b_food1', name: 'Rações de emergência / barras de alta densidade (3 dias)', weight: 1.50, checked: true },
+          { id: 'b_food2', name: 'Pederneira de ferrocerium com raspador', weight: 0.08, checked: true },
+          { id: 'b_food3', name: '2x Isqueiros tipo maçarico / Bic em saco estanque', weight: 0.06, checked: true },
+          { id: 'b_food4', name: 'Iscas de fogo (algodão parafinado)', weight: 0.05, checked: true }
+        ]
+      },
+      {
+        category: '⛺ Abrigo & Aquecimento',
+        items: [
+          { id: 'b_shlt1', name: '2x Mantas térmicas de mylar aluminizadas', weight: 0.12, checked: true },
+          { id: 'b_shlt2', name: 'Lona tática ripstop 3x3m para tarp', weight: 0.65, checked: true },
+          { id: 'b_shlt3', name: 'Corda Paracord 550 (15 metros)', weight: 0.18, checked: true },
+          { id: 'b_shlt4', name: 'Poncho impermeável militar camuflado/verde', weight: 0.35, checked: true },
+          { id: 'b_shlt5', name: 'Muda de roupa seca em saco ziploc a vácuo', weight: 0.85, checked: true }
+        ]
+      },
+      {
+        category: '🚑 Primeiros Socorros & Farmácia',
+        items: [
+          { id: 'b_med1', name: 'Torniquete tático homologado (tipo C-A-T)', weight: 0.15, checked: true },
+          { id: 'b_med2', name: 'Bandagem elástica tipo israelense 6"', weight: 0.10, checked: true },
+          { id: 'b_med3', name: 'Gaze estéril + fita micropore', weight: 0.08, checked: true },
+          { id: 'b_med4', name: 'Medicamentos de uso contínuo (reserva 7 dias)', weight: 0.15, checked: true },
+          { id: 'b_med5', name: 'Analgésicos (Dipirona), anti-histamínico e antidiarreico', weight: 0.08, checked: true },
+          { id: 'b_med6', name: 'Frasco pequeno álcool 70% ou clorexidina', weight: 0.10, checked: true }
+        ]
+      },
+      {
+        category: '📻 Comunicação, Navegação & Energia',
+        items: [
+          { id: 'b_nav1', name: 'Bússola prismática com régua milimétrica', weight: 0.09, checked: true },
+          { id: 'b_nav2', name: 'Rádio comunicador VHF/UHF (Baofeng UV-5R)', weight: 0.28, checked: true },
+          { id: 'b_nav3', name: 'Powerbank 20.000 mAh c/ cabos USB blindados', weight: 0.42, checked: true },
+          { id: 'b_nav4', name: 'Lanterna de cabeça LED c/ pilhas recarregáveis', weight: 0.12, checked: true },
+          { id: 'b_nav5', name: 'Apito de resgate sem esfera (120 dB)', weight: 0.02, checked: true }
+        ]
+      },
+      {
+        category: '🛠️ Ferramentas & Equipamento',
+        items: [
+          { id: 'b_tool1', name: 'Faca de sobrevivência lâmina fixa full-tang', weight: 0.35, checked: true },
+          { id: 'b_tool2', name: 'Alicate multi-função (Leatherman ou similar)', weight: 0.25, checked: true },
+          { id: 'b_tool3', name: 'Rolo de Silver Tape industrial (10m compacto)', weight: 0.12, checked: true },
+          { id: 'b_tool4', name: 'Abraçadeiras plásticas (enforca-gato) x10', weight: 0.03, checked: true },
+          { id: 'b_tool5', name: 'Luvas de proteção vaqueta / couro de campo', weight: 0.14, checked: true }
+        ]
+      },
+      {
+        category: '📄 Documentos & Dinheiro',
+        items: [
+          { id: 'b_doc1', name: 'Cópia plastificada de RG, CNH, Certidões', weight: 0.05, checked: true },
+          { id: 'b_doc2', name: 'Dinheiro em espécie (cédulas de 10, 20 e 50 reais)', weight: 0.05, checked: true },
+          { id: 'b_doc3', name: 'Cartão de Bolso Nomad Brasil A4 plastificado', weight: 0.04, checked: true },
+          { id: 'b_doc4', name: 'Bloco de notas à prova d\'água e lápis grafite', weight: 0.06, checked: true }
+        ]
+      }
+    ]
+  },
+  edc: {
+    name: 'Kit EDC (Everyday Carry - Bolso & Cinto)',
+    maxWeight: 1.5,
+    categories: [
+      {
+        category: '🎒 Porte Diário Essencial',
+        items: [
+          { id: 'e_edc1', name: 'Canivete dobrável com trava segura', weight: 0.12, checked: true },
+          { id: 'e_edc2', name: 'Mini lanterna tática LED (pilha AA ou USB)', weight: 0.08, checked: true },
+          { id: 'e_edc3', name: 'Isqueiro compacto', weight: 0.03, checked: true },
+          { id: 'e_edc4', name: 'Mini caneta e chaveiro com apito de emergência', weight: 0.04, checked: true },
+          { id: 'e_edc5', name: 'Curativos adesivos e 2 comprimidos dipirona', weight: 0.02, checked: true },
+          { id: 'e_edc6', name: 'Cédula de reserva em compartimento oculto', weight: 0.01, checked: true },
+          { id: 'e_edc7', name: 'Cartão multi-ferramenta em aço para carteira', weight: 0.04, checked: true }
+        ]
+      }
+    ]
+  },
+  car: {
+    name: 'Kit Veicular de Emergência',
+    maxWeight: 20.0,
+    categories: [
+      {
+        category: '🚗 Mecânica, Tração & Elétrica',
+        items: [
+          { id: 'c_car1', name: 'Cabo auxiliar de partida (chupeta de bateria 500A)', weight: 1.80, checked: true },
+          { id: 'c_car2', name: 'Compressor de ar 12V para calibração de pneus', weight: 1.40, checked: true },
+          { id: 'c_car3', name: 'Kit reparo macarrão antifuro para pneus', weight: 0.30, checked: true },
+          { id: 'c_car4', name: 'Cabo de reboque com manilhas de aço (5 toneladas)', weight: 2.10, checked: true },
+          { id: 'c_car5', name: 'Jogo de chaves de fenda, philips e soquetes', weight: 1.50, checked: true },
+          { id: 'c_car6', name: 'Fusíveis automotivos reservas variados', weight: 0.08, checked: true }
+        ]
+      },
+      {
+        category: '🦺 Sinalização & Socorro Rodoviário',
+        items: [
+          { id: 'c_car7', name: 'Colete refletivo de alta visibilidade', weight: 0.15, checked: true },
+          { id: 'c_car8', name: 'Sinalizador LED estroboscópico magnético', weight: 0.25, checked: true },
+          { id: 'c_car9', name: 'Extintor ABC inspecionado e válido', weight: 2.00, checked: true },
+          { id: 'c_car10', name: 'Galão homologado 5L com água para motor/emergência', weight: 5.30, checked: true },
+          { id: 'c_car11', name: 'Pá dobrável de trincheira / desatolamento', weight: 1.10, checked: true }
+        ]
+      }
+    ]
+  }
+};
+
+let currentBobKit = 'bob';
+const BOB_STORAGE_KEY = 'nomad_bob_checked_state_v1';
+
+function getStoredBobChecks() {
+  try {
+    const raw = localStorage.getItem(BOB_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveStoredBobChecks(state) {
+  try {
+    localStorage.setItem(BOB_STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('Erro ao salvar no localStorage:', e);
+  }
+}
+
+window.switchBobKit = function(kitId) {
+  currentBobKit = kitId;
+  ['bob', 'edc', 'car'].forEach(id => {
+    const btn = document.getElementById(`bob-tab-${id}`);
+    if (btn) {
+      if (id === kitId) {
+        btn.classList.add('chip-highlight');
+      } else {
+        btn.classList.remove('chip-highlight');
+      }
+    }
+  });
+  renderBobKit();
+};
+
+window.toggleBobItem = function(itemId) {
+  const kit = BOB_KITS[currentBobKit];
+  if (!kit) return;
+  const stored = getStoredBobChecks() || {};
+
+  for (const cat of kit.categories) {
+    for (const it of cat.items) {
+      if (it.id === itemId) {
+        const currentChecked = (stored[itemId] !== undefined) ? stored[itemId] : it.checked;
+        stored[itemId] = !currentChecked;
+        saveStoredBobChecks(stored);
+        break;
+      }
+    }
+  }
+  renderBobKit();
+};
+
+window.resetBobKit = function() {
+  if (!confirm('Deseja restaurar as seleções padrão deste kit?')) return;
+  const kit = BOB_KITS[currentBobKit];
+  if (!kit) return;
+  const stored = getStoredBobChecks() || {};
+  for (const cat of kit.categories) {
+    for (const it of cat.items) {
+      delete stored[it.id];
+    }
+  }
+  saveStoredBobChecks(stored);
+  renderBobKit();
+};
+
+function renderBobKit() {
+  const container = document.getElementById('bob-items-container');
+  if (!container) return;
+
+  const kit = BOB_KITS[currentBobKit];
+  if (!kit) return;
+
+  const stored = getStoredBobChecks() || {};
+
+  let totalWeight = 0;
+  let totalChecked = 0;
+  let totalItemsCount = 0;
+
+  let html = '';
+
+  kit.categories.forEach(cat => {
+    let catHtml = `
+      <div class="tactical-card">
+        <div class="bob-category-header">${cat.category}</div>
+        <div class="bob-category-items">
+    `;
+
+    cat.items.forEach(it => {
+      totalItemsCount++;
+      const isChecked = (stored[it.id] !== undefined) ? stored[it.id] : it.checked;
+      if (isChecked) {
+        totalWeight += it.weight;
+        totalChecked++;
+      }
+
+      catHtml += `
+        <div class="bob-item-row" onclick="toggleBobItem('${it.id}')">
+          <input type="checkbox" class="bob-checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); toggleBobItem('${it.id}');">
+          <span class="bob-item-name ${isChecked ? '' : 'text-gray-500 line-through'}">${it.name}</span>
+          <span class="bob-item-weight font-mono">${it.weight.toFixed(2)} kg</span>
+        </div>
+      `;
+    });
+
+    catHtml += `</div></div>`;
+    html += catHtml;
+  });
+
+  container.innerHTML = html;
+
+  const weightDisplay = document.getElementById('bob-weight-display');
+  const weightBar = document.getElementById('bob-weight-bar');
+  const checkedDisplay = document.getElementById('bob-status-checked');
+  const warningDisplay = document.getElementById('bob-status-warning');
+
+  if (weightDisplay) {
+    weightDisplay.textContent = `${totalWeight.toFixed(2)} kg / Meta máx: ${kit.maxWeight.toFixed(1)} kg`;
+  }
+
+  const pct = Math.min(100, Math.round((totalWeight / kit.maxWeight) * 100));
+  if (weightBar) {
+    weightBar.style.width = `${pct}%`;
+    if (totalWeight > kit.maxWeight) {
+      weightBar.style.background = 'var(--accent-red)';
+    } else if (totalWeight > kit.maxWeight * 0.85) {
+      weightBar.style.background = 'var(--accent-amber)';
+    } else {
+      weightBar.style.background = 'var(--accent-green)';
+    }
+  }
+
+  if (checkedDisplay) {
+    checkedDisplay.textContent = `${totalChecked} de ${totalItemsCount} itens empacotados (${Math.round((totalChecked / (totalItemsCount || 1)) * 100)}%)`;
+  }
+
+  if (warningDisplay) {
+    if (totalWeight > kit.maxWeight) {
+      warningDisplay.textContent = `⚠️ SOBREPESO: Excedeu o limite em ${(totalWeight - kit.maxWeight).toFixed(2)} kg! Elimine peso supérfluo.`;
+    } else {
+      warningDisplay.textContent = '✅ Peso dentro da margem recomendada de marcha.';
+    }
+  }
+}
+
+// =====================================================================
+// 13. BÚSSOLA DIGITAL & ORIENTAÇÃO NATURAL
+// =====================================================================
+let compassActive = false;
+
+window.enableCompassSensor = function() {
+  const statusEl = document.getElementById('compass-sensor-status');
+
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(permissionState => {
+        if (permissionState === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation, true);
+          compassActive = true;
+          if (statusEl) statusEl.textContent = 'Sensor magnético calibrado e ativo.';
+        } else {
+          if (statusEl) statusEl.textContent = 'Permissão de sensor negada pelo usuário.';
+        }
+      })
+      .catch(err => {
+        if (statusEl) statusEl.textContent = 'Erro de permissão: ' + err.message;
+      });
+  } else if ('ondeviceorientationabsolute' in window) {
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    compassActive = true;
+    if (statusEl) statusEl.textContent = 'Sensor magnético absoluto conectado.';
+  } else if ('ondeviceorientation' in window) {
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    compassActive = true;
+    if (statusEl) statusEl.textContent = 'Sensor de orientação conectado.';
+  } else {
+    if (statusEl) statusEl.textContent = 'Dispositivo sem magnetômetro. Use a orientação pelo sol ou estrelas abaixo.';
+  }
+};
+
+function handleOrientation(event) {
+  let heading = null;
+
+  if (event.webkitCompassHeading) {
+    heading = event.webkitCompassHeading;
+  } else if (event.alpha !== null) {
+    heading = (360 - event.alpha) % 360;
+  }
+
+  if (heading === null || isNaN(heading)) return;
+
+  const deg = Math.round(heading);
+  const needle = document.getElementById('compass-needle');
+  const degDisplay = document.getElementById('compass-degrees');
+
+  if (needle) {
+    needle.style.transform = `translate(-50%, -100%) rotate(${deg}deg)`;
+  }
+
+  if (degDisplay) {
+    let cardinal = 'N';
+    if (deg >= 337.5 || deg < 22.5) cardinal = 'N';
+    else if (deg >= 22.5 && deg < 67.5) cardinal = 'NE';
+    else if (deg >= 67.5 && deg < 112.5) cardinal = 'L';
+    else if (deg >= 112.5 && deg < 157.5) cardinal = 'SE';
+    else if (deg >= 157.5 && deg < 202.5) cardinal = 'S';
+    else if (deg >= 202.5 && deg < 247.5) cardinal = 'SO';
+    else if (deg >= 247.5 && deg < 292.5) cardinal = 'O';
+    else if (deg >= 292.5 && deg < 337.5) cardinal = 'NO';
+
+    degDisplay.textContent = `${String(deg).padStart(3, '0')}° ${cardinal}`;
+  }
+}
+
+// =====================================================================
+// 14. CIFRA TÁTICA & CÓDIGO DE CAMPO (VERNAM / OTP 5-LETTER BLOCKS)
+// =====================================================================
+window.generateRandomKey = function() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let key = '';
+  for (let i = 0; i < 8; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const keyInput = document.getElementById('cipher-key');
+  if (keyInput) keyInput.value = key;
+};
+
+window.processCipher = function(mode) {
+  const inputEl = document.getElementById('cipher-input');
+  const keyEl = document.getElementById('cipher-key');
+  const outEl = document.getElementById('cipher-output');
+
+  if (!inputEl || !outEl) return;
+
+  const text = (inputEl.value || '').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const key = ((keyEl ? keyEl.value : '') || 'NOMAD').toUpperCase().replace(/[^A-Z]/g, '');
+
+  if (!key) {
+    alert('Insira uma chave secreta com letras de A a Z.');
+    return;
+  }
+
+  const cleanText = text.replace(/[^A-Z]/g, '');
+  if (!cleanText) {
+    outEl.textContent = '--- (Nenhum texto alfabético para processar)';
+    return;
+  }
+
+  let result = '';
+  for (let i = 0; i < cleanText.length; i++) {
+    const textCode = cleanText.charCodeAt(i) - 65;
+    const keyCode = key.charCodeAt(i % key.length) - 65;
+
+    let resCode;
+    if (mode === 'encrypt') {
+      resCode = (textCode + keyCode) % 26;
+    } else {
+      resCode = (textCode - keyCode + 26) % 26;
+    }
+    result += String.fromCharCode(resCode + 65);
+  }
+
+  const blocks = [];
+  for (let i = 0; i < result.length; i += 5) {
+    blocks.push(result.substring(i, i + 5));
+  }
+
+  outEl.textContent = blocks.join(' ');
+};
+
+window.copyCipherOutput = function() {
+  const outEl = document.getElementById('cipher-output');
+  if (!outEl) return;
+  const text = outEl.textContent.trim();
+  if (!text || text.startsWith('---')) return;
+
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Mensagem copiada para a área de transferência!');
+  }).catch(() => {
+    alert('Texto selecionado: ' + text);
+  });
+};
 

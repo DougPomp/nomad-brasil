@@ -28,6 +28,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
   <link rel="stylesheet" href="/styles.css?v=3.0">
   <link rel="stylesheet" href="/vendor/maplibre-gl.css">
@@ -105,6 +106,10 @@
             <span class="nav-icon">🚑</span>
             <span class="nav-label">Primeiros Socorros</span>
           </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="venomous">
+            <span class="nav-icon">🐍</span>
+            <span class="nav-label">Animais Peçonhentos</span>
+          </button>
           <button type="button" class="nav-tab-btn" data-tab-target="morse">
             <span class="nav-icon">🚨</span>
             <span class="nav-label">Sinais &amp; Morse SOS</span>
@@ -113,18 +118,34 @@
             <span class="nav-icon">📻</span>
             <span class="nav-label">Rádio &amp; Telecom</span>
           </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="cipher">
+            <span class="nav-icon">🔐</span>
+            <span class="nav-label">Cifra &amp; Código Tático</span>
+          </button>
         </div>
 
-        <!-- Group 3: Logística & Apoio -->
+        <!-- Group 3: Logística & Engenharia -->
         <div class="nav-group">
-          <div class="nav-group-label">Logística &amp; Apoio</div>
-          <button type="button" class="nav-tab-btn" data-tab-target="rationing">
+          <div class="nav-group-label">Logística &amp; Engenharia</div>
+          <button type="button" class="nav-tab-btn" data-tab-target="solar">
+            <span class="nav-icon">⚡</span>
+            <span class="nav-label">Energia Solar 12V</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="bob">
             <span class="nav-icon">🎒</span>
+            <span class="nav-label">Mochila 72h (BOB)</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="navigation">
+            <span class="nav-icon">🧭</span>
+            <span class="nav-label">Bússola &amp; Orientação</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="rationing">
+            <span class="nav-icon">🍲</span>
             <span class="nav-label">Racionamento &amp; Estoque</span>
           </button>
           <button type="button" class="nav-tab-btn" data-tab-target="survival">
             <span class="nav-icon">🏕️</span>
-            <span class="nav-label">Manuais de Resiliência</span>
+            <span class="nav-label">Manuais de Campo</span>
           </button>
           <button type="button" class="nav-tab-btn" data-tab-target="pocketcard">
             <span class="nav-icon">📄</span>
@@ -840,6 +861,358 @@
       </section>
 
       <!-- =================================================================
+           10. TAB: GUIA VISUAL DE ANIMAIS PEÇONHENTOS DO BRASIL
+           ================================================================= -->
+      <section class="tab-view" id="tab-venomous">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">TOXICOLOGIA DE CAMPO &amp; IDENTIFICAÇÃO</span>
+              <h2 class="page-title">🐍 Animais Peçonhentos do Brasil</h2>
+              <p class="page-subtitle">
+                Identificação rápida de serpentes (Jararaca, Cascavel, Surucucu, Coral), escorpiões e aranhas, com tipo de veneno, soro correspondente e protocolos vitais.
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="chip-btn chip-highlight" onclick="filterVenomousGroup('all')">Todos</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('serpente')">Serpentes</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('escorpião')">Escorpiões</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('aranha')">Aranhas</button>
+            </div>
+          </div>
+
+          <!-- Red Alert Banner -->
+          <div class="info-box" style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--accent-red); color: #fca5a5; margin-bottom: 1rem;">
+            <strong>REGRA DE OURO EM PICADAS NO BRASIL:</strong> Jamais faça torniquete ou garrote. Jamais corte, fure ou sugue o local. Lave apenas com água e sabão e transporte o paciente com urgência para hospital com soro antiveneno.
+          </div>
+
+          <div id="venomous-container" class="grid-2">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           11. TAB: CALCULADORA DE ENERGIA SOLAR & BATERIAS 12V
+           ================================================================= -->
+      <section class="tab-view" id="tab-solar">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">AUTONOMIA ENERGÉTICA OFF-GRID</span>
+              <h2 class="page-title">⚡ Calculadora Solar &amp; Banco de Baterias</h2>
+              <p class="page-subtitle">
+                Dimensionamento fotovoltaico de emergência para manter rádios, iluminação, geladeiras 12V e equipamentos de campo funcionando sem rede elétrica.
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="window.print()">
+              <span>🖨️</span> Imprimir Projeto Solar
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Inputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⚙️</span> Consumidores de Carga Diária
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Rádio PX / VHF (25W TX)</span>
+                    <span class="text-xs text-gray-400">Escuta e transmissão (~3h/dia)</span>
+                  </div>
+                  <input type="number" id="solar-radio-hours" class="form-input font-mono text-center" style="width: 80px;" value="3" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Iluminação LED Básica (10W total)</span>
+                    <span class="text-xs text-gray-400">2 lâmpadas 5W para abrigo</span>
+                  </div>
+                  <input type="number" id="solar-led-hours" class="form-input font-mono text-center" style="width: 80px;" value="6" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Notebook / Roteador Offline (45W)</span>
+                    <span class="text-xs text-gray-400">Consulta de mapas e dados</span>
+                  </div>
+                  <input type="number" id="solar-pc-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Geladeira / Frigobar 12V (40W ciclo)</span>
+                    <span class="text-xs text-gray-400">Preservação de insulina e comida</span>
+                  </div>
+                  <input type="number" id="solar-fridge-hours" class="form-input font-mono text-center" style="width: 80px;" value="8" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Cargas de Celular / Rádio HT (15W)</span>
+                    <span class="text-xs text-gray-400">Lanternas, baterias e rádios</span>
+                  </div>
+                  <input type="number" id="solar-phone-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                  <span class="stat-label">Região do Brasil (Horas de Sol Pleno - HSP)</span>
+                  <select id="solar-region" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="5.5" selected>Nordeste / Centro-Oeste (HSP ~5.5h/dia)</option>
+                    <option value="4.8">Sudeste (HSP ~4.8h/dia)</option>
+                    <option value="4.2">Sul / Litoral Úmido (HSP ~4.2h/dia)</option>
+                    <option value="4.5">Norte / Amazônia (HSP ~4.5h/dia)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <span class="stat-label">Tipo de Banco de Bateria</span>
+                  <select id="solar-battery-type" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="0.5" selected>Chumbo-Ácido Estacionária (Descarga máx: 50%)</option>
+                    <option value="0.8">Lítio LiFePO4 (Descarga máx: 80%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solar Outputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📊</span> Dimensionamento Recomendado
+              </div>
+
+              <div class="route-metrics-grid mb-3">
+                <div class="metric-card">
+                  <span class="metric-title">CONSUMO DIÁRIO TOTAL</span>
+                  <span class="metric-value font-mono text-cyan-400" id="solar-res-wh">0 Wh/dia</span>
+                  <span class="text-xs text-gray-400" id="solar-res-ah12v">0 Ah em 12V</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">POTÊNCIA DE PAINÉIS</span>
+                  <span class="metric-value font-mono text-amber-400" id="solar-res-panels-w">0 Wp</span>
+                  <span class="text-xs text-gray-400" id="solar-res-panels-qty">0 painéis de 150W</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">BANCO DE BATERIAS (12V)</span>
+                  <span class="metric-value font-mono text-emerald-400" id="solar-res-battery-ah">0 Ah</span>
+                  <span class="text-xs text-gray-400" id="solar-res-battery-qty">Autonomia de 1.5 dias</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">CONTROLADOR DE CARGA</span>
+                  <span class="metric-value font-mono text-white" id="solar-res-controller">0 A</span>
+                  <span class="text-xs text-emerald-400 font-bold" id="solar-res-controller-type">MPPT Recomendado</span>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <div class="text-xs font-bold text-white uppercase mb-2">🔌 Bitola de Fiação &amp; Inversor Sugerido</div>
+                <div class="space-y-1 text-xs text-gray-300">
+                  <div>📏 <strong>Fio Painel para Controlador (&lt; 10m):</strong> <span id="solar-res-wire" class="text-cyan-400 font-mono font-bold">6.0 mm²</span></div>
+                  <div>⚡ <strong>Inversor 12V para 110V/220V:</strong> <span id="solar-res-inverter" class="text-amber-400 font-mono font-bold">600W Onda Senoidal Pura</span></div>
+                  <div>🛡️ <strong>Fusível Principal de Bateria:</strong> <span id="solar-res-fuse" class="text-red-400 font-mono font-bold">60A</span> junto ao polo positivo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           12. TAB: CHECKLIST MOCHILA 72H (BUG-OUT BAG)
+           ================================================================= -->
+      <section class="tab-view" id="tab-bob">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">EQUIPAMENTO INDIVIDUAL DE EVACUAÇÃO</span>
+              <h2 class="page-title">🎒 Checklist de Mochila 72 Horas (BOB)</h2>
+              <p class="page-subtitle">
+                Gerencie seus kits de evacuação rápida, porte diário (EDC) e emergência veicular. Controle o peso total para não ultrapassar o limite ergonômico.
+              </p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button type="button" class="chip-btn chip-highlight" id="bob-tab-bob" onclick="switchBobKit('bob')">Mochila 72h</button>
+              <button type="button" class="chip-btn" id="bob-tab-edc" onclick="switchBobKit('edc')">EDC (Bolso)</button>
+              <button type="button" class="chip-btn" id="bob-tab-car" onclick="switchBobKit('car')">Kit Veicular</button>
+              <button type="button" class="btn-clear-route" onclick="resetBobKit()">Resetar</button>
+            </div>
+          </div>
+
+          <!-- Weight Bar -->
+          <div class="metric-card" style="padding: 1rem;">
+            <div class="flex justify-between items-center mb-1">
+              <span class="stat-label">PESO ESTIMADO DO KIT SELECIONADO</span>
+              <span class="font-mono text-base font-bold text-emerald-400" id="bob-weight-display">0.0 kg / Meta máx: 12.0 kg</span>
+            </div>
+            <div class="route-loading-bar-wrap" style="height: 8px;">
+              <div id="bob-weight-bar" style="width: 0%; height: 100%; background: var(--accent-green); transition: width 0.3s ease;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 mt-2">
+              <span id="bob-status-checked">0 de 0 itens empacotados</span>
+              <span id="bob-status-warning" class="text-amber-400 font-bold"></span>
+            </div>
+          </div>
+
+          <div id="bob-items-container" class="grid-2">
+            <!-- Injected by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           13. TAB: BÚSSOLA DIGITAL & ORIENTAÇÃO SOLAR/ESTELAR
+           ================================================================= -->
+      <section class="tab-view" id="tab-navigation">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">NAVEGAÇÃO TERRESTRE &amp; ASTRONÔMICA</span>
+              <h2 class="page-title">🧭 Bússola Digital &amp; Orientação Natural</h2>
+              <p class="page-subtitle">
+                Leitura do sensor magnetômetro do smartphone com azimute em tempo real e guias de orientação natural no Hemisfério Sul (Cruzeiro do Sul e Relógio Solar).
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="enableCompassSensor()">
+              <span>🎯</span> Calibrar / Ativar Bússola
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Digital Compass Dial -->
+            <div class="tactical-card text-center">
+              <div class="section-heading" style="justify-content: center;">
+                <span>🧭</span> Azimute Magnético
+              </div>
+
+              <div class="compass-dial-wrap">
+                <div class="compass-ring">
+                  <span class="compass-label-cardinal compass-n">N</span>
+                  <span class="compass-label-cardinal compass-e">L</span>
+                  <span class="compass-label-cardinal compass-s">S</span>
+                  <span class="compass-label-cardinal compass-w">O</span>
+                  <div class="compass-needle" id="compass-needle"></div>
+                  <div class="compass-center-pivot" style="top: calc(50% - 7px); left: calc(50% - 7px);"></div>
+                </div>
+              </div>
+
+              <div class="font-mono text-3xl font-extrabold text-emerald-400" id="compass-degrees">
+                000° N
+              </div>
+              <div class="text-xs text-gray-400 mt-1" id="compass-sensor-status">
+                Mova o dispositivo em formato de "8" para calibrar os sensores
+              </div>
+            </div>
+
+            <!-- Natural Navigation Guides (Southern Hemisphere) -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⭐</span> Orientação Estelar (Cruzeiro do Sul)
+              </div>
+              <div class="space-y-2 text-xs text-gray-300">
+                <div class="metric-card">
+                  <div class="text-cyan-400 font-bold mb-1">1. Método do Braço Maior (4,5x):</div>
+                  <div>Localize as 4 estrelas em cruz e as duas "apontadoras" (Alfa e Beta do Centauro). Estenda uma linha imaginária pelo braço maior da cruz por <strong>4 vezes e meia</strong> o seu comprimento. Baixe uma reta vertical até o horizonte: ali está o <strong>Sul Geográfico verdadeiro</strong>.</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-amber-400 font-bold mb-1">2. Método da Vara e Sombra do Sol:</div>
+                  <div>Finque uma vara reta de 1 metro no chão. Marque a ponta da sombra com uma pedra. Espere 15 a 20 minutos e marque a nova posição da ponta da sombra. A linha ligando o ponto 1 ao ponto 2 indica exatamente o <strong>Eixo Leste-Oeste</strong> (o primeiro ponto é Oeste, o segundo é Leste).</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-emerald-400 font-bold mb-1">3. Declinação Magnética no Brasil:</div>
+                  <div>No território brasileiro, o Norte Magnético aponta cerca de <strong>15° a 22° a Oeste</strong> do Norte Verdadeiro (Variação W). Para cartas topográficas militares, some ou subtraia o ângulo de declinação local.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           14. TAB: CIFRA TÁTICA & CÓDIGOS DE COMUNICAÇÃO SEGURA
+           ================================================================= -->
+      <section class="tab-view" id="tab-cipher">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">CRIPTOGRAFIA DE CAMPO &amp; SIGILO</span>
+              <h2 class="page-title">🔐 Cifra Tática &amp; Código de Transmissão</h2>
+              <p class="page-subtitle">
+                Criptografia leve (Cifra de Vernam / One-Time Pad e Blocos de 5 dígitos) para transmitir coordenadas e mensagens táticas via rádio aberto sem ser interceptado.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Cipher Input / Output -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🔒</span> Cifrador / Decifrador de Mensagens
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-input">Mensagem Original ou Cifrada</label>
+                <textarea id="cipher-input" class="route-input font-mono" rows="3" placeholder="Digite o texto (ex: PONTO DE ENCONTRO PONTE KM 45)..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-key">Chave de Segurança Compartilhada (Senha secreta)</label>
+                <div class="flex gap-2">
+                  <input type="text" id="cipher-key" class="route-input font-mono" placeholder="Ex: BRAVO7" value="NOMAD">
+                  <button type="button" class="chip-btn" onclick="generateRandomKey()">🎲 Gerar</button>
+                </div>
+              </div>
+
+              <div class="flex gap-2 mt-2">
+                <button type="button" class="btn-calc-route" style="flex:1;" onclick="processCipher('encrypt')">
+                  <span>🔒</span> Cifrar Mensagem
+                </button>
+                <button type="button" class="btn-export-gpx" style="flex:1;" onclick="processCipher('decrypt')">
+                  <span>🔓</span> Decifrar
+                </button>
+              </div>
+
+              <div class="metric-card mt-3">
+                <span class="metric-title">RESULTADO CODIFICADO (BLOCOS DE 5 DÍGITOS PARA RÁDIO)</span>
+                <div id="cipher-output" class="font-mono text-emerald-400 font-bold text-base tracking-widest break-all mt-1">
+                  ---
+                </div>
+                <button type="button" class="btn-copy-coords mt-2" onclick="copyCipherOutput()">📋 Copiar Texto</button>
+              </div>
+            </div>
+
+            <!-- Radio Transmission Protocol -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📻</span> Procedimento Padrão de Transmissão Cifrada
+              </div>
+
+              <div class="space-y-3 text-xs text-gray-300">
+                <div class="metric-card">
+                  <strong class="text-cyan-400">1. Chamada de Abertura:</strong>
+                  <div class="font-mono mt-1 text-white">"Aqui Base Alfa para Patrulha 1, prepare bloco de mensagem cifrada chave DELTA. QSL?"</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-amber-400">2. Transmissão em Blocos de 5 Letras:</strong>
+                  <div class="font-mono mt-1 text-white">"Transmito: BRAVO-ALFA-XRAY-ZULU-ECHO [pausa], TANGO-HOTEL-ROMEO-ECHO-ECHO... Total 2 grupos. Câmbio."</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-emerald-400">3. Confirmação e Queima:</strong>
+                  <div class="mt-1">O operador receptor anota os blocos, aplica a chave no decifrador e confirma o recebimento. Destrua anotações físicas de chaves comprometidas.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
            7. TAB: RÁDIO & TELECOMUNICAÇÕES
            ================================================================= -->
       <section class="tab-view" id="tab-telecom">
@@ -925,6 +1298,358 @@
                 <span>🗣️</span> Alfabeto Fonético OTAN / ICAO
               </div>
               <div id="phonetic-list-container" class="route-steps-list" style="max-height: 360px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           10. TAB: GUIA VISUAL DE ANIMAIS PEÇONHENTOS DO BRASIL
+           ================================================================= -->
+      <section class="tab-view" id="tab-venomous">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">TOXICOLOGIA DE CAMPO &amp; IDENTIFICAÇÃO</span>
+              <h2 class="page-title">🐍 Animais Peçonhentos do Brasil</h2>
+              <p class="page-subtitle">
+                Identificação rápida de serpentes (Jararaca, Cascavel, Surucucu, Coral), escorpiões e aranhas, com tipo de veneno, soro correspondente e protocolos vitais.
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="chip-btn chip-highlight" onclick="filterVenomousGroup('all')">Todos</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('serpente')">Serpentes</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('escorpião')">Escorpiões</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('aranha')">Aranhas</button>
+            </div>
+          </div>
+
+          <!-- Red Alert Banner -->
+          <div class="info-box" style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--accent-red); color: #fca5a5; margin-bottom: 1rem;">
+            <strong>REGRA DE OURO EM PICADAS NO BRASIL:</strong> Jamais faça torniquete ou garrote. Jamais corte, fure ou sugue o local. Lave apenas com água e sabão e transporte o paciente com urgência para hospital com soro antiveneno.
+          </div>
+
+          <div id="venomous-container" class="grid-2">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           11. TAB: CALCULADORA DE ENERGIA SOLAR & BATERIAS 12V
+           ================================================================= -->
+      <section class="tab-view" id="tab-solar">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">AUTONOMIA ENERGÉTICA OFF-GRID</span>
+              <h2 class="page-title">⚡ Calculadora Solar &amp; Banco de Baterias</h2>
+              <p class="page-subtitle">
+                Dimensionamento fotovoltaico de emergência para manter rádios, iluminação, geladeiras 12V e equipamentos de campo funcionando sem rede elétrica.
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="window.print()">
+              <span>🖨️</span> Imprimir Projeto Solar
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Inputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⚙️</span> Consumidores de Carga Diária
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Rádio PX / VHF (25W TX)</span>
+                    <span class="text-xs text-gray-400">Escuta e transmissão (~3h/dia)</span>
+                  </div>
+                  <input type="number" id="solar-radio-hours" class="form-input font-mono text-center" style="width: 80px;" value="3" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Iluminação LED Básica (10W total)</span>
+                    <span class="text-xs text-gray-400">2 lâmpadas 5W para abrigo</span>
+                  </div>
+                  <input type="number" id="solar-led-hours" class="form-input font-mono text-center" style="width: 80px;" value="6" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Notebook / Roteador Offline (45W)</span>
+                    <span class="text-xs text-gray-400">Consulta de mapas e dados</span>
+                  </div>
+                  <input type="number" id="solar-pc-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Geladeira / Frigobar 12V (40W ciclo)</span>
+                    <span class="text-xs text-gray-400">Preservação de insulina e comida</span>
+                  </div>
+                  <input type="number" id="solar-fridge-hours" class="form-input font-mono text-center" style="width: 80px;" value="8" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Cargas de Celular / Rádio HT (15W)</span>
+                    <span class="text-xs text-gray-400">Lanternas, baterias e rádios</span>
+                  </div>
+                  <input type="number" id="solar-phone-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                  <span class="stat-label">Região do Brasil (Horas de Sol Pleno - HSP)</span>
+                  <select id="solar-region" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="5.5" selected>Nordeste / Centro-Oeste (HSP ~5.5h/dia)</option>
+                    <option value="4.8">Sudeste (HSP ~4.8h/dia)</option>
+                    <option value="4.2">Sul / Litoral Úmido (HSP ~4.2h/dia)</option>
+                    <option value="4.5">Norte / Amazônia (HSP ~4.5h/dia)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <span class="stat-label">Tipo de Banco de Bateria</span>
+                  <select id="solar-battery-type" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="0.5" selected>Chumbo-Ácido Estacionária (Descarga máx: 50%)</option>
+                    <option value="0.8">Lítio LiFePO4 (Descarga máx: 80%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solar Outputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📊</span> Dimensionamento Recomendado
+              </div>
+
+              <div class="route-metrics-grid mb-3">
+                <div class="metric-card">
+                  <span class="metric-title">CONSUMO DIÁRIO TOTAL</span>
+                  <span class="metric-value font-mono text-cyan-400" id="solar-res-wh">0 Wh/dia</span>
+                  <span class="text-xs text-gray-400" id="solar-res-ah12v">0 Ah em 12V</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">POTÊNCIA DE PAINÉIS</span>
+                  <span class="metric-value font-mono text-amber-400" id="solar-res-panels-w">0 Wp</span>
+                  <span class="text-xs text-gray-400" id="solar-res-panels-qty">0 painéis de 150W</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">BANCO DE BATERIAS (12V)</span>
+                  <span class="metric-value font-mono text-emerald-400" id="solar-res-battery-ah">0 Ah</span>
+                  <span class="text-xs text-gray-400" id="solar-res-battery-qty">Autonomia de 1.5 dias</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">CONTROLADOR DE CARGA</span>
+                  <span class="metric-value font-mono text-white" id="solar-res-controller">0 A</span>
+                  <span class="text-xs text-emerald-400 font-bold" id="solar-res-controller-type">MPPT Recomendado</span>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <div class="text-xs font-bold text-white uppercase mb-2">🔌 Bitola de Fiação &amp; Inversor Sugerido</div>
+                <div class="space-y-1 text-xs text-gray-300">
+                  <div>📏 <strong>Fio Painel para Controlador (&lt; 10m):</strong> <span id="solar-res-wire" class="text-cyan-400 font-mono font-bold">6.0 mm²</span></div>
+                  <div>⚡ <strong>Inversor 12V para 110V/220V:</strong> <span id="solar-res-inverter" class="text-amber-400 font-mono font-bold">600W Onda Senoidal Pura</span></div>
+                  <div>🛡️ <strong>Fusível Principal de Bateria:</strong> <span id="solar-res-fuse" class="text-red-400 font-mono font-bold">60A</span> junto ao polo positivo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           12. TAB: CHECKLIST MOCHILA 72H (BUG-OUT BAG)
+           ================================================================= -->
+      <section class="tab-view" id="tab-bob">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">EQUIPAMENTO INDIVIDUAL DE EVACUAÇÃO</span>
+              <h2 class="page-title">🎒 Checklist de Mochila 72 Horas (BOB)</h2>
+              <p class="page-subtitle">
+                Gerencie seus kits de evacuação rápida, porte diário (EDC) e emergência veicular. Controle o peso total para não ultrapassar o limite ergonômico.
+              </p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button type="button" class="chip-btn chip-highlight" id="bob-tab-bob" onclick="switchBobKit('bob')">Mochila 72h</button>
+              <button type="button" class="chip-btn" id="bob-tab-edc" onclick="switchBobKit('edc')">EDC (Bolso)</button>
+              <button type="button" class="chip-btn" id="bob-tab-car" onclick="switchBobKit('car')">Kit Veicular</button>
+              <button type="button" class="btn-clear-route" onclick="resetBobKit()">Resetar</button>
+            </div>
+          </div>
+
+          <!-- Weight Bar -->
+          <div class="metric-card" style="padding: 1rem;">
+            <div class="flex justify-between items-center mb-1">
+              <span class="stat-label">PESO ESTIMADO DO KIT SELECIONADO</span>
+              <span class="font-mono text-base font-bold text-emerald-400" id="bob-weight-display">0.0 kg / Meta máx: 12.0 kg</span>
+            </div>
+            <div class="route-loading-bar-wrap" style="height: 8px;">
+              <div id="bob-weight-bar" style="width: 0%; height: 100%; background: var(--accent-green); transition: width 0.3s ease;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 mt-2">
+              <span id="bob-status-checked">0 de 0 itens empacotados</span>
+              <span id="bob-status-warning" class="text-amber-400 font-bold"></span>
+            </div>
+          </div>
+
+          <div id="bob-items-container" class="grid-2">
+            <!-- Injected by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           13. TAB: BÚSSOLA DIGITAL & ORIENTAÇÃO SOLAR/ESTELAR
+           ================================================================= -->
+      <section class="tab-view" id="tab-navigation">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">NAVEGAÇÃO TERRESTRE &amp; ASTRONÔMICA</span>
+              <h2 class="page-title">🧭 Bússola Digital &amp; Orientação Natural</h2>
+              <p class="page-subtitle">
+                Leitura do sensor magnetômetro do smartphone com azimute em tempo real e guias de orientação natural no Hemisfério Sul (Cruzeiro do Sul e Relógio Solar).
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="enableCompassSensor()">
+              <span>🎯</span> Calibrar / Ativar Bússola
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Digital Compass Dial -->
+            <div class="tactical-card text-center">
+              <div class="section-heading" style="justify-content: center;">
+                <span>🧭</span> Azimute Magnético
+              </div>
+
+              <div class="compass-dial-wrap">
+                <div class="compass-ring">
+                  <span class="compass-label-cardinal compass-n">N</span>
+                  <span class="compass-label-cardinal compass-e">L</span>
+                  <span class="compass-label-cardinal compass-s">S</span>
+                  <span class="compass-label-cardinal compass-w">O</span>
+                  <div class="compass-needle" id="compass-needle"></div>
+                  <div class="compass-center-pivot" style="top: calc(50% - 7px); left: calc(50% - 7px);"></div>
+                </div>
+              </div>
+
+              <div class="font-mono text-3xl font-extrabold text-emerald-400" id="compass-degrees">
+                000° N
+              </div>
+              <div class="text-xs text-gray-400 mt-1" id="compass-sensor-status">
+                Mova o dispositivo em formato de "8" para calibrar os sensores
+              </div>
+            </div>
+
+            <!-- Natural Navigation Guides (Southern Hemisphere) -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⭐</span> Orientação Estelar (Cruzeiro do Sul)
+              </div>
+              <div class="space-y-2 text-xs text-gray-300">
+                <div class="metric-card">
+                  <div class="text-cyan-400 font-bold mb-1">1. Método do Braço Maior (4,5x):</div>
+                  <div>Localize as 4 estrelas em cruz e as duas "apontadoras" (Alfa e Beta do Centauro). Estenda uma linha imaginária pelo braço maior da cruz por <strong>4 vezes e meia</strong> o seu comprimento. Baixe uma reta vertical até o horizonte: ali está o <strong>Sul Geográfico verdadeiro</strong>.</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-amber-400 font-bold mb-1">2. Método da Vara e Sombra do Sol:</div>
+                  <div>Finque uma vara reta de 1 metro no chão. Marque a ponta da sombra com uma pedra. Espere 15 a 20 minutos e marque a nova posição da ponta da sombra. A linha ligando o ponto 1 ao ponto 2 indica exatamente o <strong>Eixo Leste-Oeste</strong> (o primeiro ponto é Oeste, o segundo é Leste).</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-emerald-400 font-bold mb-1">3. Declinação Magnética no Brasil:</div>
+                  <div>No território brasileiro, o Norte Magnético aponta cerca de <strong>15° a 22° a Oeste</strong> do Norte Verdadeiro (Variação W). Para cartas topográficas militares, some ou subtraia o ângulo de declinação local.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           14. TAB: CIFRA TÁTICA & CÓDIGOS DE COMUNICAÇÃO SEGURA
+           ================================================================= -->
+      <section class="tab-view" id="tab-cipher">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">CRIPTOGRAFIA DE CAMPO &amp; SIGILO</span>
+              <h2 class="page-title">🔐 Cifra Tática &amp; Código de Transmissão</h2>
+              <p class="page-subtitle">
+                Criptografia leve (Cifra de Vernam / One-Time Pad e Blocos de 5 dígitos) para transmitir coordenadas e mensagens táticas via rádio aberto sem ser interceptado.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Cipher Input / Output -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🔒</span> Cifrador / Decifrador de Mensagens
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-input">Mensagem Original ou Cifrada</label>
+                <textarea id="cipher-input" class="route-input font-mono" rows="3" placeholder="Digite o texto (ex: PONTO DE ENCONTRO PONTE KM 45)..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-key">Chave de Segurança Compartilhada (Senha secreta)</label>
+                <div class="flex gap-2">
+                  <input type="text" id="cipher-key" class="route-input font-mono" placeholder="Ex: BRAVO7" value="NOMAD">
+                  <button type="button" class="chip-btn" onclick="generateRandomKey()">🎲 Gerar</button>
+                </div>
+              </div>
+
+              <div class="flex gap-2 mt-2">
+                <button type="button" class="btn-calc-route" style="flex:1;" onclick="processCipher('encrypt')">
+                  <span>🔒</span> Cifrar Mensagem
+                </button>
+                <button type="button" class="btn-export-gpx" style="flex:1;" onclick="processCipher('decrypt')">
+                  <span>🔓</span> Decifrar
+                </button>
+              </div>
+
+              <div class="metric-card mt-3">
+                <span class="metric-title">RESULTADO CODIFICADO (BLOCOS DE 5 DÍGITOS PARA RÁDIO)</span>
+                <div id="cipher-output" class="font-mono text-emerald-400 font-bold text-base tracking-widest break-all mt-1">
+                  ---
+                </div>
+                <button type="button" class="btn-copy-coords mt-2" onclick="copyCipherOutput()">📋 Copiar Texto</button>
+              </div>
+            </div>
+
+            <!-- Radio Transmission Protocol -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📻</span> Procedimento Padrão de Transmissão Cifrada
+              </div>
+
+              <div class="space-y-3 text-xs text-gray-300">
+                <div class="metric-card">
+                  <strong class="text-cyan-400">1. Chamada de Abertura:</strong>
+                  <div class="font-mono mt-1 text-white">"Aqui Base Alfa para Patrulha 1, prepare bloco de mensagem cifrada chave DELTA. QSL?"</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-amber-400">2. Transmissão em Blocos de 5 Letras:</strong>
+                  <div class="font-mono mt-1 text-white">"Transmito: BRAVO-ALFA-XRAY-ZULU-ECHO [pausa], TANGO-HOTEL-ROMEO-ECHO-ECHO... Total 2 grupos. Câmbio."</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-emerald-400">3. Confirmação e Queima:</strong>
+                  <div class="mt-1">O operador receptor anota os blocos, aplica a chave no decifrador e confirma o recebimento. Destrua anotações físicas de chaves comprometidas.</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1058,6 +1783,358 @@
       </section>
 
       <!-- =================================================================
+           10. TAB: GUIA VISUAL DE ANIMAIS PEÇONHENTOS DO BRASIL
+           ================================================================= -->
+      <section class="tab-view" id="tab-venomous">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">TOXICOLOGIA DE CAMPO &amp; IDENTIFICAÇÃO</span>
+              <h2 class="page-title">🐍 Animais Peçonhentos do Brasil</h2>
+              <p class="page-subtitle">
+                Identificação rápida de serpentes (Jararaca, Cascavel, Surucucu, Coral), escorpiões e aranhas, com tipo de veneno, soro correspondente e protocolos vitais.
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="chip-btn chip-highlight" onclick="filterVenomousGroup('all')">Todos</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('serpente')">Serpentes</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('escorpião')">Escorpiões</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('aranha')">Aranhas</button>
+            </div>
+          </div>
+
+          <!-- Red Alert Banner -->
+          <div class="info-box" style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--accent-red); color: #fca5a5; margin-bottom: 1rem;">
+            <strong>REGRA DE OURO EM PICADAS NO BRASIL:</strong> Jamais faça torniquete ou garrote. Jamais corte, fure ou sugue o local. Lave apenas com água e sabão e transporte o paciente com urgência para hospital com soro antiveneno.
+          </div>
+
+          <div id="venomous-container" class="grid-2">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           11. TAB: CALCULADORA DE ENERGIA SOLAR & BATERIAS 12V
+           ================================================================= -->
+      <section class="tab-view" id="tab-solar">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">AUTONOMIA ENERGÉTICA OFF-GRID</span>
+              <h2 class="page-title">⚡ Calculadora Solar &amp; Banco de Baterias</h2>
+              <p class="page-subtitle">
+                Dimensionamento fotovoltaico de emergência para manter rádios, iluminação, geladeiras 12V e equipamentos de campo funcionando sem rede elétrica.
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="window.print()">
+              <span>🖨️</span> Imprimir Projeto Solar
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Inputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⚙️</span> Consumidores de Carga Diária
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Rádio PX / VHF (25W TX)</span>
+                    <span class="text-xs text-gray-400">Escuta e transmissão (~3h/dia)</span>
+                  </div>
+                  <input type="number" id="solar-radio-hours" class="form-input font-mono text-center" style="width: 80px;" value="3" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Iluminação LED Básica (10W total)</span>
+                    <span class="text-xs text-gray-400">2 lâmpadas 5W para abrigo</span>
+                  </div>
+                  <input type="number" id="solar-led-hours" class="form-input font-mono text-center" style="width: 80px;" value="6" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Notebook / Roteador Offline (45W)</span>
+                    <span class="text-xs text-gray-400">Consulta de mapas e dados</span>
+                  </div>
+                  <input type="number" id="solar-pc-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Geladeira / Frigobar 12V (40W ciclo)</span>
+                    <span class="text-xs text-gray-400">Preservação de insulina e comida</span>
+                  </div>
+                  <input type="number" id="solar-fridge-hours" class="form-input font-mono text-center" style="width: 80px;" value="8" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Cargas de Celular / Rádio HT (15W)</span>
+                    <span class="text-xs text-gray-400">Lanternas, baterias e rádios</span>
+                  </div>
+                  <input type="number" id="solar-phone-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                  <span class="stat-label">Região do Brasil (Horas de Sol Pleno - HSP)</span>
+                  <select id="solar-region" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="5.5" selected>Nordeste / Centro-Oeste (HSP ~5.5h/dia)</option>
+                    <option value="4.8">Sudeste (HSP ~4.8h/dia)</option>
+                    <option value="4.2">Sul / Litoral Úmido (HSP ~4.2h/dia)</option>
+                    <option value="4.5">Norte / Amazônia (HSP ~4.5h/dia)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <span class="stat-label">Tipo de Banco de Bateria</span>
+                  <select id="solar-battery-type" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="0.5" selected>Chumbo-Ácido Estacionária (Descarga máx: 50%)</option>
+                    <option value="0.8">Lítio LiFePO4 (Descarga máx: 80%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solar Outputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📊</span> Dimensionamento Recomendado
+              </div>
+
+              <div class="route-metrics-grid mb-3">
+                <div class="metric-card">
+                  <span class="metric-title">CONSUMO DIÁRIO TOTAL</span>
+                  <span class="metric-value font-mono text-cyan-400" id="solar-res-wh">0 Wh/dia</span>
+                  <span class="text-xs text-gray-400" id="solar-res-ah12v">0 Ah em 12V</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">POTÊNCIA DE PAINÉIS</span>
+                  <span class="metric-value font-mono text-amber-400" id="solar-res-panels-w">0 Wp</span>
+                  <span class="text-xs text-gray-400" id="solar-res-panels-qty">0 painéis de 150W</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">BANCO DE BATERIAS (12V)</span>
+                  <span class="metric-value font-mono text-emerald-400" id="solar-res-battery-ah">0 Ah</span>
+                  <span class="text-xs text-gray-400" id="solar-res-battery-qty">Autonomia de 1.5 dias</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">CONTROLADOR DE CARGA</span>
+                  <span class="metric-value font-mono text-white" id="solar-res-controller">0 A</span>
+                  <span class="text-xs text-emerald-400 font-bold" id="solar-res-controller-type">MPPT Recomendado</span>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <div class="text-xs font-bold text-white uppercase mb-2">🔌 Bitola de Fiação &amp; Inversor Sugerido</div>
+                <div class="space-y-1 text-xs text-gray-300">
+                  <div>📏 <strong>Fio Painel para Controlador (&lt; 10m):</strong> <span id="solar-res-wire" class="text-cyan-400 font-mono font-bold">6.0 mm²</span></div>
+                  <div>⚡ <strong>Inversor 12V para 110V/220V:</strong> <span id="solar-res-inverter" class="text-amber-400 font-mono font-bold">600W Onda Senoidal Pura</span></div>
+                  <div>🛡️ <strong>Fusível Principal de Bateria:</strong> <span id="solar-res-fuse" class="text-red-400 font-mono font-bold">60A</span> junto ao polo positivo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           12. TAB: CHECKLIST MOCHILA 72H (BUG-OUT BAG)
+           ================================================================= -->
+      <section class="tab-view" id="tab-bob">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">EQUIPAMENTO INDIVIDUAL DE EVACUAÇÃO</span>
+              <h2 class="page-title">🎒 Checklist de Mochila 72 Horas (BOB)</h2>
+              <p class="page-subtitle">
+                Gerencie seus kits de evacuação rápida, porte diário (EDC) e emergência veicular. Controle o peso total para não ultrapassar o limite ergonômico.
+              </p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button type="button" class="chip-btn chip-highlight" id="bob-tab-bob" onclick="switchBobKit('bob')">Mochila 72h</button>
+              <button type="button" class="chip-btn" id="bob-tab-edc" onclick="switchBobKit('edc')">EDC (Bolso)</button>
+              <button type="button" class="chip-btn" id="bob-tab-car" onclick="switchBobKit('car')">Kit Veicular</button>
+              <button type="button" class="btn-clear-route" onclick="resetBobKit()">Resetar</button>
+            </div>
+          </div>
+
+          <!-- Weight Bar -->
+          <div class="metric-card" style="padding: 1rem;">
+            <div class="flex justify-between items-center mb-1">
+              <span class="stat-label">PESO ESTIMADO DO KIT SELECIONADO</span>
+              <span class="font-mono text-base font-bold text-emerald-400" id="bob-weight-display">0.0 kg / Meta máx: 12.0 kg</span>
+            </div>
+            <div class="route-loading-bar-wrap" style="height: 8px;">
+              <div id="bob-weight-bar" style="width: 0%; height: 100%; background: var(--accent-green); transition: width 0.3s ease;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 mt-2">
+              <span id="bob-status-checked">0 de 0 itens empacotados</span>
+              <span id="bob-status-warning" class="text-amber-400 font-bold"></span>
+            </div>
+          </div>
+
+          <div id="bob-items-container" class="grid-2">
+            <!-- Injected by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           13. TAB: BÚSSOLA DIGITAL & ORIENTAÇÃO SOLAR/ESTELAR
+           ================================================================= -->
+      <section class="tab-view" id="tab-navigation">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">NAVEGAÇÃO TERRESTRE &amp; ASTRONÔMICA</span>
+              <h2 class="page-title">🧭 Bússola Digital &amp; Orientação Natural</h2>
+              <p class="page-subtitle">
+                Leitura do sensor magnetômetro do smartphone com azimute em tempo real e guias de orientação natural no Hemisfério Sul (Cruzeiro do Sul e Relógio Solar).
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="enableCompassSensor()">
+              <span>🎯</span> Calibrar / Ativar Bússola
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Digital Compass Dial -->
+            <div class="tactical-card text-center">
+              <div class="section-heading" style="justify-content: center;">
+                <span>🧭</span> Azimute Magnético
+              </div>
+
+              <div class="compass-dial-wrap">
+                <div class="compass-ring">
+                  <span class="compass-label-cardinal compass-n">N</span>
+                  <span class="compass-label-cardinal compass-e">L</span>
+                  <span class="compass-label-cardinal compass-s">S</span>
+                  <span class="compass-label-cardinal compass-w">O</span>
+                  <div class="compass-needle" id="compass-needle"></div>
+                  <div class="compass-center-pivot" style="top: calc(50% - 7px); left: calc(50% - 7px);"></div>
+                </div>
+              </div>
+
+              <div class="font-mono text-3xl font-extrabold text-emerald-400" id="compass-degrees">
+                000° N
+              </div>
+              <div class="text-xs text-gray-400 mt-1" id="compass-sensor-status">
+                Mova o dispositivo em formato de "8" para calibrar os sensores
+              </div>
+            </div>
+
+            <!-- Natural Navigation Guides (Southern Hemisphere) -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⭐</span> Orientação Estelar (Cruzeiro do Sul)
+              </div>
+              <div class="space-y-2 text-xs text-gray-300">
+                <div class="metric-card">
+                  <div class="text-cyan-400 font-bold mb-1">1. Método do Braço Maior (4,5x):</div>
+                  <div>Localize as 4 estrelas em cruz e as duas "apontadoras" (Alfa e Beta do Centauro). Estenda uma linha imaginária pelo braço maior da cruz por <strong>4 vezes e meia</strong> o seu comprimento. Baixe uma reta vertical até o horizonte: ali está o <strong>Sul Geográfico verdadeiro</strong>.</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-amber-400 font-bold mb-1">2. Método da Vara e Sombra do Sol:</div>
+                  <div>Finque uma vara reta de 1 metro no chão. Marque a ponta da sombra com uma pedra. Espere 15 a 20 minutos e marque a nova posição da ponta da sombra. A linha ligando o ponto 1 ao ponto 2 indica exatamente o <strong>Eixo Leste-Oeste</strong> (o primeiro ponto é Oeste, o segundo é Leste).</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-emerald-400 font-bold mb-1">3. Declinação Magnética no Brasil:</div>
+                  <div>No território brasileiro, o Norte Magnético aponta cerca de <strong>15° a 22° a Oeste</strong> do Norte Verdadeiro (Variação W). Para cartas topográficas militares, some ou subtraia o ângulo de declinação local.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           14. TAB: CIFRA TÁTICA & CÓDIGOS DE COMUNICAÇÃO SEGURA
+           ================================================================= -->
+      <section class="tab-view" id="tab-cipher">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">CRIPTOGRAFIA DE CAMPO &amp; SIGILO</span>
+              <h2 class="page-title">🔐 Cifra Tática &amp; Código de Transmissão</h2>
+              <p class="page-subtitle">
+                Criptografia leve (Cifra de Vernam / One-Time Pad e Blocos de 5 dígitos) para transmitir coordenadas e mensagens táticas via rádio aberto sem ser interceptado.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Cipher Input / Output -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🔒</span> Cifrador / Decifrador de Mensagens
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-input">Mensagem Original ou Cifrada</label>
+                <textarea id="cipher-input" class="route-input font-mono" rows="3" placeholder="Digite o texto (ex: PONTO DE ENCONTRO PONTE KM 45)..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-key">Chave de Segurança Compartilhada (Senha secreta)</label>
+                <div class="flex gap-2">
+                  <input type="text" id="cipher-key" class="route-input font-mono" placeholder="Ex: BRAVO7" value="NOMAD">
+                  <button type="button" class="chip-btn" onclick="generateRandomKey()">🎲 Gerar</button>
+                </div>
+              </div>
+
+              <div class="flex gap-2 mt-2">
+                <button type="button" class="btn-calc-route" style="flex:1;" onclick="processCipher('encrypt')">
+                  <span>🔒</span> Cifrar Mensagem
+                </button>
+                <button type="button" class="btn-export-gpx" style="flex:1;" onclick="processCipher('decrypt')">
+                  <span>🔓</span> Decifrar
+                </button>
+              </div>
+
+              <div class="metric-card mt-3">
+                <span class="metric-title">RESULTADO CODIFICADO (BLOCOS DE 5 DÍGITOS PARA RÁDIO)</span>
+                <div id="cipher-output" class="font-mono text-emerald-400 font-bold text-base tracking-widest break-all mt-1">
+                  ---
+                </div>
+                <button type="button" class="btn-copy-coords mt-2" onclick="copyCipherOutput()">📋 Copiar Texto</button>
+              </div>
+            </div>
+
+            <!-- Radio Transmission Protocol -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📻</span> Procedimento Padrão de Transmissão Cifrada
+              </div>
+
+              <div class="space-y-3 text-xs text-gray-300">
+                <div class="metric-card">
+                  <strong class="text-cyan-400">1. Chamada de Abertura:</strong>
+                  <div class="font-mono mt-1 text-white">"Aqui Base Alfa para Patrulha 1, prepare bloco de mensagem cifrada chave DELTA. QSL?"</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-amber-400">2. Transmissão em Blocos de 5 Letras:</strong>
+                  <div class="font-mono mt-1 text-white">"Transmito: BRAVO-ALFA-XRAY-ZULU-ECHO [pausa], TANGO-HOTEL-ROMEO-ECHO-ECHO... Total 2 grupos. Câmbio."</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-emerald-400">3. Confirmação e Queima:</strong>
+                  <div class="mt-1">O operador receptor anota os blocos, aplica a chave no decifrador e confirma o recebimento. Destrua anotações físicas de chaves comprometidas.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
            9. TAB: CARTÃO TÁTICO DE BOLSO (FOLHA A4)
            ================================================================= -->
       <section class="tab-view" id="tab-pocketcard">
@@ -1170,6 +2247,358 @@
                 </div>
                 <div style="border-top: 1px solid #94a3b8; padding-top: 6px; text-align: center; font-weight: 900;">
                   SOS MORSE: &bull;&bull;&bull; &minus;&minus;&minus; &bull;&bull;&bull; (3 curtos, 3 longos, 3 curtos)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           10. TAB: GUIA VISUAL DE ANIMAIS PEÇONHENTOS DO BRASIL
+           ================================================================= -->
+      <section class="tab-view" id="tab-venomous">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">TOXICOLOGIA DE CAMPO &amp; IDENTIFICAÇÃO</span>
+              <h2 class="page-title">🐍 Animais Peçonhentos do Brasil</h2>
+              <p class="page-subtitle">
+                Identificação rápida de serpentes (Jararaca, Cascavel, Surucucu, Coral), escorpiões e aranhas, com tipo de veneno, soro correspondente e protocolos vitais.
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="chip-btn chip-highlight" onclick="filterVenomousGroup('all')">Todos</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('serpente')">Serpentes</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('escorpião')">Escorpiões</button>
+              <button type="button" class="chip-btn" onclick="filterVenomousGroup('aranha')">Aranhas</button>
+            </div>
+          </div>
+
+          <!-- Red Alert Banner -->
+          <div class="info-box" style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--accent-red); color: #fca5a5; margin-bottom: 1rem;">
+            <strong>REGRA DE OURO EM PICADAS NO BRASIL:</strong> Jamais faça torniquete ou garrote. Jamais corte, fure ou sugue o local. Lave apenas com água e sabão e transporte o paciente com urgência para hospital com soro antiveneno.
+          </div>
+
+          <div id="venomous-container" class="grid-2">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           11. TAB: CALCULADORA DE ENERGIA SOLAR & BATERIAS 12V
+           ================================================================= -->
+      <section class="tab-view" id="tab-solar">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">AUTONOMIA ENERGÉTICA OFF-GRID</span>
+              <h2 class="page-title">⚡ Calculadora Solar &amp; Banco de Baterias</h2>
+              <p class="page-subtitle">
+                Dimensionamento fotovoltaico de emergência para manter rádios, iluminação, geladeiras 12V e equipamentos de campo funcionando sem rede elétrica.
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="window.print()">
+              <span>🖨️</span> Imprimir Projeto Solar
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Inputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⚙️</span> Consumidores de Carga Diária
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Rádio PX / VHF (25W TX)</span>
+                    <span class="text-xs text-gray-400">Escuta e transmissão (~3h/dia)</span>
+                  </div>
+                  <input type="number" id="solar-radio-hours" class="form-input font-mono text-center" style="width: 80px;" value="3" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Iluminação LED Básica (10W total)</span>
+                    <span class="text-xs text-gray-400">2 lâmpadas 5W para abrigo</span>
+                  </div>
+                  <input type="number" id="solar-led-hours" class="form-input font-mono text-center" style="width: 80px;" value="6" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Notebook / Roteador Offline (45W)</span>
+                    <span class="text-xs text-gray-400">Consulta de mapas e dados</span>
+                  </div>
+                  <input type="number" id="solar-pc-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Geladeira / Frigobar 12V (40W ciclo)</span>
+                    <span class="text-xs text-gray-400">Preservação de insulina e comida</span>
+                  </div>
+                  <input type="number" id="solar-fridge-hours" class="form-input font-mono text-center" style="width: 80px;" value="8" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div class="flex justify-between items-center gap-2">
+                  <div style="flex:1;">
+                    <span class="stat-label">Cargas de Celular / Rádio HT (15W)</span>
+                    <span class="text-xs text-gray-400">Lanternas, baterias e rádios</span>
+                  </div>
+                  <input type="number" id="solar-phone-hours" class="form-input font-mono text-center" style="width: 80px;" value="4" min="0" max="24" oninput="calculateSolar()">
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                  <span class="stat-label">Região do Brasil (Horas de Sol Pleno - HSP)</span>
+                  <select id="solar-region" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="5.5" selected>Nordeste / Centro-Oeste (HSP ~5.5h/dia)</option>
+                    <option value="4.8">Sudeste (HSP ~4.8h/dia)</option>
+                    <option value="4.2">Sul / Litoral Úmido (HSP ~4.2h/dia)</option>
+                    <option value="4.5">Norte / Amazônia (HSP ~4.5h/dia)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <span class="stat-label">Tipo de Banco de Bateria</span>
+                  <select id="solar-battery-type" class="form-select mt-1" onchange="calculateSolar()">
+                    <option value="0.5" selected>Chumbo-Ácido Estacionária (Descarga máx: 50%)</option>
+                    <option value="0.8">Lítio LiFePO4 (Descarga máx: 80%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solar Outputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📊</span> Dimensionamento Recomendado
+              </div>
+
+              <div class="route-metrics-grid mb-3">
+                <div class="metric-card">
+                  <span class="metric-title">CONSUMO DIÁRIO TOTAL</span>
+                  <span class="metric-value font-mono text-cyan-400" id="solar-res-wh">0 Wh/dia</span>
+                  <span class="text-xs text-gray-400" id="solar-res-ah12v">0 Ah em 12V</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">POTÊNCIA DE PAINÉIS</span>
+                  <span class="metric-value font-mono text-amber-400" id="solar-res-panels-w">0 Wp</span>
+                  <span class="text-xs text-gray-400" id="solar-res-panels-qty">0 painéis de 150W</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">BANCO DE BATERIAS (12V)</span>
+                  <span class="metric-value font-mono text-emerald-400" id="solar-res-battery-ah">0 Ah</span>
+                  <span class="text-xs text-gray-400" id="solar-res-battery-qty">Autonomia de 1.5 dias</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">CONTROLADOR DE CARGA</span>
+                  <span class="metric-value font-mono text-white" id="solar-res-controller">0 A</span>
+                  <span class="text-xs text-emerald-400 font-bold" id="solar-res-controller-type">MPPT Recomendado</span>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <div class="text-xs font-bold text-white uppercase mb-2">🔌 Bitola de Fiação &amp; Inversor Sugerido</div>
+                <div class="space-y-1 text-xs text-gray-300">
+                  <div>📏 <strong>Fio Painel para Controlador (&lt; 10m):</strong> <span id="solar-res-wire" class="text-cyan-400 font-mono font-bold">6.0 mm²</span></div>
+                  <div>⚡ <strong>Inversor 12V para 110V/220V:</strong> <span id="solar-res-inverter" class="text-amber-400 font-mono font-bold">600W Onda Senoidal Pura</span></div>
+                  <div>🛡️ <strong>Fusível Principal de Bateria:</strong> <span id="solar-res-fuse" class="text-red-400 font-mono font-bold">60A</span> junto ao polo positivo.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           12. TAB: CHECKLIST MOCHILA 72H (BUG-OUT BAG)
+           ================================================================= -->
+      <section class="tab-view" id="tab-bob">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">EQUIPAMENTO INDIVIDUAL DE EVACUAÇÃO</span>
+              <h2 class="page-title">🎒 Checklist de Mochila 72 Horas (BOB)</h2>
+              <p class="page-subtitle">
+                Gerencie seus kits de evacuação rápida, porte diário (EDC) e emergência veicular. Controle o peso total para não ultrapassar o limite ergonômico.
+              </p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button type="button" class="chip-btn chip-highlight" id="bob-tab-bob" onclick="switchBobKit('bob')">Mochila 72h</button>
+              <button type="button" class="chip-btn" id="bob-tab-edc" onclick="switchBobKit('edc')">EDC (Bolso)</button>
+              <button type="button" class="chip-btn" id="bob-tab-car" onclick="switchBobKit('car')">Kit Veicular</button>
+              <button type="button" class="btn-clear-route" onclick="resetBobKit()">Resetar</button>
+            </div>
+          </div>
+
+          <!-- Weight Bar -->
+          <div class="metric-card" style="padding: 1rem;">
+            <div class="flex justify-between items-center mb-1">
+              <span class="stat-label">PESO ESTIMADO DO KIT SELECIONADO</span>
+              <span class="font-mono text-base font-bold text-emerald-400" id="bob-weight-display">0.0 kg / Meta máx: 12.0 kg</span>
+            </div>
+            <div class="route-loading-bar-wrap" style="height: 8px;">
+              <div id="bob-weight-bar" style="width: 0%; height: 100%; background: var(--accent-green); transition: width 0.3s ease;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400 mt-2">
+              <span id="bob-status-checked">0 de 0 itens empacotados</span>
+              <span id="bob-status-warning" class="text-amber-400 font-bold"></span>
+            </div>
+          </div>
+
+          <div id="bob-items-container" class="grid-2">
+            <!-- Injected by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           13. TAB: BÚSSOLA DIGITAL & ORIENTAÇÃO SOLAR/ESTELAR
+           ================================================================= -->
+      <section class="tab-view" id="tab-navigation">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">NAVEGAÇÃO TERRESTRE &amp; ASTRONÔMICA</span>
+              <h2 class="page-title">🧭 Bússola Digital &amp; Orientação Natural</h2>
+              <p class="page-subtitle">
+                Leitura do sensor magnetômetro do smartphone com azimute em tempo real e guias de orientação natural no Hemisfério Sul (Cruzeiro do Sul e Relógio Solar).
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="enableCompassSensor()">
+              <span>🎯</span> Calibrar / Ativar Bússola
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Digital Compass Dial -->
+            <div class="tactical-card text-center">
+              <div class="section-heading" style="justify-content: center;">
+                <span>🧭</span> Azimute Magnético
+              </div>
+
+              <div class="compass-dial-wrap">
+                <div class="compass-ring">
+                  <span class="compass-label-cardinal compass-n">N</span>
+                  <span class="compass-label-cardinal compass-e">L</span>
+                  <span class="compass-label-cardinal compass-s">S</span>
+                  <span class="compass-label-cardinal compass-w">O</span>
+                  <div class="compass-needle" id="compass-needle"></div>
+                  <div class="compass-center-pivot" style="top: calc(50% - 7px); left: calc(50% - 7px);"></div>
+                </div>
+              </div>
+
+              <div class="font-mono text-3xl font-extrabold text-emerald-400" id="compass-degrees">
+                000° N
+              </div>
+              <div class="text-xs text-gray-400 mt-1" id="compass-sensor-status">
+                Mova o dispositivo em formato de "8" para calibrar os sensores
+              </div>
+            </div>
+
+            <!-- Natural Navigation Guides (Southern Hemisphere) -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⭐</span> Orientação Estelar (Cruzeiro do Sul)
+              </div>
+              <div class="space-y-2 text-xs text-gray-300">
+                <div class="metric-card">
+                  <div class="text-cyan-400 font-bold mb-1">1. Método do Braço Maior (4,5x):</div>
+                  <div>Localize as 4 estrelas em cruz e as duas "apontadoras" (Alfa e Beta do Centauro). Estenda uma linha imaginária pelo braço maior da cruz por <strong>4 vezes e meia</strong> o seu comprimento. Baixe uma reta vertical até o horizonte: ali está o <strong>Sul Geográfico verdadeiro</strong>.</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-amber-400 font-bold mb-1">2. Método da Vara e Sombra do Sol:</div>
+                  <div>Finque uma vara reta de 1 metro no chão. Marque a ponta da sombra com uma pedra. Espere 15 a 20 minutos e marque a nova posição da ponta da sombra. A linha ligando o ponto 1 ao ponto 2 indica exatamente o <strong>Eixo Leste-Oeste</strong> (o primeiro ponto é Oeste, o segundo é Leste).</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="text-emerald-400 font-bold mb-1">3. Declinação Magnética no Brasil:</div>
+                  <div>No território brasileiro, o Norte Magnético aponta cerca de <strong>15° a 22° a Oeste</strong> do Norte Verdadeiro (Variação W). Para cartas topográficas militares, some ou subtraia o ângulo de declinação local.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           14. TAB: CIFRA TÁTICA & CÓDIGOS DE COMUNICAÇÃO SEGURA
+           ================================================================= -->
+      <section class="tab-view" id="tab-cipher">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">CRIPTOGRAFIA DE CAMPO &amp; SIGILO</span>
+              <h2 class="page-title">🔐 Cifra Tática &amp; Código de Transmissão</h2>
+              <p class="page-subtitle">
+                Criptografia leve (Cifra de Vernam / One-Time Pad e Blocos de 5 dígitos) para transmitir coordenadas e mensagens táticas via rádio aberto sem ser interceptado.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Cipher Input / Output -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🔒</span> Cifrador / Decifrador de Mensagens
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-input">Mensagem Original ou Cifrada</label>
+                <textarea id="cipher-input" class="route-input font-mono" rows="3" placeholder="Digite o texto (ex: PONTO DE ENCONTRO PONTE KM 45)..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="cipher-key">Chave de Segurança Compartilhada (Senha secreta)</label>
+                <div class="flex gap-2">
+                  <input type="text" id="cipher-key" class="route-input font-mono" placeholder="Ex: BRAVO7" value="NOMAD">
+                  <button type="button" class="chip-btn" onclick="generateRandomKey()">🎲 Gerar</button>
+                </div>
+              </div>
+
+              <div class="flex gap-2 mt-2">
+                <button type="button" class="btn-calc-route" style="flex:1;" onclick="processCipher('encrypt')">
+                  <span>🔒</span> Cifrar Mensagem
+                </button>
+                <button type="button" class="btn-export-gpx" style="flex:1;" onclick="processCipher('decrypt')">
+                  <span>🔓</span> Decifrar
+                </button>
+              </div>
+
+              <div class="metric-card mt-3">
+                <span class="metric-title">RESULTADO CODIFICADO (BLOCOS DE 5 DÍGITOS PARA RÁDIO)</span>
+                <div id="cipher-output" class="font-mono text-emerald-400 font-bold text-base tracking-widest break-all mt-1">
+                  ---
+                </div>
+                <button type="button" class="btn-copy-coords mt-2" onclick="copyCipherOutput()">📋 Copiar Texto</button>
+              </div>
+            </div>
+
+            <!-- Radio Transmission Protocol -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📻</span> Procedimento Padrão de Transmissão Cifrada
+              </div>
+
+              <div class="space-y-3 text-xs text-gray-300">
+                <div class="metric-card">
+                  <strong class="text-cyan-400">1. Chamada de Abertura:</strong>
+                  <div class="font-mono mt-1 text-white">"Aqui Base Alfa para Patrulha 1, prepare bloco de mensagem cifrada chave DELTA. QSL?"</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-amber-400">2. Transmissão em Blocos de 5 Letras:</strong>
+                  <div class="font-mono mt-1 text-white">"Transmito: BRAVO-ALFA-XRAY-ZULU-ECHO [pausa], TANGO-HOTEL-ROMEO-ECHO-ECHO... Total 2 grupos. Câmbio."</div>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-emerald-400">3. Confirmação e Queima:</strong>
+                  <div class="mt-1">O operador receptor anota os blocos, aplica a chave no decifrador e confirma o recebimento. Destrua anotações físicas de chaves comprometidas.</div>
                 </div>
               </div>
             </div>

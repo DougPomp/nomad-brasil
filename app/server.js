@@ -15,12 +15,14 @@ const emergenciesPath = path.join(__dirname, 'data', 'emergencies.json');
 const survivalPath = path.join(__dirname, 'data', 'survival.json');
 const poisPath = path.join(__dirname, 'data', 'pois.json');
 const radioPath = path.join(__dirname, 'data', 'radio_frequencies.json');
+const venomousPath = path.join(__dirname, 'data', 'venomous_animals.json');
 
 const cities = fs.existsSync(citiesPath) ? JSON.parse(fs.readFileSync(citiesPath, 'utf8')) : [];
 const emergencies = fs.existsSync(emergenciesPath) ? JSON.parse(fs.readFileSync(emergenciesPath, 'utf8')) : [];
 const survivalManuals = fs.existsSync(survivalPath) ? JSON.parse(fs.readFileSync(survivalPath, 'utf8')) : [];
 const strategicPois = fs.existsSync(poisPath) ? JSON.parse(fs.readFileSync(poisPath, 'utf8')) : [];
 const radioData = fs.existsSync(radioPath) ? JSON.parse(fs.readFileSync(radioPath, 'utf8')) : { bands: [], q_code: [], phonetic_alphabet: [], antennas: [] };
+const venomousAnimals = fs.existsSync(venomousPath) ? JSON.parse(fs.readFileSync(venomousPath, 'utf8')) : [];
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -254,6 +256,18 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/radio') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(radioData));
+    return;
+  }
+
+  // 4.03 API: Venomous Animals Database
+  if (pathname === '/api/venomous') {
+    const group = urlObj.searchParams.get('group');
+    let results = venomousAnimals;
+    if (group && group !== 'all') {
+      results = venomousAnimals.filter(a => a.group === group);
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(results));
     return;
   }
 

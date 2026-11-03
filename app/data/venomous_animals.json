@@ -1,0 +1,194 @@
+[
+  {
+    "id": "jararaca",
+    "name": "Jararaca (Bothrops jararaca)",
+    "group": "serpente",
+    "venomType": "Botrópico (Proteolítico, Coagulante e Hemorrágico)",
+    "antivenom": "Soro Antibotrópico (SAB)",
+    "lethality": "Alta se não tratada",
+    "incidence": "Responsável por ~85% dos acidentes ofídicos no Brasil",
+    "habitat": "Mata Atlântica, Cerrado, beira de rios e áreas rurais do Sul/Sudeste/Centro-Oeste",
+    "characteristics": "Corpo cinza/pardo com manchas triangulares escuras (em V invertido), cabeça triangular, fosseta loreal (orifício entre olho e narina).",
+    "symptoms": [
+      "Dor imediata e intensa no local da picada",
+      "Inchaço (edema) progressivo e calor local",
+      "Manchas roxas (equimose) e sangramento na gengiva/urina",
+      "Risco de necrose tecidual e insuficiência renal aguda"
+    ],
+    "firstAid": [
+      "Mantenha a vítima em repouso absoluto (o esforço acelera a circulação do veneno)",
+      "Lave o local da picada com água corrente e sabão",
+      "Retire anéis, pulseiras, sapatos e roupas apertadas antes do inchaço",
+      "Mantenha o membro acometido elevado em posição confortável",
+      "Hidrate a vítima com bastante água potável",
+      "Transporte urgentemente para o hospital mais próximo com soro"
+    ],
+    "dangerWarnings": [
+      "NUNCA faça torniquete ou garrote (aumenta o risco de amputação)",
+      "NUNCA corte, fure ou chupe o local da picada",
+      "NUNCA aplique pó de café, fumo, folhas, querosene ou urina",
+      "NUNCA dê álcool ou sedativos à vítima"
+    ]
+  },
+  {
+    "id": "cascavel",
+    "name": "Cascavel (Crotalus durissus)",
+    "group": "serpente",
+    "venomType": "Crotálico (Neurotóxico, Miotóxico e Coagulante)",
+    "antivenom": "Soro Anticrotálico (SAC) ou Antibotrópico-Crotálico",
+    "lethality": "Muito Alta",
+    "incidence": "~9% dos acidentes ofídicos no Brasil",
+    "habitat": "Cerrado, Caatinga, pastagens secas, áreas abertas e pedregosas",
+    "characteristics": "Chocalho (guizo) característico na ponta da cauda. Escamas marrons com desenhos romboidais (losangos claros no dorso).",
+    "symptoms": [
+      "Dor local quase imperceptível (pouco inchaço no local)",
+      "Queda das pálpebras (fácies miastênica) e visão dupla/turva",
+      "Dores musculares generalizadas (mialgia)",
+      "Urina escura avermelhada/cor de coca-cola (mioglobinúria)",
+      "Parada respiratória por bloqueio neuromuscular"
+    ],
+    "firstAid": [
+      "Repouso absoluto para desacelerar o veneno",
+      "Lavar o local com água e sabão",
+      "Hidratação abundante com água para proteger os rins",
+      "Monitorar a respiração do acidentado continuamente",
+      "Evacuação rápida para unidade hospitalar com soro anticrotálico"
+    ],
+    "dangerWarnings": [
+      "NÃO subestime a picada pela ausência de dor local!",
+      "NUNCA faça torniquete",
+      "NUNCA permita que o paciente caminhe ou corra"
+    ]
+  },
+  {
+    "id": "surucucu",
+    "name": "Surucucu Pico-de-Jaca (Lachesis muta)",
+    "group": "serpente",
+    "venomType": "Laquético (Proteolítico, Coagulante, Hemorrágico e Neurovegetativo)",
+    "antivenom": "Soro Antilaquético (SAL) ou Antibotrópico-Laquético",
+    "lethality": "Extrema (Maior serpente peçonhenta das Américas, até 3,5m)",
+    "incidence": "~3% dos acidentes (concentrada na Amazônia e remanescentes de Mata Atlântica)",
+    "habitat": "Florestas densas e úmidas primárias",
+    "characteristics": "Porte grande (2 a 3,5 metros). Escamas eriçadas que lembram a casca de jaca. Cauda com escamas pontiagudas.",
+    "symptoms": [
+      "Dor intensa e edema volumoso imediato",
+      "Diarreia e vômitos profusos",
+      "Queda brusca da pressão arterial (choque) e bradicardia severa",
+      "Hemorragias graves e choque vagal"
+    ],
+    "firstAid": [
+      "Imobilização do paciente e lavagem do ferimento",
+      "Prevenção do choque: deitar a vítima com as pernas levemente elevadas se a pressão cair",
+      "Evacuação médica de emergência máxima (requer altas doses de soro)"
+    ],
+    "dangerWarnings": [
+      "Choque circulatório rápido requer atendimento em UTI médica",
+      "NUNCA faça torniquetes ou cortes"
+    ]
+  },
+  {
+    "id": "coral-verdadeira",
+    "name": "Coral-Verdadeira (Micrurus spp.)",
+    "group": "serpente",
+    "venomType": "Elapídico (Neurotóxico pós-sináptico potente)",
+    "antivenom": "Soro Antielapídico (SAE)",
+    "lethality": "Altíssima se houver inoculação de veneno",
+    "incidence": "< 1% dos acidentes (dentes pequenos e fixos, hábitos fossoriais)",
+    "habitat": "Toca no solo, serrapilheira e sob troncos caídos em todo o Brasil",
+    "characteristics": "Anéis vermelhos, pretos e brancos/amarelados completos ao redor de todo o corpo (incluindo o ventre). Olhos pequenos.",
+    "symptoms": [
+      "Dor leve ou sensação de dormência (parestesia) no local",
+      "Fraqueza muscular progressiva rápida",
+      "Queda de pálpebras, paralisia de língua e dificuldade para engolir",
+      "Insuficiência respiratória aguda por asfixia em poucas horas"
+    ],
+    "firstAid": [
+      "Tratar como emergência médica absoluta mesmo sem dor local",
+      "Lavar o local e manter vítima calma",
+      "Estar preparado para realizar respiração assistida se houver parada respiratória",
+      "Transporte imediato ao hospital de referência regional"
+    ],
+    "dangerWarnings": [
+      "NÃO tente diferenciar coral falsa da verdadeira pela regra das cores — TODA coral deve ser considerada peçonhenta na dúvida!",
+      "A parada respiratória pode ocorrer em menos de 2 a 4 horas"
+    ]
+  },
+  {
+    "id": "escorpiao-amarelo",
+    "name": "Escorpião-Amarelo (Tityus serrulatus)",
+    "group": "escorpião",
+    "venomType": "Escorpiônico (Neurotóxico liberador de neurotransmissores)",
+    "antivenom": "Soro Antiescorpiônico (SAEsc) ou Antiaranídico",
+    "lethality": "Alta em crianças menores de 10 anos e idosos",
+    "incidence": "O animal peçonhento que mais causa acidentes no Brasil urbano e rural",
+    "habitat": "Entulho, tubulações de esgoto, frestas de alvenaria e pilhas de tijolos",
+    "characteristics": "Coloração amarelo-clara com tronco escuro e serrilha na cauda. Reproduz-se por partenogênese (sem necessidade de macho).",
+    "symptoms": [
+      "Dor local imediata insuportável irradiando para o membro",
+      "Suor profuso, salivação intensa e vômitos repetidos",
+      "Arritmia cardíaca, hipertensão inicial seguida de choque",
+      "Edema pulmonar agudo em crianças (principal causa de óbito)"
+    ],
+    "firstAid": [
+      "Compressas de água morna/quente no local (ajuda a aliviar a dor)",
+      "Lavar com água e sabão",
+      "Levar IMEDIATAMENTE crianças ao hospital para bloqueio anestésico e soro",
+      "Capturar o animal com segurança em pote fechado para identificação"
+    ],
+    "dangerWarnings": [
+      "Gelo NÃO é recomendado (o calor ameniza mais a dor de escorpião)",
+      "Em crianças pequenas, o quadro pode se agravar em menos de 30 minutos"
+    ]
+  },
+  {
+    "id": "aranha-marrom",
+    "name": "Aranha-Marrom (Loxosceles spp.)",
+    "group": "aranha",
+    "venomType": "Loxoscélico (Proteolítico, Hemolítico e Vasculítico)",
+    "antivenom": "Soro Antiloxoscélico ou Antiaranídico",
+    "lethality": "Média/Alta (Risco de falência renal aguda)",
+    "incidence": "Muito comum na região Sul e Sudeste (Paraná, SP, RS, SC)",
+    "habitat": "Atrás de quadros, cortinas, roupas guardadas e caixas de papelão",
+    "characteristics": "Pequena (3 a 4 cm com pernas). Marrom uniforme, cefalotórax com desenho que lembra um violino. Teia irregular parecida com chumaço de algodão.",
+    "symptoms": [
+      "Picada indolor ou pouco dolorosa no momento",
+      "Após 12 a 24 horas: lesão em alvo (placa marmórea de centro arroxeado e borda vermelha)",
+      "Evolução para necrose seca e úlcera profunda de difícil cicatrização",
+      "Forma visceral (rara, mas grave): febre, anemia hemolítica e urina escura"
+    ],
+    "firstAid": [
+      "Lavar o local com água e sabão",
+      "Aplicar compressas frias locais (o frio retarda a ação da enzima esfingomielinase)",
+      "Procurar posto médico para avaliação mesmo que a dor pareça insignificante"
+    ],
+    "dangerWarnings": [
+      "NUNCA espremer ou furar a bolha de necrose",
+      "Sacuda sempre roupas e calçados antes de vestir"
+    ]
+  },
+  {
+    "id": "aranha-armadeira",
+    "name": "Aranha-Armadeira (Phoneutria spp.)",
+    "group": "aranha",
+    "venomType": "Foneútrico (Neurotóxico excitatório periférico)",
+    "antivenom": "Soro Antictenídico ou Antiaranídico",
+    "lethality": "Moderada a Alta em crianças e idosos",
+    "incidence": "Comum em plantações de banana, frestas de madeira e calçados",
+    "habitat": "Troncos, bromélias, entulho, calçados e telhados",
+    "characteristics": "Muito agressiva: quando acuada, apoia-se nas pernas traseiras, ergue as pernas dianteiras e salta até 40 cm. Pode atingir 15 cm de envergadura.",
+    "symptoms": [
+      "Dor imediata violenta e queimação irradiada",
+      "Edema local discreto com sudorese e formigamento",
+      "Priapismo (ereção dolorosa involuntária e prolongada)",
+      "Taquicardia, tremores musculares e vômitos"
+    ],
+    "firstAid": [
+      "Compressas de água morna no local para alívio térmico da dor",
+      "Lavar ferimento com água e sabão",
+      "Encaminhamento ao pronto-socorro para infiltração de anestésico local sem vasoconstritor"
+    ],
+    "dangerWarnings": [
+      "A aranha armadeira não constrói teias fixas e é ativa à noite — cuidado ao manusear lenha e ferramentas no escuro"
+    ]
+  }
+]

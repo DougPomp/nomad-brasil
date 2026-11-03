@@ -41,6 +41,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -659,6 +660,118 @@
     }
     .flash-white { background: #fff !important; }
 
+    /* Compass Styles */
+    .compass-dial-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 1.5rem 0;
+    }
+    .compass-ring {
+      position: relative;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      border: 4px solid #1e293b;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8), 0 0 15px rgba(16, 185, 129, 0.15);
+      background: radial-gradient(circle, #0d151c 0%, #06090c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .compass-needle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 60px;
+      transform-origin: 50% 100%;
+      transform: translate(-50%, -100%) rotate(0deg);
+      transition: transform 0.15s ease-out;
+      z-index: 4;
+    }
+    .compass-needle::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -8px;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 35px solid #ef4444;
+    }
+    .compass-needle::after {
+      content: '';
+      position: absolute;
+      bottom: -35px;
+      left: -8px;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 35px solid #38bdf8;
+    }
+    .compass-center-pivot {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: #ffffff;
+      border: 3px solid #10b981;
+      border-radius: 50%;
+      z-index: 5;
+    }
+    .compass-label-cardinal {
+      position: absolute;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+    .compass-n { top: 6px; left: calc(50% - 6px); color: #ef4444; }
+    .compass-s { bottom: 6px; left: calc(50% - 6px); color: #38bdf8; }
+    .compass-e { right: 8px; top: calc(50% - 8px); color: #cbd5e1; }
+    .compass-w { left: 8px; top: calc(50% - 8px); color: #cbd5e1; }
+
+    /* BOB Checklist Styles */
+    .bob-category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.85rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+      border-left: 3px solid var(--accent-green);
+    }
+    .bob-item-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.45rem 0.65rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .bob-item-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .bob-item-row input[type="checkbox"] {
+      accent-color: var(--accent-green);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .bob-item-weight {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent-amber);
+      margin-left: auto;
+    }
+
     footer {
       border-top: 1px solid var(--border);
       padding: 1.75rem 1.5rem;
@@ -780,6 +893,10 @@
             <span class="tab-icon">🚑</span>
             <span>Primeiros Socorros</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="venomous" onclick="switchDemoTab('venomous')">
+            <span class="tab-icon">🐍</span>
+            <span>Animais Peçonhentos</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="morse" onclick="switchDemoTab('morse')">
             <span class="tab-icon">🚨</span>
             <span>Morse &amp; Farol SOS</span>
@@ -788,12 +905,28 @@
             <span class="tab-icon">📻</span>
             <span>Rádio &amp; Antenas</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="cipher" onclick="switchDemoTab('cipher')">
+            <span class="tab-icon">🔐</span>
+            <span>Cifra &amp; Código Tático</span>
+          </button>
         </div>
 
         <div class="nav-group">
           <div class="nav-group-label">Logística &amp; Apoio</div>
-          <button type="button" class="demo-tab-btn" data-demo-tab="rationing" onclick="switchDemoTab('rationing')">
+          <button type="button" class="demo-tab-btn" data-demo-tab="solar" onclick="switchDemoTab('solar')">
+            <span class="tab-icon">⚡</span>
+            <span>Energia Solar 12V</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="bob" onclick="switchDemoTab('bob')">
             <span class="tab-icon">🎒</span>
+            <span>Mochila 72h (BOB)</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="navigation" onclick="switchDemoTab('navigation')">
+            <span class="tab-icon">🧭</span>
+            <span>Bússola &amp; Orientação</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="rationing" onclick="switchDemoTab('rationing')">
+            <span class="tab-icon">🍲</span>
             <span>Racionamento &amp; Água</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="pocketcard" onclick="switchDemoTab('pocketcard')">
@@ -1151,6 +1284,271 @@
           </div>
         </section>
 
+        <!-- TAB 9: ANIMAIS PEÇONHENTOS -->
+        <section class="tab-pane" id="tab-venomous">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div>
+                <h2 class="card-title">🐍 Animais Peçonhentos do Brasil</h2>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Catálogo toxicológico com identificação morfológica, ação do veneno, soros antiveneno do SUS e protocolos vitais.
+                </p>
+              </div>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="chip-btn chip-highlight" onclick="filterVenomousOnline('all')">Todos</button>
+                <button type="button" class="chip-btn" onclick="filterVenomousOnline('serpente')">Serpentes</button>
+                <button type="button" class="chip-btn" onclick="filterVenomousOnline('escorpião')">Escorpiões</button>
+                <button type="button" class="chip-btn" onclick="filterVenomousOnline('aranha')">Aranhas</button>
+              </div>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--accent-red); padding: 0.85rem; border-radius: 4px; color: #fca5a5; font-size: 0.85rem; margin-bottom: 1.25rem;">
+              <strong>⚠️ REGRA DE OURO EM ACIDENTES NO BRASIL:</strong> NÃO faça torniquete, NÃO fure e NÃO chupe o local. Lave com água e sabão e transporte o acidentado com urgência ao hospital de referência.
+            </div>
+
+            <div id="online-venomous-container" class="grid-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 10: ENERGIA SOLAR & BATERIAS 12V -->
+        <section class="tab-pane" id="tab-solar">
+          <div class="card">
+            <h2 class="card-title">⚡ Calculadora de Energia Solar &amp; Baterias 12V</h2>
+            <p class="card-subtitle">
+              Dimensionamento fotovoltaico de emergência para manter sistemas de telecomunicações, iluminação, geladeiras 12V e equipamentos de campo.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.65rem;">⚙️ Consumo Diário de Carga</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Rádio PX / VHF (25W TX) - h/dia:</span>
+                    <input type="number" id="sol-rad" class="route-input" style="width: 70px; text-align: center;" value="3" min="0" max="24" oninput="calcSolarOnline()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Iluminação LED Básica (10W total) - h/dia:</span>
+                    <input type="number" id="sol-led" class="route-input" style="width: 70px; text-align: center;" value="6" min="0" max="24" oninput="calcSolarOnline()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Notebook / Roteador (45W) - h/dia:</span>
+                    <input type="number" id="sol-pc" class="route-input" style="width: 70px; text-align: center;" value="4" min="0" max="24" oninput="calcSolarOnline()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Geladeira 12V (40W ciclo) - h/dia:</span>
+                    <input type="number" id="sol-fridge" class="route-input" style="width: 70px; text-align: center;" value="8" min="0" max="24" oninput="calcSolarOnline()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Recargas USB Celular/HT (15W) - h/dia:</span>
+                    <input type="number" id="sol-usb" class="route-input" style="width: 70px; text-align: center;" value="4" min="0" max="24" oninput="calcSolarOnline()">
+                  </div>
+
+                  <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.25rem;">
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.25rem;">REGIÃO DO BRASIL (SOL PLENO):</div>
+                    <select id="sol-reg" class="route-input" onchange="calcSolarOnline()">
+                      <option value="5.5" selected>Nordeste / Centro-Oeste (HSP ~5.5h/dia)</option>
+                      <option value="4.8">Sudeste (HSP ~4.8h/dia)</option>
+                      <option value="4.2">Sul / Litoral Úmido (HSP ~4.2h/dia)</option>
+                      <option value="4.5">Norte / Amazônia (HSP ~4.5h/dia)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.25rem;">TIPO DE BATERIA:</div>
+                    <select id="sol-bat" class="route-input" onchange="calcSolarOnline()">
+                      <option value="0.5" selected>Chumbo-Ácido Estacionária (DoD 50%)</option>
+                      <option value="0.8">Lítio LiFePO4 (DoD 80%)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.65rem;">📊 Dimensionamento Recomendado</h3>
+                <div class="route-metrics-grid mb-2">
+                  <div class="metric-card">
+                    <span class="metric-title">CONSUMO DIÁRIO</span>
+                    <span class="metric-value" style="color: #38bdf8;" id="sol-out-wh">0 Wh</span>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);" id="sol-out-ah">0 Ah (12V)</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">PAINÉIS SOLARES</span>
+                    <span class="metric-value" style="color: #fbbf24;" id="sol-out-panels">0 Wp</span>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);" id="sol-out-panels-qty">0x 150W</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">BANCO BATERIA</span>
+                    <span class="metric-value" style="color: #34d399;" id="sol-out-batt">0 Ah</span>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">1.5 dias autonomia</span>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-title">CONTROLADOR</span>
+                    <span class="metric-value" style="color: #fff;" id="sol-out-ctrl">0 A</span>
+                    <span style="font-size: 0.7rem; color: #34d399; font-weight: bold;">MPPT</span>
+                  </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 0.65rem; border-radius: 6px; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">
+                  <div>📏 <strong>Bitola Fio Painel-Controlador:</strong> <span id="sol-out-wire" style="color: #38bdf8; font-weight: bold;">6.0 mm²</span></div>
+                  <div>⚡ <strong>Inversor 12V &rarr; 110V/220V:</strong> <span id="sol-out-inv" style="color: #fbbf24; font-weight: bold;">600W Senoidal Pura</span></div>
+                  <div>🛡️ <strong>Fusível Geral do Polo Positivo:</strong> <span id="sol-out-fuse" style="color: #f87171; font-weight: bold;">60A</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 11: MOCHILA 72H (BOB) -->
+        <section class="tab-pane" id="tab-bob">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div>
+                <h2 class="card-title">🎒 Checklist Tático de Mochila 72h (BOB)</h2>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Kits para evacuação rápida, porte diário e emergência rodoviária com balanço dinâmico de peso em tempo real.
+                </p>
+              </div>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="chip-btn chip-highlight" id="bob-btn-bob" onclick="switchOnlineBobKit('bob')">Mochila 72h</button>
+                <button type="button" class="chip-btn" id="bob-btn-edc" onclick="switchOnlineBobKit('edc')">EDC (Bolso)</button>
+                <button type="button" class="chip-btn" id="bob-btn-car" onclick="switchOnlineBobKit('car')">Kit Veicular</button>
+                <button type="button" class="btn-sidebar-action secondary" style="padding: 0.35rem 0.65rem;" onclick="resetOnlineBobKit()">Resetar</button>
+              </div>
+            </div>
+
+            <!-- Weight meter -->
+            <div class="metric-card" style="margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <span class="metric-title">PESO ESTIMADO DO KIT</span>
+                <span style="font-family: monospace; font-size: 1rem; font-weight: 800; color: #34d399;" id="online-bob-weight">0.0 kg</span>
+              </div>
+              <div style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
+                <div id="online-bob-weight-bar" style="height: 100%; width: 0%; background: #10b981; transition: width 0.3s ease;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+                <span id="online-bob-checked-count">0 itens</span>
+                <span id="online-bob-warning" style="font-weight: bold; color: #fbbf24;"></span>
+              </div>
+            </div>
+
+            <div id="online-bob-container" class="grid-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 12: BÚSSOLA & ORIENTAÇÃO -->
+        <section class="tab-pane" id="tab-navigation">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div>
+                <h2 class="card-title">🧭 Bússola Digital &amp; Orientação Natural</h2>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Leitura magnetométrica em tempo real e técnicas de orientação no Hemisfério Sul (Cruzeiro do Sul e Vareta Solar).
+                </p>
+              </div>
+              <button type="button" class="chip-btn chip-highlight" onclick="enableOnlineCompass()">
+                🎯 Ativar Sensor Magnético
+              </button>
+            </div>
+
+            <div class="grid-2">
+              <div class="metric-card" style="text-align: center; padding: 1.5rem 1rem;">
+                <div class="metric-title" style="margin-bottom: 0.5rem;">AZIMUTE MAGNÉTICO EM TEMPO REAL</div>
+                <div class="compass-dial-wrap">
+                  <div class="compass-ring">
+                    <span class="compass-label-cardinal compass-n">N</span>
+                    <span class="compass-label-cardinal compass-e">L</span>
+                    <span class="compass-label-cardinal compass-s">S</span>
+                    <span class="compass-label-cardinal compass-w">O</span>
+                    <div class="compass-needle" id="online-compass-needle"></div>
+                    <div class="compass-center-pivot"></div>
+                  </div>
+                </div>
+                <div style="font-family: monospace; font-size: 2rem; font-weight: 900; color: #34d399;" id="online-compass-deg">
+                  000° N
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;" id="online-compass-status">
+                  Toque em 'Ativar Sensor Magnético' para conectar o giroscópio/magnetômetro.
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.65rem;">⭐ Orientação pelo Cruzeiro do Sul</h3>
+                <div style="font-size: 0.82rem; line-height: 1.5; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem;">
+                  <div style="background: rgba(255,255,255,0.03); padding: 0.65rem; border-radius: 6px;">
+                    <strong style="color: #fff;">1. Método dos 4,5x:</strong> Identifique a cruz no céu noturno. Prolongue o braço maior da cruz (haste vertical) <strong>4 vezes e meia</strong> em linha reta na direção do pé da cruz. Baixe uma linha vertical reta até o horizonte: esse ponto é o <strong>Sul Verdadeiro</strong>.
+                  </div>
+                  <div style="background: rgba(255,255,255,0.03); padding: 0.65rem; border-radius: 6px;">
+                    <strong style="color: #fff;">2. Método da Vareta e Sombra:</strong> Espete uma vara reta no solo verticalmente. Marque a ponta da primeira sombra com uma pedra. Espere 20 minutos e marque a segunda posição da sombra. A linha da primeira para a segunda pedra aponta exatamente para o <strong>Leste</strong>.
+                  </div>
+                  <div style="background: rgba(255,255,255,0.03); padding: 0.65rem; border-radius: 6px;">
+                    <strong style="color: #fff;">3. Declinação Magnética no Brasil:</strong> No Brasil a declinação magnética varia entre <strong>15° e 23° Oeste</strong>. O Norte da agulha aponta à esquerda do Norte Geográfico da carta.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 13: CIFRA & CÓDIGO TÁTICO -->
+        <section class="tab-pane" id="tab-cipher">
+          <div class="card">
+            <h2 class="card-title">🔐 Cifra Tática de Campo (Vernam / OTP)</h2>
+            <p class="card-subtitle">
+              Criptografia tática para comunicação via rádio PX, VHF ou mensageiro em blocos de 5 letras sem depender de redes de computadores.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.65rem;">✍️ Cifrador / Decifrador</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                  <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700;">MENSAGEM:</label>
+                    <textarea id="online-cipher-input" class="route-input font-mono" rows="3" style="width: 100%; margin-top: 0.25rem;" placeholder="Ex: PONTO DE ENCONTRO PONTE KM 45"></textarea>
+                  </div>
+
+                  <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700;">CHAVE COMPARTILHADA:</label>
+                    <div style="display: flex; gap: 0.35rem; margin-top: 0.25rem;">
+                      <input type="text" id="online-cipher-key" class="route-input font-mono" value="NOMAD" style="flex: 1;">
+                      <button type="button" class="chip-btn" onclick="genOnlineKey()">🎲 Gerar</button>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
+                    <button type="button" class="btn-sidebar-action primary" style="flex: 1; justify-content: center;" onclick="runOnlineCipher('encrypt')">🔒 Cifrar</button>
+                    <button type="button" class="btn-sidebar-action secondary" style="flex: 1; justify-content: center;" onclick="runOnlineCipher('decrypt')">🔓 Decifrar</button>
+                  </div>
+
+                  <div class="metric-card" style="margin-top: 0.5rem;">
+                    <span class="metric-title">RESULTADO EM BLOCOS DE 5 LETRAS</span>
+                    <div id="online-cipher-res" style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: #34d399; letter-spacing: 0.15em; word-break: break-all; margin-top: 0.35rem;">
+                      ---
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.65rem;">📻 Procedimento de Transmissão por Rádio</h3>
+                <div style="font-size: 0.82rem; line-height: 1.5; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.65rem;">
+                  <div style="background: rgba(255,255,255,0.03); padding: 0.65rem; border-radius: 6px;">
+                    <strong style="color: #38bdf8;">1. Chamada:</strong> "Base Alfa para Patrulha 1, mensagem cifrada chave NOMAD. Total 2 blocos. QSL?"
+                  </div>
+                  <div style="background: rgba(255,255,255,0.03); padding: 0.65rem; border-radius: 6px;">
+                    <strong style="color: #fbbf24;">2. Transmissão Fonética:</strong> Soletre cada letra do bloco no Alfabeto Fonético ICAO (ex: <em>BRAVO-ECHO-ALFA-TANGO-OSCAR</em>) com pausas nítidas entre os blocos.
+                  </div>
+                  <div style="background: rgba(255,255,255,0.03); padding: 0.65rem; border-radius: 6px;">
+                    <strong style="color: #34d399;">3. Descarte Seguro:</strong> Chaves de uso único (OTP) devem ser destruídas ou queimadas fisicamente após o recebimento.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <footer>
@@ -1462,7 +1860,298 @@
       }
     }
 
+    // =====================================================================
+    // 9. ANIMAIS PEÇONHENTOS (ONLINE SHOWCASE)
+    // =====================================================================
+    let onlineVenomousData = [];
+    let onlineVenomousFilter = 'all';
+
+    async function loadOnlineVenomous() {
+      try {
+        const res = await fetch('data/venomous_animals.json');
+        onlineVenomousData = await res.json();
+        renderOnlineVenomous();
+      } catch (e) {
+        console.warn('Erro ao carregar animais peçonhentos:', e);
+      }
+    }
+
+    function filterVenomousOnline(grp) {
+      onlineVenomousFilter = grp;
+      const sec = document.getElementById('tab-venomous');
+      if (sec) {
+        sec.querySelectorAll('.chip-btn').forEach(b => {
+          const t = b.textContent.toLowerCase();
+          b.classList.toggle('chip-highlight', (grp === 'all' && t.includes('todos')) ||
+            (grp === 'serpente' && t.includes('serpentes')) ||
+            (grp === 'escorpião' && t.includes('escorpiões')) ||
+            (grp === 'aranha' && t.includes('aranhas')));
+        });
+      }
+      renderOnlineVenomous();
+    }
+
+    function renderOnlineVenomous() {
+      const box = document.getElementById('online-venomous-container');
+      if (!box) return;
+      const filtered = (onlineVenomousFilter === 'all')
+        ? onlineVenomousData
+        : onlineVenomousData.filter(i => (i.group || '').toLowerCase().includes(onlineVenomousFilter));
+
+      box.innerHTML = filtered.map(i => {
+        const lethality = i.lethality || i.dangerLevel || 'ALTO';
+        const isCrit = lethality.toLowerCase().includes('muito') || lethality.toLowerCase().includes('crítico');
+        const firstAidText = Array.isArray(i.firstAid)
+          ? i.firstAid.map(s => `<div>• ${s}</div>`).join('')
+          : (i.firstAid || '');
+
+        return `
+          <div class="metric-card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.4rem;">
+              <div>
+                <span style="font-size:0.65rem; color:var(--text-dim); font-weight:800; text-transform:uppercase;">${i.group}</span>
+                <h3 style="font-size:1rem; color:#fff; font-weight:800; margin-top:0.15rem;">${i.name}</h3>
+              </div>
+              <span class="protocol-badge" style="background:${isCrit ? 'rgba(239,68,68,0.2)' : 'rgba(251,191,36,0.2)'}; color:${isCrit ? '#f87171' : '#fbbf24'};">${lethality}</span>
+            </div>
+            <div style="font-size:0.78rem; line-height:1.45; color:var(--text-secondary); display:flex; flex-direction:column; gap:0.4rem;">
+              <div><strong style="color:#fbbf24;">Ação do Veneno:</strong> ${i.venomType}</div>
+              <div><strong style="color:#34d399;">Soro SUS / Butantan:</strong> <span style="font-family:monospace; font-weight:bold; color:#fff;">${i.antivenom || i.antivenomSerum}</span></div>
+              <div><strong style="color:#38bdf8;">Identificação:</strong> ${i.characteristics || i.identification}</div>
+              <div style="background:rgba(239,68,68,0.1); padding:0.45rem; border-radius:4px; color:#fca5a5;">
+                <strong style="display:block; margin-bottom:0.25rem;">Primeiros Socorros:</strong>
+                ${firstAidText}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =====================================================================
+    // 10. ENERGIA SOLAR & BATERIAS (ONLINE)
+    // =====================================================================
+    function calcSolarOnline() {
+      const r = parseFloat(document.getElementById('sol-rad')?.value || '3');
+      const l = parseFloat(document.getElementById('sol-led')?.value || '6');
+      const p = parseFloat(document.getElementById('sol-pc')?.value || '4');
+      const f = parseFloat(document.getElementById('sol-fridge')?.value || '8');
+      const u = parseFloat(document.getElementById('sol-usb')?.value || '4');
+
+      const hsp = parseFloat(document.getElementById('sol-reg')?.value || '4.8');
+      const dod = parseFloat(document.getElementById('sol-bat')?.value || '0.5');
+
+      const totalWh = (r * 25) + (l * 10) + (p * 45) + (f * 40) + (u * 15);
+      const totalAh12 = totalWh / 12;
+
+      const wp = Math.ceil(totalWh / (hsp * 0.75));
+      const pQty = Math.ceil(wp / 150) || 1;
+      const battAh = Math.ceil((totalAh12 * 1.5) / dod);
+      const ctrlA = Math.ceil((wp / 12) * 1.25);
+
+      document.getElementById('sol-out-wh').textContent = `${Math.round(totalWh)} Wh`;
+      document.getElementById('sol-out-ah').textContent = `${totalAh12.toFixed(1)} Ah (12V)`;
+      document.getElementById('sol-out-panels').textContent = `${wp} Wp`;
+      document.getElementById('sol-out-panels-qty').textContent = `${pQty}x painel(éis) de 150W`;
+      document.getElementById('sol-out-batt').textContent = `${battAh} Ah`;
+      document.getElementById('sol-out-ctrl').textContent = `${Math.max(10, ctrlA)} A`;
+      document.getElementById('sol-out-wire').textContent = ctrlA > 20 ? '10.0 mm²' : '6.0 mm²';
+      document.getElementById('sol-out-inv').textContent = totalWh > 500 ? '1000W Senoidal Pura' : '600W Senoidal Pura';
+      document.getElementById('sol-out-fuse').textContent = `${Math.max(40, Math.ceil(ctrlA * 1.5))}A`;
+    }
+
+    // =====================================================================
+    // 11. CHECKLIST BOB (ONLINE SHOWCASE)
+    // =====================================================================
+    const ONLINE_BOB = {
+      bob: {
+        name: 'Mochila 72h (Evacuação)', max: 12.0,
+        items: [
+          { id: 'ob1', name: 'Cantil militar inox 1L cheio', w: 1.25, c: true },
+          { id: 'ob2', name: 'Filtro de água portátil de campo', w: 0.12, c: true },
+          { id: 'ob3', name: 'Pastilhas de cloro Clorin (blister 20)', w: 0.02, c: true },
+          { id: 'ob4', name: 'Rações de emergência / barras (3 dias)', w: 1.50, c: true },
+          { id: 'ob5', name: 'Pederneira de magnésio + Isqueiro maçarico', w: 0.14, c: true },
+          { id: 'ob6', name: '2x Mantas térmicas de mylar aluminizadas', w: 0.12, c: true },
+          { id: 'ob7', name: 'Lona tática ripstop 3x3m + Paracord 15m', w: 0.83, c: true },
+          { id: 'ob8', name: 'Poncho impermeável camuflado militar', w: 0.35, c: true },
+          { id: 'ob9', name: 'Torniquete C-A-T + Bandagem israelense 6"', w: 0.25, c: true },
+          { id: 'ob10', name: 'Kit primeiros socorros e remédios essenciais', w: 0.35, c: true },
+          { id: 'ob11', name: 'Rádio comunicador Baofeng UV-5R VHF/UHF', w: 0.28, c: true },
+          { id: 'ob12', name: 'Powerbank 20000mAh + Lanterna de cabeça', w: 0.54, c: true },
+          { id: 'ob13', name: 'Faca full-tang + Canivete multi-função', w: 0.60, c: true },
+          { id: 'ob14', name: 'Silver Tape 10m + Abraçadeiras plásticas', w: 0.15, c: true },
+          { id: 'ob15', name: 'Cartão de Bolso Nomad A4 + Cópia de Docs', w: 0.09, c: true }
+        ]
+      },
+      edc: {
+        name: 'EDC de Bolso', max: 1.5,
+        items: [
+          { id: 'oe1', name: 'Canivete dobrável com trava segura', w: 0.12, c: true },
+          { id: 'oe2', name: 'Mini lanterna tática LED USB', w: 0.08, c: true },
+          { id: 'oe3', name: 'Isqueiro compacto', w: 0.03, c: true },
+          { id: 'oe4', name: 'Mini caneta + apito de emergência', w: 0.04, c: true },
+          { id: 'oe5', name: 'Curativos adesivos e dipirona', w: 0.02, c: true },
+          { id: 'oe6', name: 'Cédula de reserva de dinheiro em espécie', w: 0.01, c: true }
+        ]
+      },
+      car: {
+        name: 'Kit Veicular de Emergência', max: 20.0,
+        items: [
+          { id: 'oc1', name: 'Cabo auxiliar de bateria 500A (chupeta)', w: 1.80, c: true },
+          { id: 'oc2', name: 'Compressor de ar 12V para pneus', w: 1.40, c: true },
+          { id: 'oc3', name: 'Kit reparo macarrão antifuro', w: 0.30, c: true },
+          { id: 'oc4', name: 'Cabo de reboque 5 toneladas c/ manilhas', w: 2.10, c: true },
+          { id: 'oc5', name: 'Colete refletivo + Sinalizador LED', w: 0.40, c: true },
+          { id: 'oc6', name: 'Galão homologado 5L com água potável/motor', w: 5.30, c: true },
+          { id: 'oc7', name: 'Extintor ABC inspecionado e válido', w: 2.00, c: true },
+          { id: 'oc8', name: 'Pá tática dobrável de desatolamento', w: 1.10, c: true }
+        ]
+      }
+    };
+
+    let curOnlineBob = 'bob';
+    let storedBobState = {};
+
+    function switchOnlineBobKit(k) {
+      curOnlineBob = k;
+      ['bob', 'edc', 'car'].forEach(id => {
+        const b = document.getElementById(`bob-btn-${id}`);
+        if (b) b.classList.toggle('chip-highlight', id === k);
+      });
+      renderOnlineBob();
+    }
+
+    function toggleOnlineBobItem(id) {
+      storedBobState[id] = !storedBobState[id];
+      renderOnlineBob();
+    }
+
+    function resetOnlineBobKit() {
+      ONLINE_BOB[curOnlineBob].items.forEach(i => delete storedBobState[i.id]);
+      renderOnlineBob();
+    }
+
+    function renderOnlineBob() {
+      const box = document.getElementById('online-bob-container');
+      if (!box) return;
+      const kit = ONLINE_BOB[curOnlineBob];
+
+      let totW = 0;
+      let totC = 0;
+
+      box.innerHTML = kit.items.map(i => {
+        const isC = (storedBobState[i.id] !== undefined) ? storedBobState[i.id] : i.c;
+        if (isC) { totW += i.w; totC++; }
+        return `
+          <div class="bob-item-row" onclick="toggleOnlineBobItem('${i.id}')">
+            <input type="checkbox" ${isC ? 'checked' : ''} onclick="event.stopPropagation(); toggleOnlineBobItem('${i.id}');">
+            <span style="${isC ? '' : 'color:var(--text-dim); text-decoration:line-through;'}">${i.name}</span>
+            <span class="bob-item-weight">${i.w.toFixed(2)} kg</span>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('online-bob-weight').textContent = `${totW.toFixed(2)} kg / Meta: ${kit.max.toFixed(1)} kg`;
+      const pct = Math.min(100, Math.round((totW / kit.max) * 100));
+      const bar = document.getElementById('online-bob-weight-bar');
+      if (bar) {
+        bar.style.width = `${pct}%`;
+        bar.style.background = totW > kit.max ? '#ef4444' : (totW > kit.max * 0.85 ? '#fbbf24' : '#10b981');
+      }
+      document.getElementById('online-bob-checked-count').textContent = `${totC} de ${kit.items.length} itens empacotados`;
+      const warn = document.getElementById('online-bob-warning');
+      if (warn) {
+        warn.textContent = totW > kit.max ? `⚠️ SOBREPESO: +${(totW - kit.max).toFixed(2)} kg!` : '✅ Peso seguro de marcha.';
+      }
+    }
+
+    // =====================================================================
+    // 12. BÚSSOLA DIGITAL (ONLINE)
+    // =====================================================================
+    function enableOnlineCompass() {
+      const st = document.getElementById('online-compass-status');
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(state => {
+          if (state === 'granted') {
+            window.addEventListener('deviceorientation', handleOnlineOrient, true);
+            if (st) st.textContent = 'Sensor magnético conectado.';
+          } else if (st) st.textContent = 'Permissão de sensor negada.';
+        }).catch(err => { if (st) st.textContent = 'Erro de sensor: ' + err.message; });
+      } else if ('ondeviceorientationabsolute' in window) {
+        window.addEventListener('deviceorientationabsolute', handleOnlineOrient, true);
+        if (st) st.textContent = 'Sensor absoluto ativo.';
+      } else if ('ondeviceorientation' in window) {
+        window.addEventListener('deviceorientation', handleOnlineOrient, true);
+        if (st) st.textContent = 'Sensor giroscópio ativo.';
+      } else {
+        if (st) st.textContent = 'Navegador sem suporte a magnetômetro.';
+      }
+    }
+
+    function handleOnlineOrient(e) {
+      let deg = e.webkitCompassHeading;
+      if (deg === undefined && e.alpha !== null) deg = (360 - e.alpha) % 360;
+      if (deg === undefined || isNaN(deg)) return;
+      const h = Math.round(deg);
+      const needle = document.getElementById('online-compass-needle');
+      const txt = document.getElementById('online-compass-deg');
+      if (needle) needle.style.transform = `translate(-50%, -100%) rotate(${h}deg)`;
+      if (txt) {
+        let card = 'N';
+        if (h >= 337.5 || h < 22.5) card = 'N';
+        else if (h >= 22.5 && h < 67.5) card = 'NE';
+        else if (h >= 67.5 && h < 112.5) card = 'L';
+        else if (h >= 112.5 && h < 157.5) card = 'SE';
+        else if (h >= 157.5 && h < 202.5) card = 'S';
+        else if (h >= 202.5 && h < 247.5) card = 'SO';
+        else if (h >= 247.5 && h < 292.5) card = 'O';
+        else if (h >= 292.5 && h < 337.5) card = 'NO';
+        txt.textContent = `${String(h).padStart(3, '0')}° ${card}`;
+      }
+    }
+
+    // =====================================================================
+    // 13. CIFRA TÁTICA (ONLINE)
+    // =====================================================================
+    function genOnlineKey() {
+      const c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let k = '';
+      for (let i = 0; i < 8; i++) k += c.charAt(Math.floor(Math.random() * c.length));
+      document.getElementById('online-cipher-key').value = k;
+    }
+
+    function runOnlineCipher(mode) {
+      const raw = (document.getElementById('online-cipher-input')?.value || '').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const key = (document.getElementById('online-cipher-key')?.value || 'NOMAD').toUpperCase().replace(/[^A-Z]/g, '');
+      const out = document.getElementById('online-cipher-res');
+      if (!out) return;
+      if (!key) { alert('Digite uma chave com letras de A a Z'); return; }
+      const text = raw.replace(/[^A-Z]/g, '');
+      if (!text) { out.textContent = '--- (Nenhuma letra para cifrar)'; return; }
+
+      let res = '';
+      for (let i = 0; i < text.length; i++) {
+        const tc = text.charCodeAt(i) - 65;
+        const kc = key.charCodeAt(i % key.length) - 65;
+        const code = mode === 'encrypt' ? (tc + kc) % 26 : (tc - kc + 26) % 26;
+        res += String.fromCharCode(code + 65);
+      }
+      const blocks = [];
+      for (let i = 0; i < res.length; i += 5) blocks.push(res.substring(i, i + 5));
+      out.textContent = blocks.join(' ');
+    }
+
+    // Service Worker PWA registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // Initialize all modules
     initData();
+    loadOnlineVenomous();
+    calcSolarOnline();
+    renderOnlineBob();
   </script>
 </body>
 </html>

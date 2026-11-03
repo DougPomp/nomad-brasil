@@ -2022,3 +2022,127 @@ a {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ==========================================================================
+   11. NEW TACTICAL MODULES: SOLAR, BUG-OUT BAG, COMPASS & CIPHER
+   ========================================================================== */
+.compass-dial-wrap {
+  width: 220px;
+  height: 220px;
+  margin: 1.5rem auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compass-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(16, 185, 129, 0.4);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(9, 13, 16, 0.95) 70%);
+  position: relative;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.15), inset 0 0 15px rgba(0, 0, 0, 0.8);
+}
+
+.compass-needle {
+  position: absolute;
+  top: 15px;
+  bottom: 15px;
+  left: calc(50% - 2px);
+  width: 4px;
+  transform-origin: center center;
+  transition: transform 0.15s ease-out;
+  pointer-events: none;
+}
+
+.compass-needle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 35px solid #ef4444;
+}
+
+.compass-needle::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 35px solid #38bdf8;
+}
+
+.compass-center-pivot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: 3px solid #10b981;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.compass-label-cardinal {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+.compass-n { top: 6px; left: calc(50% - 6px); color: #ef4444; }
+.compass-s { bottom: 6px; left: calc(50% - 6px); color: #38bdf8; }
+.compass-e { right: 8px; top: calc(50% - 8px); color: #cbd5e1; }
+.compass-w { left: 8px; top: calc(50% - 8px); color: #cbd5e1; }
+
+.bob-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid var(--accent-green);
+}
+
+.bob-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.bob-item-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.bob-item-row.checked {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+.bob-item-row input[type="checkbox"] {
+  accent-color: var(--accent-green);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.bob-item-weight {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent-amber);
+  margin-left: auto;
+}
+
