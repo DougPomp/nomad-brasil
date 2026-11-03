@@ -14,7 +14,8 @@ const OFFLINE_URLS = [
   './data/pois.json',
   './data/radio_frequencies.json',
   './data/survival.json',
-  './data/venomous_animals.json'
+  './data/venomous_animals.json',
+  './data/panc_plants.json'
 ];
 
 self.addEventListener('install', (event) => {

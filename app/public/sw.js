@@ -18,7 +18,8 @@ const OFFLINE_URLS = [
   '/api/survival',
   '/api/pois',
   '/api/radio',
-  '/api/venomous'
+  '/api/venomous',
+  '/api/plants'
 ];
 
 self.addEventListener('install', (event) => {

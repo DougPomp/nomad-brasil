@@ -2146,3 +2146,59 @@ a {
   margin-left: auto;
 }
 
+/* Layered Water Filter Graphic */
+.water-filter-column {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.filter-layer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.layer-gravel { background: #334155; color: #f1f5f9; border-left: 4px solid #94a3b8; }
+.layer-coarse-sand { background: #451a03; color: #fde68a; border-left: 4px solid #f59e0b; }
+.layer-fine-sand { background: #78350f; color: #fef3c7; border-left: 4px solid #d97706; }
+.layer-charcoal { background: #0f172a; color: #cbd5e1; border-left: 4px solid #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+.layer-cloth { background: #1e293b; color: #34d399; border-left: 4px solid #10b981; }
+
+/* Numbered step badges */
+.step-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-green-dim);
+  color: #34d399;
+  font-size: 0.72rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* Storm Distance Display */
+.storm-display-box {
+  background: radial-gradient(circle, #0f172a 0%, #06090c 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+.storm-km-val {
+  font-family: var(--font-mono);
+  font-size: 2.75rem;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: -0.02em;
+}
+

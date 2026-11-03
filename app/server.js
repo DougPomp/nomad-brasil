@@ -16,6 +16,7 @@ const survivalPath = path.join(__dirname, 'data', 'survival.json');
 const poisPath = path.join(__dirname, 'data', 'pois.json');
 const radioPath = path.join(__dirname, 'data', 'radio_frequencies.json');
 const venomousPath = path.join(__dirname, 'data', 'venomous_animals.json');
+const plantsPath = path.join(__dirname, 'data', 'panc_plants.json');
 
 const cities = fs.existsSync(citiesPath) ? JSON.parse(fs.readFileSync(citiesPath, 'utf8')) : [];
 const emergencies = fs.existsSync(emergenciesPath) ? JSON.parse(fs.readFileSync(emergenciesPath, 'utf8')) : [];
@@ -23,6 +24,7 @@ const survivalManuals = fs.existsSync(survivalPath) ? JSON.parse(fs.readFileSync
 const strategicPois = fs.existsSync(poisPath) ? JSON.parse(fs.readFileSync(poisPath, 'utf8')) : [];
 const radioData = fs.existsSync(radioPath) ? JSON.parse(fs.readFileSync(radioPath, 'utf8')) : { bands: [], q_code: [], phonetic_alphabet: [], antennas: [] };
 const venomousAnimals = fs.existsSync(venomousPath) ? JSON.parse(fs.readFileSync(venomousPath, 'utf8')) : [];
+const pancPlants = fs.existsSync(plantsPath) ? JSON.parse(fs.readFileSync(plantsPath, 'utf8')) : [];
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -265,6 +267,18 @@ const server = http.createServer((req, res) => {
     let results = venomousAnimals;
     if (group && group !== 'all') {
       results = venomousAnimals.filter(a => a.group === group);
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(results));
+    return;
+  }
+
+  // 4.04 API: PANC & Fitoterapia Database
+  if (pathname === '/api/plants') {
+    const type = urlObj.searchParams.get('type');
+    let results = pancPlants;
+    if (type && type !== 'all') {
+      results = pancPlants.filter(p => (p.type || '').toLowerCase().includes(type.toLowerCase()));
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(results));

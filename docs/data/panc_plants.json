@@ -1,0 +1,98 @@
+[
+  {
+    "id": "ora-pro-nobis",
+    "name": "Ora-pro-nóbis (Pereskia aculeata)",
+    "type": "Alimentícia (PANC)",
+    "proteinContent": "~25% matéria seca (Carne dos Pobres)",
+    "identification": "Cactácea trepadeira ou arbustiva com folhas verdes suculentas, caules com espinhos afiados e flores brancas perfumadas.",
+    "edibleParts": "Folhas jovens e maduras, flores e frutos amarelos.",
+    "preparation": "Pode ser consumida crua em saladas, refogada com alho e cebola, adicionada a feijão, sopas, omeletes ou desidratada e moída como farinha nutritiva.",
+    "habitat": "Muito comum em todo o Brasil (Sudeste, Sul, Nordeste), quintais, cercas vivas e bordas de matas.",
+    "warnings": "Atenção aos espinhos nos ramos ao colher. Não confundir com espécies ornamentais não comestíveis.",
+    "medicinal": "Rica em ferro, ácido fólico, fibras e cálcio; combate anemia e inflamações intestinais."
+  },
+  {
+    "id": "taioba-mansa",
+    "name": "Taioba Mansa (Xanthosoma sagittifolium)",
+    "type": "Alimentícia (PANC)",
+    "proteinContent": "Rica em vitamina A, C, ferro e fibras",
+    "identification": "Folha grande em formato de coração/flecha. DIFERENCIAL VITAL: Na taioba mansa, o corte da fenda da folha vai ATÉ o ponto de inserção do talo (pecíolo), e o talo é verde uniforme com nervura marginal contínua ao redor de toda a borda.",
+    "edibleParts": "Apenas as folhas (bem cozidas) e o rizoma subterrâneo (cozido).",
+    "preparation": "NUNCA COMER CRUA! Deve ser fervida, escaldada ou refogada por pelo menos 5 minutos para destruir os cristais de oxalato de cálcio que irritam a garganta.",
+    "habitat": "Locais úmidos, sombreados, beira de córregos e solos ricos em matéria orgânica em quase todo o Brasil.",
+    "warnings": "PERIGO EXTREMO: A 'Taioba-Brava' (Colocasia antiquorum / folhas roxas ou talo escuro onde a fenda NÃO toca o talo) é venenosa e queima severamente as mucosas por excesso de oxalato.",
+    "medicinal": "Fortalece imunidade, protege a visão e regulariza o trânsito digestivo."
+  },
+  {
+    "id": "picao-preto",
+    "name": "Picão-Preto (Bidens pilosa)",
+    "type": "Medicinal & Alimentícia",
+    "proteinContent": "Antioxidante e antiviral potente",
+    "identification": "Erva anual ereta (30-80cm), folhas opostas serrilhadas, flores pequenas amarelas e sementes pretas alongadas com ganchos que grudam na roupa.",
+    "edibleParts": "Brotos tenros e folhas jovens.",
+    "preparation": "Cozido em sopas, refogados e chás de infusão.",
+    "habitat": "Espontâneo em todo o território nacional, hortas, pastos, beiras de estrada e terrenos baldios.",
+    "warnings": "Evitar colher em beiras de estradas asfaltadas com alto tráfego devido a metais pesados da fumaça.",
+    "medicinal": "O chá das folhas e flores combate icterícia, hepatite, úlceras estomacais, inflamações na garganta e infecções urinárias."
+  },
+  {
+    "id": "beldroega",
+    "name": "Beldroega (Portulaca oleracea)",
+    "type": "Alimentícia (Superalimento)",
+    "proteinContent": "A maior fonte vegetal de Ômega-3",
+    "identification": "Planta rasteira e suculenta, caules avermelhados carnudos, folhas verdes ovais e brilhantes, flores amarelas pequenas.",
+    "edibleParts": "Toda a parte aérea (caules e folhas).",
+    "preparation": "Excelente crua em saladas (sabor levemente ácido e refrescante), refogada ou batida em sucos.",
+    "habitat": "Solos férteis, hortas, vasos e calçadas em todo o Brasil.",
+    "warnings": "Consumir cozida caso o indivíduo tenha tendência a cálculo renal (possui oxalato solúvel).",
+    "medicinal": "Combate inflamações cardíacas, protege os vasos sanguíneos e é cicatrizante tópico."
+  },
+  {
+    "id": "dente-de-leao",
+    "name": "Dente-de-Leão (Taraxacum officinale)",
+    "type": "Alimentícia & Desintoxicante",
+    "proteinContent": "Rico em potássio, ferro e inulina",
+    "identification": "Roseta de folhas basais dentadas, haste oca contendo látex branco e flor amarela solitária que se transforma em pompom de sementes plumosas.",
+    "edibleParts": "Folhas, botões florais, flores e raízes.",
+    "preparation": "Folhas cruas ou refogadas (amargor suave similar à rúcula); raízes tostadas e moídas servem como substituto do café.",
+    "habitat": "Climas temperados e tropicais do Sul, Sudeste e planaltos brasileiros.",
+    "warnings": "Lavar bem para remover sujidades do solo.",
+    "medicinal": "Poderoso estimulante hepático e renal; purifica o sangue e estimula a digestão em situações de racionamento."
+  },
+  {
+    "id": "guaco",
+    "name": "Guaco (Mikania glomerata)",
+    "type": "Medicinal (Vias Aéreas)",
+    "proteinContent": "Broncodilatador e Expectorante natural",
+    "identification": "Cipó lenhoso, folhas coriáceas verde-escuras, brilhantes, em formato de lança triangular, com aroma característico de cumarina (baunilha/mata doce).",
+    "edibleParts": "Apenas folhas em infusão (chá) ou xarope.",
+    "preparation": "Ferver 4 a 6 folhas em 500ml de água por 5 minutos ou macerar com açúcar/mel para xarope.",
+    "habitat": "Mata Atlântica, matas de galeria e cultivado em hortas medicinais brasileiras.",
+    "warnings": "Contraindicado para pessoas usando anticoagulantes ou com problemas de coagulação sanguínea.",
+    "medicinal": "Tratamento de tosse persistente, bronquite, asma de campo, chiado no peito e picadas venenosas leves (uso tópico complementar)."
+  },
+  {
+    "id": "boldo-da-terra",
+    "name": "Boldo-Brasileiro / Falso-Boldo (Plectranthus barbatus)",
+    "type": "Medicinal (Digestivo de Emergência)",
+    "proteinContent": "Rico em Barbatusina e Forcolina",
+    "identification": "Arbusto perene até 1,5m, folhas aveludadas, grossas e macias, com bordas serrilhadas e cheiro amargo característico ao amassar.",
+    "edibleParts": "Folhas cruas maceradas em água fria (chá a frio).",
+    "preparation": "Amasse 1 folha grande em um copo de água fria potável e beba. Não há necessidade de ferver para não perder os óleos essenciais ativos.",
+    "habitat": "Presente em praticamente todos os quintais e terrenos do Brasil.",
+    "warnings": "Uso excessivo por mais de 5 dias seguidos pode irritar a mucosa gástrica.",
+    "medicinal": "Alívio imediato de intoxicação alimentar, indigestão, azia, ressaca, dores de estômago e mal-estar hepático no campo."
+  },
+  {
+    "id": "erva-baleeira",
+    "name": "Erva-Baleeira (Cordia verbenacea)",
+    "type": "Medicinal (Anti-inflamatório Potente)",
+    "proteinContent": "Princípio ativo Alfa-humuleno",
+    "identification": "Arbusto de 1,5 a 2,5m, folhas alongadas verde-escuras, ásperas, com forte aroma que lembra caldo de galinha ou tempero marinho.",
+    "edibleParts": "Folhas para infusão, compressas tópicas ou macerado em álcool.",
+    "preparation": "Compressas quentes com o chá concentrado sobre músculos e articulações lesionadas ou chá brando (1 colher de folhas por xícara).",
+    "habitat": "Litoral brasileiro, restingas, Mata Atlântica e cerrado.",
+    "warnings": "Não ingerir em grandes volumes contínuos.",
+    "medicinal": "Excelente anti-inflamatório para torções, tendinites de marcha prolongada, dores musculares agudas e contusões de evacuação."
+  }
+]

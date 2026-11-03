@@ -772,6 +772,60 @@
       margin-left: auto;
     }
 
+    /* Water filter styles */
+    .water-filter-column {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .filter-layer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+    .layer-gravel { background: #334155; color: #f1f5f9; border-left: 4px solid #94a3b8; }
+    .layer-coarse-sand { background: #451a03; color: #fde68a; border-left: 4px solid #f59e0b; }
+    .layer-fine-sand { background: #78350f; color: #fef3c7; border-left: 4px solid #d97706; }
+    .layer-charcoal { background: #0f172a; color: #cbd5e1; border-left: 4px solid #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+    .layer-cloth { background: #1e293b; color: #34d399; border-left: 4px solid #10b981; }
+
+    .step-number-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent-green-dim);
+      color: #34d399;
+      font-size: 0.72rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .storm-display-box {
+      background: radial-gradient(circle, #0f172a 0%, #06090c 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1rem;
+      text-align: center;
+    }
+    .storm-km-val {
+      font-family: var(--font-mono);
+      font-size: 2.75rem;
+      font-weight: 900;
+      color: #38bdf8;
+      letter-spacing: -0.02em;
+    }
+
     footer {
       border-top: 1px solid var(--border);
       padding: 1.75rem 1.5rem;
@@ -897,6 +951,18 @@
             <span class="tab-icon">🐍</span>
             <span>Animais Peçonhentos</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="plants" onclick="switchDemoTab('plants')">
+            <span class="tab-icon">🌾</span>
+            <span>Plantas &amp; PANC</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="water" onclick="switchDemoTab('water')">
+            <span class="tab-icon">🌊</span>
+            <span>Água &amp; Saneamento</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="knots" onclick="switchDemoTab('knots')">
+            <span class="tab-icon">🪢</span>
+            <span>Nós &amp; Amarrações</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="morse" onclick="switchDemoTab('morse')">
             <span class="tab-icon">🚨</span>
             <span>Morse &amp; Farol SOS</span>
@@ -908,6 +974,10 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="cipher" onclick="switchDemoTab('cipher')">
             <span class="tab-icon">🔐</span>
             <span>Cifra &amp; Código Tático</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="weather" onclick="switchDemoTab('weather')">
+            <span class="tab-icon">⛈️</span>
+            <span>Meteorologia &amp; Nuvens</span>
           </button>
         </div>
 
@@ -921,6 +991,14 @@
             <span class="tab-icon">🎒</span>
             <span>Mochila 72h (BOB)</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="pef" onclick="switchDemoTab('pef')">
+            <span class="tab-icon">👨‍👩‍👧‍👦</span>
+            <span>Plano Familiar (PEF)</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="vehicle" onclick="switchDemoTab('vehicle')">
+            <span class="tab-icon">🚗</span>
+            <span>Mecânica &amp; 4x4</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="navigation" onclick="switchDemoTab('navigation')">
             <span class="tab-icon">🧭</span>
             <span>Bússola &amp; Orientação</span>
@@ -932,6 +1010,10 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="pocketcard" onclick="switchDemoTab('pocketcard')">
             <span class="tab-icon">📄</span>
             <span>Cartão de Bolso A4</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="export" onclick="switchDemoTab('export')">
+            <span class="tab-icon">📥</span>
+            <span>Pacote Portátil Offline</span>
           </button>
         </div>
       </nav>
@@ -1549,6 +1631,271 @@
           </div>
         </section>
 
+        <!-- TAB 14: PLANTAS ALIMENTÍCIAS (PANC) & FITOTERAPIA -->
+        <section class="tab-pane" id="tab-plants">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div>
+                <h2 class="card-title">🌾 Plantas Alimentícias (PANC) &amp; Fitoterapia</h2>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Identificação de plantas silvestres nutritivas do Brasil, diferenciação de espécies tóxicas e o Protocolo Universal de Comestibilidade.
+                </p>
+              </div>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="chip-btn chip-highlight" onclick="filterOnlinePlants('all')">Todas</button>
+                <button type="button" class="chip-btn" onclick="filterOnlinePlants('Alimentícia')">Alimentícias (PANC)</button>
+                <button type="button" class="chip-btn" onclick="filterOnlinePlants('Medicinal')">Medicinais</button>
+              </div>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--accent-red); padding: 0.85rem; border-radius: 4px; color: #fca5a5; font-size: 0.85rem; margin-bottom: 1.25rem;">
+              <strong>⚠️ ALERTA DE SEGURANÇA MÁXIMA (TAIOBA MANSA vs BRAVA):</strong> Na Taioba Mansa (comestível quando cozida), a fenda entre as duas orelhas da folha chega exatamente no ponto de inserção do talo. Na Taioba-Brava (tóxica), a fenda NÃO toca o talo. NUNCA consuma folhas cruas!
+            </div>
+
+            <div class="metric-card" style="margin-bottom: 1.25rem;">
+              <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🔬 Protocolo Militar: Teste Universal de Comestibilidade (8 Passos)</h3>
+              <div class="grid-2" style="font-size: 0.8rem; gap: 0.5rem;">
+                <div><span class="step-number-badge">1</span> <strong>Isolar partes:</strong> Teste apenas 1 parte (folha OU caule OU raiz) por vez.</div>
+                <div><span class="step-number-badge">2</span> <strong>Odor:</strong> Se cheirar a amêndoa amarga ou pêssego bravo (cianeto), descarte.</div>
+                <div><span class="step-number-badge">3</span> <strong>Contato na pele:</strong> Esfregue no antebraço e aguarde 15 min sem irritação.</div>
+                <div><span class="step-number-badge">4</span> <strong>Lábios:</strong> Encoste nos lábios por 3 min sem queimar ou formigar.</div>
+                <div><span class="step-number-badge">5</span> <strong>Ponta da língua:</strong> Segure sobre a língua por 15 min sem engolir.</div>
+                <div><span class="step-number-badge">6</span> <strong>Mastigação:</strong> Mastigue um pedacinho por 15 min e engula.</div>
+                <div><span class="step-number-badge">7</span> <strong>Jejum de 8h:</strong> Monitore náuseas, dor abdominal ou febre por 8 horas.</div>
+                <div><span class="step-number-badge">8</span> <strong>Liberação:</strong> Coma 1/4 de xícara cozida e espere 4h antes de liberar.</div>
+              </div>
+            </div>
+
+            <div id="online-plants-container" class="grid-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 15: SANEAMENTO DE CAMPO & ÁGUA -->
+        <section class="tab-pane" id="tab-water">
+          <div class="card">
+            <h2 class="card-title">🌊 Água Potável, Filtração &amp; Saneamento</h2>
+            <p class="card-subtitle">
+              Desinfecção solar SODIS, filtro por gravidade com carvão ativado moído e latrina sanitária de trincheira para acampamentos de evacuação.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🧪 Filtro Gravitacional em Camadas</h3>
+                <div class="water-filter-column mb-2">
+                  <div class="filter-layer-row layer-gravel"><span>1. Brita / Cascalho Pequeno (5 cm)</span><span>Retém galhos e folhas</span></div>
+                  <div class="filter-layer-row layer-coarse-sand"><span>2. Areia Grossa Lavada (6 cm)</span><span>Retém terra e cascalho</span></div>
+                  <div class="filter-layer-row layer-fine-sand"><span>3. Areia Fina / Quartzo (8 cm)</span><span>Retém micropartículas</span></div>
+                  <div class="filter-layer-row layer-charcoal"><span>4. Carvão Ativado Moído (6 cm)</span><span>Absorve toxinas e odores</span></div>
+                  <div class="filter-layer-row layer-cloth"><span>5. Bico: Algodão ou Tecido</span><span>Impede carvão de descer</span></div>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary);">
+                  <strong>Como ativar o carvão de fogueira:</strong> Ferva o carvão vegetal moído em água com sal e limão ou vinagre por 10 minutos para abrir os microporos adsortivos.
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">☀️ Desinfecção Solar SODIS (OMS)</h3>
+                <div style="font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem;">
+                  <div>• Use garrafas PET transparentes e lisas de até 2 litros.</div>
+                  <div>• Encha 3/4, chacoalhe por 20 segundos para oxigenar, complete e deite sobre superfície reflexiva.</div>
+                  <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 4px;">
+                    <strong style="color: #fff;">Tempo de Exposição:</strong><br>
+                    <span style="color: #34d399; font-weight: bold;">Sol Pleno: 6 horas</span> &bull; <span style="color: #fbbf24;">Céu Nublado: 2 dias</span>
+                  </div>
+                  <div style="border-top: 1px solid var(--border); padding-top: 0.5rem;">
+                    <strong style="color: #fbbf24;">Latrina Sanitária de Trincheira:</strong> Cavar a pelo menos <strong>60 metros</strong> de qualquer curso d'água. Dimensões: 30cm de largura por 60cm a 1m de profundidade. Jogue 3 pás de terra e cinza após cada uso.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 16: NÓS & AMARRAÇÕES TÁTICAS -->
+        <section class="tab-pane" id="tab-knots">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div>
+                <h2 class="card-title">🪢 Manual Tático de Nós &amp; Amarrações</h2>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Os nós fundamentais para resgate, montagem de abrigo contra vendaval e tensionamento de cargas.
+                </p>
+              </div>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="chip-btn chip-highlight" onclick="filterOnlineKnots('all')">Todos</button>
+                <button type="button" class="chip-btn" onclick="filterOnlineKnots('ancoragem')">Ancoragem</button>
+                <button type="button" class="chip-btn" onclick="filterOnlineKnots('tensao')">Tensionamento</button>
+                <button type="button" class="chip-btn" onclick="filterOnlineKnots('uniao')">União</button>
+              </div>
+            </div>
+
+            <div id="online-knots-container" class="grid-2">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 17: PLANO DE EMERGÊNCIA FAMILIAR (PEF) -->
+        <section class="tab-pane" id="tab-pef">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div>
+                <h2 class="card-title">👨‍👩‍👧‍👦 Plano de Emergência Familiar (PEF)</h2>
+                <p class="card-subtitle" style="margin-bottom: 0;">
+                  Cadastre os pontos de encontro da família e contato fora da área para triangulação de recados em desastres.
+                </p>
+              </div>
+              <button type="button" class="chip-btn chip-highlight" onclick="window.print()">
+                🖨️ Imprimir Ficha Familiar
+              </button>
+            </div>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">📍 Pontos de Encontro &amp; Contato</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <div>
+                    <label style="font-size: 0.72rem; color: var(--text-dim); font-weight: bold;">PONTO 1 (NO BAIRRO - IMEDIATO):</label>
+                    <input type="text" id="online-pef-p1" class="route-input" style="width: 100%; margin-top: 0.2rem;" placeholder="Ex: Praça Central / Portaria da Escola" oninput="saveOnlinePef()">
+                  </div>
+                  <div>
+                    <label style="font-size: 0.72rem; color: var(--text-dim); font-weight: bold;">PONTO 2 (REGIONAL - FORA DO MUNICÍPIO):</label>
+                    <input type="text" id="online-pef-p2" class="route-input" style="width: 100%; margin-top: 0.2rem;" placeholder="Ex: Sítio em Atibaia - Rodovia SP-065 km 78" oninput="saveOnlinePef()">
+                  </div>
+                  <div style="border-top: 1px solid var(--border); padding-top: 0.4rem; margin-top: 0.2rem;">
+                    <label style="font-size: 0.72rem; color: #fbbf24; font-weight: bold;">CONTATO FORA DA ÁREA (OUTRO ESTADO):</label>
+                    <div style="display: flex; gap: 0.35rem; margin-top: 0.2rem;">
+                      <input type="text" id="online-pef-name" class="route-input" placeholder="Nome" style="flex: 1;" oninput="saveOnlinePef()">
+                      <input type="text" id="online-pef-phone" class="route-input font-mono" placeholder="DDD + Telefone" style="flex: 1;" oninput="saveOnlinePef()">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">⚡ Checklist de Evacuação (15 Minutos)</h3>
+                <div class="space-y-1" style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  <label class="bob-item-row"><input type="checkbox" id="on_pef_gas" onchange="saveOnlinePef()"><span>Fechar registro geral de gás (GLP ou rua)</span></label>
+                  <label class="bob-item-row"><input type="checkbox" id="on_pef_elec" onchange="saveOnlinePef()"><span>Desligar disjuntor elétrico geral da casa</span></label>
+                  <label class="bob-item-row"><input type="checkbox" id="on_pef_water" onchange="saveOnlinePef()"><span>Fechar hidrômetro geral de água</span></label>
+                  <label class="bob-item-row"><input type="checkbox" id="on_pef_pets" onchange="saveOnlinePef()"><span>Acomodar animais de estimação na caixa de transporte</span></label>
+                  <label class="bob-item-row"><input type="checkbox" id="on_pef_docs" onchange="saveOnlinePef()"><span>Pegar pasta estanque de documentos (RG, CNH, Certidões)</span></label>
+                  <label class="bob-item-row"><input type="checkbox" id="on_pef_bob" onchange="saveOnlinePef()"><span>Mochilas 72h (BOB) de cada pessoa</span></label>
+                </div>
+                <div id="online-pef-status" style="font-size: 0.75rem; color: #34d399; font-weight: bold; margin-top: 0.5rem;">
+                  ✅ Dados salvos automaticamente no navegador
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 18: METEOROLOGIA EMPÍRICA -->
+        <section class="tab-pane" id="tab-weather">
+          <div class="card">
+            <h2 class="card-title">⛈️ Meteorologia Empírica &amp; Nuvens</h2>
+            <p class="card-subtitle">
+              Previsão de tempestades pelo formato das nuvens e cálculo da distância de relâmpagos pela velocidade acústica (340 m/s).
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">⚡ Calculadora de Distância de Raio</h3>
+                <div class="storm-display-box mb-2">
+                  <div class="metric-title">DISTÂNCIA ESTIMADA DO RAIO</div>
+                  <div class="storm-km-val" id="on-storm-dist">0.0 km</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);" id="on-storm-sec">0.0 segundos decorridos</div>
+                  <div id="on-storm-badge" style="font-size: 0.75rem; font-weight: bold; color: #34d399; margin-top: 0.4rem;">
+                    Toque em 'Vi o Clarão' para iniciar a medição acústica
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 0.4rem;">
+                  <button type="button" class="btn-sidebar-action primary" style="flex: 1; justify-content: center;" id="on-btn-flash" onclick="startOnlineLightning()">⚡ 1. Vi o Clarão!</button>
+                  <button type="button" class="btn-sidebar-action secondary" style="flex: 1; justify-content: center;" id="on-btn-thunder" onclick="stopOnlineLightning()" disabled>🔊 2. Ouvi o Trovão!</button>
+                </div>
+
+                <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 0.5rem; background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 4px;">
+                  <strong>Regra 30/30:</strong> Se o tempo for inferior a <strong>30 segundos</strong> (distância menor que 10 km), você está na zona letal de descarga. Busque abrigo fechado imediatamente.
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">☁️ Sinais Visuais de Nuvens Críticas</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.78rem;">
+                  <div style="background: rgba(239,68,68,0.1); padding: 0.5rem; border-radius: 4px; border-left: 3px solid #ef4444;">
+                    <strong style="color: #fca5a5;">Cumulonimbus (Cb):</strong> Bigorna escura gigante. Tempestade violenta, ventania e raios em 30 a 60 minutos.
+                  </div>
+                  <div style="background: rgba(56,189,248,0.1); padding: 0.5rem; border-radius: 4px; border-left: 3px solid #38bdf8;">
+                    <strong style="color: #38bdf8;">Cirrus (Ci):</strong> Fios brancos finos como 'rabo de galo'. Se engrossarem ao entardecer, indicam frente fria e chuva em 24h.
+                  </div>
+                  <div style="background: rgba(251,191,36,0.1); padding: 0.5rem; border-radius: 4px; border-left: 3px solid #fbbf24;">
+                    <strong style="color: #fbbf24;">Altocumulus (Ac):</strong> Céu encarneirado em bolinhas. Choque térmico e alta chance de temporais de verão no fim do dia.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 19: MECÂNICA & DESATOLAMENTO 4X2 / 4X4 -->
+        <section class="tab-pane" id="tab-vehicle">
+          <div class="card">
+            <h2 class="card-title">🚗 Mecânica de Emergência &amp; Desatolamento</h2>
+            <p class="card-subtitle">
+              Calibração de pneus para lama e areia, ancoragem de estepe enterrado e reparos provisórios de mangueira e fiação.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🛞 Calibração Tática de Pneus</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.3rem 0;">
+                    <span>Asfalto Normal:</span><strong style="color: #34d399;" class="font-mono">30 a 35 PSI</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.3rem 0;">
+                    <span>Estrada de Terra / Cascalho:</span><strong style="color: #38bdf8;" class="font-mono">22 a 26 PSI</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.3rem 0;">
+                    <span>Lama Pesada / Areia de Praia:</span><strong style="color: #fbbf24;" class="font-mono">15 a 18 PSI</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;">
+                    <span style="color: #f87171;">Desatolamento Extremo:</span><strong style="color: #ef4444;" class="font-mono">10 a 12 PSI</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">⛏️ Técnicas de Resgate Sem Guincho</h3>
+                <div style="font-size: 0.78rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong>1. Tora Amarrada na Roda:</strong> Amarre um pedaço de madeira firme (50cm) atravessado no pneu trator passando pelo vão da roda de aço. Ele atua como pá elevando o carro da vala.</div>
+                  <div><strong>2. Estepe Enterrado como Âncora:</strong> Cave um buraco de 1 metro, amarre o cabo de reboque no centro da roda do estepe e enterre-o. Serve como âncora de tração sólida em terreno plano.</div>
+                  <div><strong>3. Mangueira Furada:</strong> Enrole câmara de ar de bicicleta com 5 voltas apertadas e finalize com Silver Tape e abraçadeiras plásticas.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 20: EXPORTAR PACOTE OFFLINE PORTÁTIL -->
+        <section class="tab-pane" id="tab-export">
+          <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">📦</div>
+            <h2 class="card-title" style="justify-content: center;">Central Nomad Brasil Portátil (.HTML Único)</h2>
+            <p class="card-subtitle" style="max-width: 650px; margin: 0 auto 1.25rem;">
+              Gere e baixe em 1 clique um arquivo HTML independente que reúne os protocolos de emergência, animais peçonhentos, plantas medicinais, plano familiar e frequências de rádio para rodar no celular sem internet e sem instalar servidores.
+            </p>
+            <button type="button" class="btn-sidebar-action primary" style="display: inline-flex; padding: 0.75rem 1.75rem; font-size: 0.95rem; margin: 0 auto;" onclick="exportOnlinePortableHtml()">
+              <span>📥</span> Baixar Pacote Portátil Offline (.html)
+            </button>
+            <div id="on-export-msg" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem;">
+              Tamanho estimado: ~1 MB &bull; Funciona em modo avião em qualquer navegador
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <footer>
@@ -2142,6 +2489,300 @@
       out.textContent = blocks.join(' ');
     }
 
+    // =====================================================================
+    // 14. PLANTAS ALIMENTÍCIAS & FITOTERAPIA (ONLINE)
+    // =====================================================================
+    let onlinePlantsData = [];
+    let onlinePlantsFilter = 'all';
+
+    async function loadOnlinePlants() {
+      try {
+        const res = await fetch('data/panc_plants.json');
+        onlinePlantsData = await res.json();
+        renderOnlinePlants();
+      } catch (e) {
+        console.warn('Erro ao carregar plantas:', e);
+      }
+    }
+
+    function filterOnlinePlants(grp) {
+      onlinePlantsFilter = grp;
+      const sec = document.getElementById('tab-plants');
+      if (sec) {
+        sec.querySelectorAll('.chip-btn').forEach(b => {
+          const t = b.textContent.toLowerCase();
+          b.classList.toggle('chip-highlight',
+            (grp === 'all' && t.includes('todas')) ||
+            (grp === 'Alimentícia' && t.includes('alimentícias')) ||
+            (grp === 'Medicinal' && t.includes('medicinais'))
+          );
+        });
+      }
+      renderOnlinePlants();
+    }
+
+    function renderOnlinePlants() {
+      const box = document.getElementById('online-plants-container');
+      if (!box) return;
+      const filtered = (onlinePlantsFilter === 'all')
+        ? onlinePlantsData
+        : onlinePlantsData.filter(i => (i.type || '').toLowerCase().includes(onlinePlantsFilter.toLowerCase()));
+
+      box.innerHTML = filtered.map(i => `
+        <div class="metric-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.4rem;">
+            <div>
+              <span style="font-size:0.65rem; color:var(--text-dim); font-weight:800; text-transform:uppercase;">${i.type}</span>
+              <h3 style="font-size:1rem; color:#fff; font-weight:800; margin-top:0.15rem;">${i.name}</h3>
+            </div>
+            <span class="protocol-badge" style="background:rgba(16,185,129,0.2); color:#34d399;">${i.proteinContent || 'Comestível'}</span>
+          </div>
+          <div style="font-size:0.78rem; line-height:1.45; color:var(--text-secondary); display:flex; flex-direction:column; gap:0.4rem;">
+            <div><strong style="color:#38bdf8;">Identificação:</strong> ${i.identification}</div>
+            <div><strong style="color:#fff;">Partes &amp; Preparo:</strong> <span style="color:#34d399;">${i.edibleParts}</span> &bull; ${i.preparation}</div>
+            <div><strong style="color:#fbbf24;">Propriedades:</strong> ${i.medicinal}</div>
+            <div style="background:rgba(239,68,68,0.1); padding:0.45rem; border-radius:4px; color:#fca5a5;">
+              <strong>Cuidados:</strong> ${i.warnings}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // =====================================================================
+    // 15. NÓS & AMARRAÇÕES (ONLINE)
+    // =====================================================================
+    const ONLINE_KNOTS = [
+      {
+        name: 'Lais de Guia (Bowline)', cat: 'ancoragem', str: '70% a 75%',
+        desc: 'Alça fixa que não corre e não emperra após tração extrema.',
+        use: 'Ancoragem em árvores e salvamento vertical.',
+        steps: ['Faça um laço simples na corda principal.', 'A ponta livre sai da toca por baixo.', 'Contorna a corda fixa por trás e entra novamente na toca.', 'Aperte a alça puxando as duas partes.']
+      },
+      {
+        name: 'Nó de Caminhoneiro (Trucker\'s)', cat: 'tensao', str: 'Polia 3:1',
+        desc: 'Multiplica a força manual por 3 usando a própria corda como roldana.',
+        use: 'Esticar lonas contra vendaval e amarrar cargas no teto.',
+        steps: ['Dê um nó de alça no meio da corda.', 'Passe a ponta livre na argola ou tronco de ancoragem.', 'Passe a ponta por dentro da alça e puxe para baixo com força.', 'Arremate com duas meias-voltas para travar.']
+      },
+      {
+        name: 'Nó Prussik (Autobloqueante)', cat: 'ancoragem', str: 'Atrito Dinâmico',
+        desc: 'Desliza livremente pela corda quando empurrado, mas trava sob peso.',
+        use: 'Ascensão em corda e linha de vida em ribanceiras.',
+        steps: ['Use cordelete fino em corda principal mais grossa.', 'Dê 3 voltas completas por dentro da alça.', 'Penteie as espiras para ficarem paralelas.', 'Puxe a alça para testar o travamento imediato.']
+      },
+      {
+        name: 'Volta do Fiel (Clove Hitch)', cat: 'ancoragem', str: '60% a 65%',
+        desc: 'Fixação firme e instantânea em postes e troncos.',
+        use: 'Iniciar montagem de abrigos e amarras de mourão.',
+        steps: ['Dê uma volta completa ao redor do poste.', 'Cruze a corda sobre a volta anterior formando um X.', 'Dê mais uma volta e passe a ponta por baixo do X.', 'Arroche ambas as pontas.']
+      },
+      {
+        name: 'Nó de Oito Duplo (Figure 8 Loop)', cat: 'ancoragem', str: '75% a 80%',
+        desc: 'O nó de alça mais confiável para segurança de vida humana (UIAA).',
+        use: 'Conexão em mosquetão de resgate, rapel e ancoragem de maca.',
+        steps: ['Dobre a corda para formar uma alça dupla.', 'Dê uma volta completa na corda principal.', 'Entre por trás formando um desenho nítido de número 8.', 'Ajuste sem sobreposições.']
+      },
+      {
+        name: 'Nó Pescador Duplo', cat: 'uniao', str: '80%',
+        desc: 'Emenda inquebrável para unir duas cordas do mesmo diâmetro.',
+        use: 'Unir cordas curtas ou fechar anéis de cordelete.',
+        steps: ['Coloque as pontas paralelas em direções opostas.', 'Dê duas voltas com uma ponta sobre as duas cordas e passe por dentro.', 'Repita com a outra ponta do outro lado.', 'Puxe as cordas até os dois nós se encontrarem e travarem.']
+      }
+    ];
+
+    let onlineKnotsFilter = 'all';
+
+    function filterOnlineKnots(cat) {
+      onlineKnotsFilter = cat;
+      const sec = document.getElementById('tab-knots');
+      if (sec) {
+        sec.querySelectorAll('.chip-btn').forEach(b => {
+          const t = b.textContent.toLowerCase();
+          b.classList.toggle('chip-highlight',
+            (cat === 'all' && t.includes('todos')) ||
+            (cat === 'ancoragem' && t.includes('ancoragem')) ||
+            (cat === 'tensao' && t.includes('tensionamento')) ||
+            (cat === 'uniao' && t.includes('união'))
+          );
+        });
+      }
+      renderOnlineKnots();
+    }
+
+    function renderOnlineKnots() {
+      const box = document.getElementById('online-knots-container');
+      if (!box) return;
+      const filtered = (onlineKnotsFilter === 'all')
+        ? ONLINE_KNOTS
+        : ONLINE_KNOTS.filter(k => k.cat === onlineKnotsFilter);
+
+      box.innerHTML = filtered.map(k => `
+        <div class="metric-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.4rem;">
+            <div>
+              <span style="font-size:0.65rem; color:var(--text-dim); font-weight:800; text-transform:uppercase;">${k.cat}</span>
+              <h3 style="font-size:1rem; color:#fff; font-weight:800; margin-top:0.15rem;">${k.name}</h3>
+            </div>
+            <span class="protocol-badge" style="background:rgba(56,189,248,0.2); color:#38bdf8;">${k.str}</span>
+          </div>
+          <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.4rem;">${k.desc}</p>
+          <div style="font-size:0.78rem; margin-bottom:0.4rem;"><strong style="color:#fbbf24;">Uso:</strong> ${k.use}</div>
+          <div style="font-size:0.78rem; display:flex; flex-direction:column; gap:0.25rem;">
+            ${k.steps.map((st, idx) => `<div><span class="step-number-badge">${idx + 1}</span> ${st}</div>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // =====================================================================
+    // 16. PLANO FAMILIAR & TEMPESTADE (ONLINE)
+    // =====================================================================
+    function saveOnlinePef() {
+      const data = {
+        p1: document.getElementById('online-pef-p1')?.value || '',
+        p2: document.getElementById('online-pef-p2')?.value || '',
+        name: document.getElementById('online-pef-name')?.value || '',
+        phone: document.getElementById('online-pef-phone')?.value || '',
+        gas: document.getElementById('on_pef_gas')?.checked || false,
+        elec: document.getElementById('on_pef_elec')?.checked || false,
+        water: document.getElementById('on_pef_water')?.checked || false,
+        pets: document.getElementById('on_pef_pets')?.checked || false,
+        docs: document.getElementById('on_pef_docs')?.checked || false,
+        bob: document.getElementById('on_pef_bob')?.checked || false
+      };
+      try { localStorage.setItem('nomad_online_pef_v1', JSON.stringify(data)); } catch (e) {}
+    }
+
+    function loadOnlinePef() {
+      let data = null;
+      try { data = JSON.parse(localStorage.getItem('nomad_online_pef_v1') || '{}'); } catch (e) {}
+      if (!data) return;
+      if (document.getElementById('online-pef-p1')) document.getElementById('online-pef-p1').value = data.p1 || '';
+      if (document.getElementById('online-pef-p2')) document.getElementById('online-pef-p2').value = data.p2 || '';
+      if (document.getElementById('online-pef-name')) document.getElementById('online-pef-name').value = data.name || '';
+      if (document.getElementById('online-pef-phone')) document.getElementById('online-pef-phone').value = data.phone || '';
+      if (document.getElementById('on_pef_gas')) document.getElementById('on_pef_gas').checked = !!data.gas;
+      if (document.getElementById('on_pef_elec')) document.getElementById('on_pef_elec').checked = !!data.elec;
+      if (document.getElementById('on_pef_water')) document.getElementById('on_pef_water').checked = !!data.water;
+      if (document.getElementById('on_pef_pets')) document.getElementById('on_pef_pets').checked = !!data.pets;
+      if (document.getElementById('on_pef_docs')) document.getElementById('on_pef_docs').checked = !!data.docs;
+      if (document.getElementById('on_pef_bob')) document.getElementById('on_pef_bob').checked = !!data.bob;
+    }
+
+    let onlineStormStart = null;
+    let onlineStormTimer = null;
+
+    function startOnlineLightning() {
+      onlineStormStart = Date.now();
+      document.getElementById('on-btn-flash').disabled = true;
+      document.getElementById('on-btn-thunder').disabled = false;
+      document.getElementById('on-storm-badge').textContent = '⏱️ Medindo... Escute o trovão!';
+      document.getElementById('on-storm-badge').style.color = '#fbbf24';
+
+      clearInterval(onlineStormTimer);
+      onlineStormTimer = setInterval(() => {
+        const sec = (Date.now() - onlineStormStart) / 1000;
+        document.getElementById('on-storm-sec').textContent = `${sec.toFixed(1)} segundos decorridos`;
+        document.getElementById('on-storm-dist').textContent = `${(sec * 0.340).toFixed(2)} km`;
+      }, 100);
+    }
+
+    function stopOnlineLightning() {
+      if (!onlineStormStart) return;
+      clearInterval(onlineStormTimer);
+      const sec = (Date.now() - onlineStormStart) / 1000;
+      const km = sec * 0.340;
+      document.getElementById('on-btn-flash').disabled = false;
+      document.getElementById('on-btn-thunder').disabled = true;
+      document.getElementById('on-storm-sec').textContent = `Tempo: ${sec.toFixed(2)}s`;
+      document.getElementById('on-storm-dist').textContent = `${km.toFixed(2)} km`;
+
+      const badge = document.getElementById('on-storm-badge');
+      if (km <= 3.0) {
+        badge.textContent = '🚨 PERIGO IMINENTE: Raio a menos de 3 km! Abrigue-se imediatamente!';
+        badge.style.color = '#ef4444';
+      } else if (km <= 10.0) {
+        badge.textContent = '⚠️ ZONA DE RISCO (Regra 30s): Tempestade a menos de 10 km!';
+        badge.style.color = '#fbbf24';
+      } else {
+        badge.textContent = '✅ Distância segura (> 10 km).';
+        badge.style.color = '#34d399';
+      }
+      onlineStormStart = null;
+    }
+
+    // =====================================================================
+    // 17. EXPORTAÇÃO HTML PORTÁTIL ONLINE
+    // =====================================================================
+    async function exportOnlinePortableHtml() {
+      const msg = document.getElementById('on-export-msg');
+      if (msg) msg.textContent = 'Gerando arquivo único...';
+
+      try {
+        const fullHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>NOMAD BRASIL — Ficha Tática Portátil Offline</title>
+  <style>
+    body { font-family: sans-serif; background: #090d10; color: #f1f5f9; padding: 20px; line-height: 1.5; }
+    h1, h2 { color: #fff; border-bottom: 2px solid #10b981; padding-bottom: 4px; }
+    .card { background: #131920; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+    .mono { font-family: monospace; color: #34d399; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    th, td { border: 1px solid #334155; padding: 6px; text-align: left; }
+    th { background: #1e293b; color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <h1>🧭 NOMAD BRASIL — Central Portátil 100% Offline</h1>
+  <p>Ficha de emergência autônoma gerada em ${new Date().toLocaleDateString('pt-BR')}. Abra no navegador sem internet.</p>
+
+  <div class="card">
+    <h2>📻 Rádio de Emergência</h2>
+    <table>
+      <tr><th>Canal / Frequência</th><th>Serviço</th></tr>
+      <tr><td>PX Canal 9 (27.065 MHz)</td><td>Emergência Rodoviária Nacional</td></tr>
+      <tr><td>PX Canal 19 (27.185 MHz)</td><td>Caminhoneiros / Rodovias</td></tr>
+      <tr><td>VHF Ch 16 (156.800 MHz)</td><td>Socorro Náutico / Marítimo</td></tr>
+      <tr><td>VHF 146.520 MHz</td><td>Chamada Geral de Radioamador</td></tr>
+      <tr><td>HF 7.060 MHz LSB</td><td>Defesa Civil / RENER</td></tr>
+    </table>
+    <p><strong>SOS MORSE:</strong> <span class="mono">... --- ...</span></p>
+  </div>
+
+  <div class="card">
+    <h2>🚑 Primeiros Socorros Imediatos</h2>
+    <div><strong>Hemorragia Grave:</strong> Pressão direta estéril. Se persistir em membros, aplique torniquete 5cm acima e anote o horário.</div>
+    <div><strong>Engasgo (Heimlich):</strong> Compressões abdominais em 'J' para dentro e para cima entre umbigo e costelas.</div>
+    <div><strong>Picada de Cobra:</strong> NUNCA amarre, corte ou chupe. Lave com água/sabão e transporte para hospital com soro.</div>
+  </div>
+
+  <div class="card">
+    <h2>💧 Purificação de Água</h2>
+    <div><strong>Hipoclorito 2.5%:</strong> 2 gotas por litro (água limpa) ou 4 gotas por litro (água turva). Aguarde 30 minutos.</div>
+    <div><strong>Fervura:</strong> 1 minuto borbulhando vigorosamente (3 minutos em montanhas).</div>
+    <div><strong>Método SODIS:</strong> Garrafa PET transparente exposta ao sol direto por 6 horas.</div>
+  </div>
+</body>
+</html>`;
+
+        const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nomad-brasil-offline-${new Date().toISOString().split('T')[0]}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        if (msg) msg.textContent = '✅ Download concluído! Arquivo pronto para uso em modo avião.';
+      } catch (e) {
+        if (msg) msg.textContent = 'Erro ao exportar: ' + e.message;
+      }
+    }
+
     // Service Worker PWA registration
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -2150,6 +2791,9 @@
     // Initialize all modules
     initData();
     loadOnlineVenomous();
+    loadOnlinePlants();
+    renderOnlineKnots();
+    loadOnlinePef();
     calcSolarOnline();
     renderOnlineBob();
   </script>

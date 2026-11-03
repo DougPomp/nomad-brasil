@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadVenomousData();
   calculateSolar();
   renderBobKit();
+  loadPlantsData();
+  renderKnotsList();
+  loadPefData();
 });
 
 // Mobile Sidebar Drawer Toggle
@@ -105,6 +108,15 @@ function switchTab(tabId) {
 
   if (tabId === 'venomous') {
     loadVenomousData();
+  }
+  if (tabId === 'plants') {
+    loadPlantsData();
+  }
+  if (tabId === 'knots') {
+    renderKnotsList();
+  }
+  if (tabId === 'pef') {
+    loadPefData();
   }
   if (tabId === 'solar') {
     calculateSolar();
@@ -2002,6 +2014,9 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
     loadVenomousData();
     calculateSolar();
     renderBobKit();
+    loadPlantsData();
+    renderKnotsList();
+    loadPefData();
   }, 200);
 }
 
@@ -2601,5 +2616,535 @@ window.copyCipherOutput = function() {
   }).catch(() => {
     alert('Texto selecionado: ' + text);
   });
+};
+
+// =====================================================================
+// 15. GUIA DE PANC & FITOTERAPIA DE CAMPO
+// =====================================================================
+let pancPlantsData = [];
+let currentPlantsFilter = 'all';
+
+async function loadPlantsData() {
+  if (pancPlantsData && pancPlantsData.length > 0) {
+    renderPlantsList(pancPlantsData);
+    return;
+  }
+  try {
+    const res = await fetch('/api/plants');
+    if (!res.ok) throw new Error('Falha HTTP ' + res.status);
+    pancPlantsData = await res.json();
+    renderPlantsList(pancPlantsData);
+  } catch (err) {
+    console.warn('Fallback plantas silvestres:', err);
+    try {
+      const res2 = await fetch('./data/panc_plants.json');
+      pancPlantsData = await res2.json();
+      renderPlantsList(pancPlantsData);
+    } catch (e2) {
+      console.error('Falha ao carregar PANC:', e2);
+    }
+  }
+}
+
+window.filterPlantsGroup = function(grp) {
+  currentPlantsFilter = grp;
+  const section = document.getElementById('tab-plants');
+  if (section) {
+    section.querySelectorAll('.chip-btn').forEach(btn => {
+      const text = btn.textContent.toLowerCase();
+      btn.classList.toggle('chip-highlight',
+        (grp === 'all' && text.includes('todas')) ||
+        (grp === 'Alimentícia' && text.includes('alimentícias')) ||
+        (grp === 'Medicinal' && text.includes('medicinais'))
+      );
+    });
+  }
+  renderPlantsList(pancPlantsData);
+};
+
+function renderPlantsList(data) {
+  const container = document.getElementById('plants-container');
+  if (!container) return;
+
+  const filtered = (currentPlantsFilter === 'all')
+    ? data
+    : data.filter(item => (item.type || '').toLowerCase().includes(currentPlantsFilter.toLowerCase()));
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = '<div class="tactical-card text-center text-gray-400">Nenhuma planta encontrada nesta categoria.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(item => {
+    const isMed = (item.type || '').includes('Medicinal');
+    const badgeColor = isMed ? 'var(--accent-cyan)' : 'var(--accent-green)';
+    return `
+      <div class="tactical-card">
+        <div class="flex justify-between items-start gap-2 mb-2">
+          <div>
+            <div class="text-xs uppercase tracking-wider font-bold text-gray-400">${item.type}</div>
+            <h3 class="text-lg font-bold text-white">${item.name}</h3>
+          </div>
+          <span class="status-pill" style="border-color: ${badgeColor}; color: ${badgeColor}; font-size: 0.7rem; font-weight: 800;">
+            ${item.proteinContent || 'Comestível'}
+          </span>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-cyan);">
+            <strong class="text-white">Identificação Botânica:</strong>
+            <p class="text-gray-300 mt-0.5">${item.identification}</p>
+          </div>
+
+          <div class="metric-card" style="padding: 0.5rem 0.75rem;">
+            <div class="text-gray-400 text-xs font-bold uppercase">Partes Utilizadas &amp; Preparo</div>
+            <div class="text-white font-medium mt-0.5"><strong>Partes:</strong> ${item.edibleParts}</div>
+            <div class="text-emerald-300 mt-1">${item.preparation}</div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.03); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-amber);">
+            <strong class="text-white">Habitat &amp; Ocorrência:</strong>
+            <p class="text-gray-300 mt-0.5">${item.habitat}</p>
+          </div>
+
+          <div style="background: rgba(16, 185, 129, 0.08); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-green);">
+            <strong class="text-emerald-400">Propriedades Fitoterápicas:</strong>
+            <p class="text-gray-200 mt-0.5">${item.medicinal}</p>
+          </div>
+
+          <div style="background: rgba(239, 68, 68, 0.1); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-red);">
+            <strong class="text-red-300">Cuidados &amp; Toxicologia:</strong>
+            <p class="text-gray-200 mt-0.5">${item.warnings}</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// =====================================================================
+// 16. MANUAL TÁTICO DE NÓS & AMARRAÇÕES
+// =====================================================================
+const TACTICAL_KNOTS = [
+  {
+    id: 'bowline',
+    name: 'Lais de Guia (Bowline)',
+    category: 'ancoragem',
+    strength: '70% a 75% da carga',
+    desc: 'O rei dos nós. Cria uma alça fixa e segura que jamais corre, aperta ou escorrega sob peso extremo, e se desata com facilidade mesmo após tracionar uma tonelada.',
+    usage: 'Ancoragem em árvores, resgate e içamento de pessoas ou cargas pesadas.',
+    steps: [
+      'Faça uma volta (laço) simples na corda principal, mantendo a ponta livre virada para cima.',
+      'A ponta livre (o coelho) sai da toca (passa por dentro do laço por baixo).',
+      'Contorna a corda fixa principal (a árvore) por trás.',
+      'Volta e entra novamente na toca (no laço) de cima para baixo.',
+      'Puxe a corda principal e a alça formada para azelhar e travar o nó.'
+    ],
+    proTip: 'Dica Tática: Para segurança de vida em rapel ou tirolesa, deixe uma cauda de sobra de pelo menos 15 cm e arremate com nó de frade (nó simples).'
+  },
+  {
+    id: 'truckers',
+    name: 'Nó de Caminhoneiro (Trucker\'s Hitch)',
+    category: 'tensao',
+    strength: 'Multiplicador mecânico 3:1',
+    desc: 'Cria um sistema de polia usando a própria corda, multiplicando sua força manual por 3 para tensionar amarrações no limite.',
+    usage: 'Esticar lonas de abrigo contra vento forte, prender tambores e cargas no teto do veículo.',
+    steps: [
+      'Faça uma volta com alça (nó de correr ou volta do polegar) no meio da corda.',
+      'Passe a ponta livre por baixo do gancho, argola ou tronco de ancoragem.',
+      'Suba a ponta livre e passe-a por dentro da alça que você criou (polia).',
+      'Puxe com força para baixo: note o efeito de roldana tracionando 3 vezes mais forte.',
+      'Arremate com duas meias-voltas na corda sob tensão para travar.'
+    ],
+    proTip: 'Dica Tática: É o nó indispensável para o tarp (lona) nunca afrouxar durante chuva torrencial ou vendaval.'
+  },
+  {
+    id: 'prussik',
+    name: 'Nó Prussik (Autobloqueante)',
+    category: 'ancoragem',
+    strength: 'Atrito dinâmico blocante',
+    desc: 'Nó friccional que desliza livremente pela corda guia quando empurrado pela mão, mas trava instantaneamente com força total sob qualquer tração ou peso.',
+    usage: 'Ascensão em corda fixa, linha de vida em declives acentuados, esticar cumeeira de barraca.',
+    steps: [
+      'Use um cordelete mais fino (ex: 5mm ou 6mm) em volta de uma corda mais grossa (10mm a 12mm).',
+      'Passe a alça do cordelete ao redor da corda principal.',
+      'Enfie as duas pontas por dentro da alça 3 vezes completas (3 voltas internas).',
+      'Ajuste as espiras para ficarem paralelas e bem organizadas sem encavalar.',
+      'Teste puxando o laço: ele morde e trava a corda imediatamente.'
+    ],
+    proTip: 'Dica Tática: O cordelete do Prussik deve ter entre 60% e 75% do diâmetro da corda principal para morder adequadamente.'
+  },
+  {
+    id: 'clove_hitch',
+    name: 'Volta do Fiel (Clove Hitch)',
+    category: 'ancoragem',
+    strength: '60% a 65% da carga',
+    desc: 'Amarração rápida e extremamente estável para fixar uma corda em postes, mourões, estacas ou troncos de madeira.',
+    usage: 'Iniciar amarrações de abrigo, prender animais de carga ou fixar botes em estacas.',
+    steps: [
+      'Dê uma volta completa ao redor do poste.',
+      'Cruze a corda sobre a primeira volta formando um "X".',
+      'Dê mais uma volta pelo poste e passe a ponta livre por baixo do cruzamento do X.',
+      'Puxe ambas as extremidades para arrochar o nó contra a madeira.'
+    ],
+    proTip: 'Dica Tática: Sob tração variável ou corda muito lisa, arremate a ponta solta com um nó de segurança para evitar deslizamento.'
+  },
+  {
+    id: 'figure8_loop',
+    name: 'Nó de Oito Duplo (Figure-Eight Loop)',
+    category: 'ancoragem',
+    strength: '75% a 80% da carga (Padrão UIAA)',
+    desc: 'O nó mais seguro e confiável do mundo para ancoragem humana. Reduz menos a resistência da corda que qualquer outro nó de alça.',
+    usage: 'Resgate em ribanceiras, ancoragem de maca, conexão em mosquetões de escalada e rapel.',
+    steps: [
+      'Dobre a corda ao meio para formar um seio (alça dupla).',
+      'Dê uma volta completa sobre a corda principal.',
+      'Passe a alça por trás e entre por dentro da primeira volta formando um formato de 8.',
+      'Penteie as cordas para que fiquem alinhadas sem torção e ajuste com firmeza.'
+    ],
+    proTip: 'Dica Tática: Inspecione visualmente o formato de "8" simétrico antes de aplicar qualquer carga viva.'
+  },
+  {
+    id: 'fisherman',
+    name: 'Nó Pescador Duplo (Double Fisherman\'s)',
+    category: 'uniao',
+    strength: 'Aproximadamente 80% da carga',
+    desc: 'A melhor emenda para unir duas cordas do mesmo diâmetro. Não desata nem desliza mesmo sob as condições mais severas.',
+    usage: 'Emendar cordas curtas para formar uma longa, fechar anéis de cordelete para Prussik.',
+    steps: [
+      'Coloque as pontas das duas cordas paralelas em direções opostas.',
+      'Com a ponta da primeira corda, dê duas voltas completas ao redor de ambas as cordas.',
+      'Passe a ponta por dentro das duas voltas recém-criadas e aperte (primeiro nó de frade duplo).',
+      'Repita o mesmo procedimento com a outra ponta livre do outro lado.',
+      'Puxe as duas cordas principais: os dois nós deslizarão até se encostarem e travarem solidamente.'
+    ],
+    proTip: 'Dica Tática: Uma vez submetido a peso extremo, é quase impossível desatar; use quando desejar união permanente e de alta segurança.'
+  }
+];
+
+let currentKnotsFilter = 'all';
+
+window.filterKnots = function(cat) {
+  currentKnotsFilter = cat;
+  const section = document.getElementById('tab-knots');
+  if (section) {
+    section.querySelectorAll('.chip-btn').forEach(btn => {
+      const text = btn.textContent.toLowerCase();
+      btn.classList.toggle('chip-highlight',
+        (cat === 'all' && text.includes('todos')) ||
+        (cat === 'ancoragem' && text.includes('ancoragem')) ||
+        (cat === 'tensao' && text.includes('tensionamento')) ||
+        (cat === 'uniao' && text.includes('união'))
+      );
+    });
+  }
+  renderKnotsList();
+};
+
+function renderKnotsList() {
+  const container = document.getElementById('knots-container');
+  if (!container) return;
+
+  const filtered = (currentKnotsFilter === 'all')
+    ? TACTICAL_KNOTS
+    : TACTICAL_KNOTS.filter(k => k.category === currentKnotsFilter);
+
+  container.innerHTML = filtered.map(k => `
+    <div class="tactical-card">
+      <div class="flex justify-between items-start gap-2 mb-2">
+        <div>
+          <div class="text-xs uppercase tracking-wider font-bold text-gray-400">Categoria: ${k.category.toUpperCase()}</div>
+          <h3 class="text-lg font-bold text-white">${k.name}</h3>
+        </div>
+        <span class="status-pill" style="border-color: var(--accent-cyan); color: var(--accent-cyan); font-size: 0.7rem; font-weight: 800;">
+          ${k.strength}
+        </span>
+      </div>
+
+      <p class="text-xs text-gray-300 mb-2">${k.desc}</p>
+
+      <div class="metric-card mb-2" style="padding: 0.5rem 0.75rem;">
+        <span class="text-xs text-gray-400 font-bold uppercase">Aplicação Tática Principal:</span>
+        <div class="text-amber-300 text-xs font-medium mt-0.5">${k.usage}</div>
+      </div>
+
+      <div class="space-y-1.5 text-xs mb-2">
+        <strong class="text-white text-xs">Instruções Passo a Passo:</strong>
+        ${k.steps.map((st, idx) => `
+          <div class="flex items-start gap-2">
+            <span class="step-number-badge">${idx + 1}</span>
+            <span class="text-gray-300">${st}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="background: rgba(16, 185, 129, 0.08); padding: 0.5rem; border-radius: 6px; border-left: 3px solid var(--accent-green);" class="text-xs text-emerald-300">
+        ${k.proTip}
+      </div>
+    </div>
+  `).join('');
+}
+
+// =====================================================================
+// 17. PLANO DE EMERGÊNCIA FAMILIAR (PEF)
+// =====================================================================
+const PEF_STORAGE_KEY = 'nomad_pef_data_v1';
+
+window.savePefData = function() {
+  const data = {
+    point1: document.getElementById('pef-point1')?.value || '',
+    point2: document.getElementById('pef-point2')?.value || '',
+    contactName: document.getElementById('pef-contact-name')?.value || '',
+    contactCity: document.getElementById('pef-contact-city')?.value || '',
+    contactPhone: document.getElementById('pef-contact-phone')?.value || '',
+    chkGas: document.getElementById('pef_chk_gas')?.checked || false,
+    chkElec: document.getElementById('pef_chk_elec')?.checked || false,
+    chkWater: document.getElementById('pef_chk_water')?.checked || false,
+    chkPets: document.getElementById('pef_chk_pets')?.checked || false,
+    chkDocs: document.getElementById('pef_chk_docs')?.checked || false,
+    chkBob: document.getElementById('pef_chk_bob')?.checked || false,
+    chkSms: document.getElementById('pef_chk_sms')?.checked || false
+  };
+
+  try {
+    localStorage.setItem(PEF_STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {}
+
+  updatePefSummary(data);
+};
+
+window.loadPefData = function() {
+  let data = null;
+  try {
+    const raw = localStorage.getItem(PEF_STORAGE_KEY);
+    if (raw) data = JSON.parse(raw);
+  } catch (e) {}
+
+  if (!data) return;
+
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+  setVal('pef-point1', data.point1);
+  setVal('pef-point2', data.point2);
+  setVal('pef-contact-name', data.contactName);
+  setVal('pef-contact-city', data.contactCity);
+  setVal('pef-contact-phone', data.contactPhone);
+
+  setChk('pef_chk_gas', data.chkGas);
+  setChk('pef_chk_elec', data.chkElec);
+  setChk('pef_chk_water', data.chkWater);
+  setChk('pef_chk_pets', data.chkPets);
+  setChk('pef_chk_docs', data.chkDocs);
+  setChk('pef_chk_bob', data.chkBob);
+  setChk('pef_chk_sms', data.chkSms);
+
+  updatePefSummary(data);
+};
+
+window.resetPefForm = function() {
+  if (!confirm('Deseja limpar todos os dados do Plano Familiar?')) return;
+  try { localStorage.removeItem(PEF_STORAGE_KEY); } catch (e) {}
+  document.querySelectorAll('#tab-pef input[type="text"]').forEach(i => i.value = '');
+  document.querySelectorAll('#tab-pef input[type="checkbox"]').forEach(c => c.checked = false);
+  updatePefSummary({});
+};
+
+function updatePefSummary(data) {
+  const summaryEl = document.getElementById('pef-status-summary');
+  if (!summaryEl) return;
+
+  const filledPoints = (data.point1 ? 1 : 0) + (data.point2 ? 1 : 0);
+  const hasContact = !!(data.contactName && data.contactPhone);
+
+  if (filledPoints === 2 && hasContact) {
+    summaryEl.textContent = '✅ Plano Familiar completo e sincronizado na memória offline.';
+    summaryEl.style.color = 'var(--accent-green)';
+  } else {
+    summaryEl.textContent = `⚠️ Plano incompleto (${filledPoints}/2 pontos de encontro, ${hasContact ? 'Contato OK' : 'Falta Contato Fora da Área'}).`;
+    summaryEl.style.color = 'var(--accent-amber)';
+  }
+}
+
+// =====================================================================
+// 18. CRONÔMETRO DE DISTÂNCIA DE RELÂMPAGO
+// =====================================================================
+let stormStartTime = null;
+let stormInterval = null;
+
+window.startLightningTimer = function() {
+  stormStartTime = Date.now();
+  const btnFlash = document.getElementById('btn-storm-flash');
+  const btnThunder = document.getElementById('btn-storm-thunder');
+  const distEl = document.getElementById('storm-dist-display');
+  const secEl = document.getElementById('storm-seconds-display');
+  const badgeEl = document.getElementById('storm-danger-badge');
+
+  if (btnFlash) btnFlash.disabled = true;
+  if (btnThunder) btnThunder.disabled = false;
+  if (badgeEl) {
+    badgeEl.textContent = '⏱️ Contando tempo até o trovão... Fique atento ao som!';
+    badgeEl.style.color = 'var(--accent-amber)';
+  }
+
+  clearInterval(stormInterval);
+  stormInterval = setInterval(() => {
+    const elapsedSec = (Date.now() - stormStartTime) / 1000;
+    const distanceKm = elapsedSec * 0.340;
+    if (secEl) secEl.textContent = `${elapsedSec.toFixed(1)} segundos decorridos`;
+    if (distEl) distEl.textContent = `${distanceKm.toFixed(2)} km`;
+  }, 100);
+};
+
+window.stopLightningTimer = function() {
+  if (!stormStartTime) return;
+  clearInterval(stormInterval);
+
+  const elapsedSec = (Date.now() - stormStartTime) / 1000;
+  const distanceKm = elapsedSec * 0.340;
+
+  const btnFlash = document.getElementById('btn-storm-flash');
+  const btnThunder = document.getElementById('btn-storm-thunder');
+  const distEl = document.getElementById('storm-dist-display');
+  const secEl = document.getElementById('storm-seconds-display');
+  const badgeEl = document.getElementById('storm-danger-badge');
+
+  if (btnFlash) btnFlash.disabled = false;
+  if (btnThunder) btnThunder.disabled = true;
+
+  if (secEl) secEl.textContent = `Tempo final: ${elapsedSec.toFixed(2)} segundos`;
+  if (distEl) distEl.textContent = `${distanceKm.toFixed(2)} km`;
+
+  if (badgeEl) {
+    if (distanceKm <= 3.0) {
+      badgeEl.textContent = '🚨 PERIGO IMINENTE: Raio a menos de 3 km! Abrigo imediato obrigatório!';
+      badgeEl.style.color = 'var(--accent-red)';
+    } else if (distanceKm <= 10.0) {
+      badgeEl.textContent = '⚠️ ZONA DE RISCO (Regra 30s): Tempestade a menos de 10 km! Não fique em áreas abertas.';
+      badgeEl.style.color = 'var(--accent-amber)';
+    } else {
+      badgeEl.textContent = '✅ Distância segura (> 10 km). Monitore se o próximo raio estará mais próximo.';
+      badgeEl.style.color = 'var(--accent-green)';
+    }
+  }
+
+  stormStartTime = null;
+};
+
+// =====================================================================
+// 19. EXPORTADOR DO PACOTE PORTÁTIL AUTOCONTIDO
+// =====================================================================
+window.exportPortableHtmlPackage = async function() {
+  const msgEl = document.getElementById('export-status-message');
+  if (msgEl) msgEl.textContent = 'Compilando banco de dados offline e manuais em arquivo único...';
+
+  try {
+    const [emergRes, venomRes, plantsRes, radioRes] = await Promise.all([
+      fetch('/api/emergencies').then(r => r.json()).catch(() => []),
+      fetch('/api/venomous').then(r => r.json()).catch(() => []),
+      fetch('/api/plants').then(r => r.json()).catch(() => []),
+      fetch('/api/radio').then(r => r.json()).catch(() => null)
+    ]);
+
+    const pefRaw = localStorage.getItem(PEF_STORAGE_KEY) || '{}';
+    const pef = JSON.parse(pefRaw);
+
+    const fullHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOMAD BRASIL — Central Portátil de Campo 100% Offline</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #090d10; color: #f1f5f9; padding: 20px; line-height: 1.5; }
+    h1, h2, h3 { color: #fff; border-bottom: 2px solid #10b981; padding-bottom: 6px; }
+    .card { background: #131920; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #10b981; color: #04130d; }
+    .alert { background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; color: #fca5a5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .mono { font-family: monospace; color: #34d399; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    th, td { border: 1px solid #334155; padding: 8px; text-align: left; }
+    th { background: #1e293b; color: #38bdf8; }
+    @media print { body { background: #fff; color: #000; } .card { border-color: #999; } }
+  </style>
+</head>
+<body>
+  <h1>🧭 NOMAD BRASIL — Ficha Tática Portátil de Sobrevivência</h1>
+  <p><em>Arquivo autocontido gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}. Funciona 100% offline em qualquer dispositivo sem servidor.</em></p>
+
+  <div class="card">
+    <h2>👨‍👩‍👧‍👦 Plano de Emergência Familiar Cadastrado</h2>
+    <div><strong>Ponto de Encontro 1 (Bairro):</strong> ${pef.point1 || 'Não cadastrado'}</div>
+    <div><strong>Ponto de Encontro 2 (Regional):</strong> ${pef.point2 || 'Não cadastrado'}</div>
+    <div><strong>Contato Fora da Área:</strong> ${pef.contactName || '--'} (${pef.contactCity || '--'}) &bull; Tel: <span class="mono">${pef.contactPhone || '--'}</span></div>
+  </div>
+
+  <div class="card">
+    <h2>📻 Rádio de Emergência &amp; Frequências do Brasil</h2>
+    <table>
+      <tr><th>Serviço</th><th>Canal / Frequência</th><th>Uso</th></tr>
+      <tr><td>PX (Faixa do Cidadão)</td><td>Canal 9 (27.065 MHz)</td><td>Emergência Rodoviária Nacional</td></tr>
+      <tr><td>PX Caminhoneiros</td><td>Canal 19 (27.185 MHz)</td><td>Situação de Rodovias e Bloqueios</td></tr>
+      <tr><td>VHF Marítimo</td><td>Canal 16 (156.800 MHz)</td><td>Socorro e Chamada Náutica</td></tr>
+      <tr><td>VHF Radioamador</td><td>146.520 MHz Simplex</td><td>Chamada Geral de Campo</td></tr>
+      <tr><td>HF Defesa Civil / RENER</td><td>7.060 MHz LSB (40 metros)</td><td>Rede Nacional de Emergência</td></tr>
+    </table>
+    <div style="margin-top: 10px;"><strong>SOS MORSE:</strong> <span class="mono">... --- ...</span> (3 curtos, 3 longos, 3 curtos)</div>
+  </div>
+
+  <div class="card">
+    <h2>🐍 Animais Peçonhentos &amp; Soros Antiveneno</h2>
+    ${venomRes.map(v => `
+      <div style="margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
+        <strong style="color:#38bdf8; font-size:15px;">${v.name}</strong> &bull; <span class="badge">${v.lethality || 'ALTO'}</span><br>
+        <div><strong>Ação do Veneno:</strong> ${v.venomType}</div>
+        <div><strong>Soro SUS / Butantan:</strong> <span class="mono">${v.antivenom || v.antivenomSerum}</span></div>
+        <div><strong>Conduta:</strong> ${Array.isArray(v.firstAid) ? v.firstAid.join('; ') : v.firstAid}</div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="card">
+    <h2>🌾 Plantas Silvestres Alimentícias (PANC) &amp; Medicinais</h2>
+    ${plantsRes.map(p => `
+      <div style="margin-bottom: 10px; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+        <strong style="color:#34d399;">${p.name}</strong> (${p.type})<br>
+        <div><strong>Preparo:</strong> ${p.preparation}</div>
+        <div><strong>Propriedades:</strong> ${p.medicinal}</div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="card">
+    <h2>🚑 Primeiros Socorros Imediatos (Resumo Vital)</h2>
+    <div class="alert"><strong>HEMORRAGIAS GRAVES:</strong> Pressão direta estéril imediata. Se em membros e sem estancar, aplique torniquete tático 5cm acima da lesão e anote o horário exato.</div>
+    <div class="alert"><strong>ENGASGO (HEIMLICH):</strong> Abraçar a vítima por trás, punho cerrado entre umbigo e boca do estômago, compressão vigorosa em formato de "J" para dentro e para cima.</div>
+    <div class="alert"><strong>PARADA CARDIORRESPIRATÓRIA:</strong> 100 a 120 compressões/minuto no centro do tórax (profundidade de 5 a 6 cm).</div>
+  </div>
+
+  <footer>
+    <p>NOMAD Brasil &bull; Projeto de Código Aberto &bull; Mantenha cópias impressas ou salvas na memória de seus aparelhos de campo.</p>
+  </footer>
+</body>
+</html>`;
+
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nomad-brasil-pacote-offline-${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    if (msgEl) {
+      msgEl.textContent = '✅ Download concluído com sucesso! Guarde este arquivo em seu celular ou pendrive.';
+      msgEl.style.color = 'var(--accent-green)';
+    }
+  } catch (err) {
+    console.error('Erro na exportação:', err);
+    if (msgEl) msgEl.textContent = 'Erro ao compilar pacote: ' + err.message;
+  }
 };
 

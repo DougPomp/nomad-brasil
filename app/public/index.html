@@ -99,9 +99,9 @@
           </button>
         </div>
 
-        <!-- Group 2: Emergência & Campo -->
+        <!-- Group 2: Emergência & Sobrevivência -->
         <div class="nav-group">
-          <div class="nav-group-label">Emergência &amp; Campo</div>
+          <div class="nav-group-label">Emergência &amp; Sobrevivência</div>
           <button type="button" class="nav-tab-btn" data-tab-target="emergencies">
             <span class="nav-icon">🚑</span>
             <span class="nav-label">Primeiros Socorros</span>
@@ -110,6 +110,27 @@
             <span class="nav-icon">🐍</span>
             <span class="nav-label">Animais Peçonhentos</span>
           </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="plants">
+            <span class="nav-icon">🌾</span>
+            <span class="nav-label">Plantas &amp; PANC</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="water">
+            <span class="nav-icon">🌊</span>
+            <span class="nav-label">Água &amp; Saneamento</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="knots">
+            <span class="nav-icon">🪢</span>
+            <span class="nav-label">Nós &amp; Amarrações</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="survival">
+            <span class="nav-icon">🏕️</span>
+            <span class="nav-label">Manuais de Campo</span>
+          </button>
+        </div>
+
+        <!-- Group 3: Comunicação & Clima -->
+        <div class="nav-group">
+          <div class="nav-group-label">Comunicação &amp; Clima</div>
           <button type="button" class="nav-tab-btn" data-tab-target="morse">
             <span class="nav-icon">🚨</span>
             <span class="nav-label">Sinais &amp; Morse SOS</span>
@@ -122,11 +143,19 @@
             <span class="nav-icon">🔐</span>
             <span class="nav-label">Cifra &amp; Código Tático</span>
           </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="navigation">
+            <span class="nav-icon">🧭</span>
+            <span class="nav-label">Bússola &amp; Orientação</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="weather">
+            <span class="nav-icon">⛈️</span>
+            <span class="nav-label">Meteorologia &amp; Nuvens</span>
+          </button>
         </div>
 
-        <!-- Group 3: Logística & Engenharia -->
+        <!-- Group 4: Logística, Veículos & Plano -->
         <div class="nav-group">
-          <div class="nav-group-label">Logística &amp; Engenharia</div>
+          <div class="nav-group-label">Logística &amp; Mobilidade</div>
           <button type="button" class="nav-tab-btn" data-tab-target="solar">
             <span class="nav-icon">⚡</span>
             <span class="nav-label">Energia Solar 12V</span>
@@ -135,21 +164,25 @@
             <span class="nav-icon">🎒</span>
             <span class="nav-label">Mochila 72h (BOB)</span>
           </button>
-          <button type="button" class="nav-tab-btn" data-tab-target="navigation">
-            <span class="nav-icon">🧭</span>
-            <span class="nav-label">Bússola &amp; Orientação</span>
+          <button type="button" class="nav-tab-btn" data-tab-target="pef">
+            <span class="nav-icon">👨‍👩‍👧‍👦</span>
+            <span class="nav-label">Plano Familiar (PEF)</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="vehicle">
+            <span class="nav-icon">🚗</span>
+            <span class="nav-label">Mecânica &amp; 4x4</span>
           </button>
           <button type="button" class="nav-tab-btn" data-tab-target="rationing">
             <span class="nav-icon">🍲</span>
             <span class="nav-label">Racionamento &amp; Estoque</span>
           </button>
-          <button type="button" class="nav-tab-btn" data-tab-target="survival">
-            <span class="nav-icon">🏕️</span>
-            <span class="nav-label">Manuais de Campo</span>
-          </button>
           <button type="button" class="nav-tab-btn" data-tab-target="pocketcard">
             <span class="nav-icon">📄</span>
             <span class="nav-label">Cartão de Bolso A4</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="export">
+            <span class="nav-icon">📥</span>
+            <span class="nav-label">Pacote Portátil Offline</span>
           </button>
         </div>
       </nav>
@@ -2601,6 +2634,529 @@
                   <div class="mt-1">O operador receptor anota os blocos, aplica a chave no decifrador e confirma o recebimento. Destrua anotações físicas de chaves comprometidas.</div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           15. TAB: PLANTAS ALIMENTÍCIAS (PANC) & FITOTERAPIA
+           ================================================================= -->
+      <section class="tab-view" id="tab-plants">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">BOTÂNICA DE SOBREVIVÊNCIA &amp; ALIMENTAÇÃO</span>
+              <h2 class="page-title">🌾 Plantas Alimentícias (PANC) &amp; Fitoterapia</h2>
+              <p class="page-subtitle">
+                Identificação segura de espécies silvestres comestíveis do Brasil, diferenciação de plantas tóxicas e o Protocolo Universal de Comestibilidade.
+              </p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button type="button" class="chip-btn chip-highlight" onclick="filterPlantsGroup('all')">Todas</button>
+              <button type="button" class="chip-btn" onclick="filterPlantsGroup('Alimentícia')">Alimentícias (PANC)</button>
+              <button type="button" class="chip-btn" onclick="filterPlantsGroup('Medicinal')">Medicinais</button>
+            </div>
+          </div>
+
+          <!-- Red Alert Taioba Brava vs Mansa -->
+          <div class="info-box" style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--accent-red); color: #fca5a5; margin-bottom: 1rem;">
+            <strong>ALERTA DE SEGURANÇA MÁXIMA (TAIOBA MANSA vs BRAVA):</strong> Na Taioba Mansa (comestível cozida), a fenda entre as duas orelhas da folha chega <em>exatamente</em> no ponto de inserção do talo. Na Taioba-Brava (tóxica), a fenda NÃO toca o talo e os caules costumam ter manchas roxas. <strong>NUNCA consuma folhas cruas de nenhuma espécie de arácea!</strong>
+          </div>
+
+          <!-- Universal Edibility Test Card -->
+          <div class="tactical-card mb-3">
+            <div class="section-heading">
+              <span>🔬</span> Protocolo Militar: Teste Universal de Comestibilidade de Campo
+            </div>
+            <div class="text-xs text-gray-300 leading-relaxed mb-2">
+              Use este protocolo de 8 etapas <strong>apenas em situações extremas de sobrevivência</strong> quando não tiver alimento seguro e encontrar uma planta desconhecida abundante:
+            </div>
+            <div class="grid-2 gap-2 text-xs">
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">1</span><strong class="text-white">Isolamento de Partes</strong></div>
+                <p class="text-gray-300">Separe raiz, caule, folha e flor. Teste apenas UMA parte da planta por vez. Nunca teste a planta inteira de uma vez só.</p>
+              </div>
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">2</span><strong class="text-white">Teste de Odor</strong></div>
+                <p class="text-gray-300">Amasse a parte entre os dedos. Se cheirar a amêndoa amarga, pêssego silvestre (cianeto) ou podridão, <strong>descarte imediatamente</strong>.</p>
+              </div>
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">3</span><strong class="text-white">Teste de Contato na Pele</strong></div>
+                <p class="text-gray-300">Esfregue o suco na parte interna do antebraço. Aguarde 15 minutos. Se surgir ardência, vermelhidão ou coceira, rejeite.</p>
+              </div>
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">4</span><strong class="text-white">Teste nos Lábios</strong></div>
+                <p class="text-gray-300">Toque um pedaço pequeno nos lábios por 3 minutos. Se formigar, queimar ou adormecer, lave com água e pare o teste.</p>
+              </div>
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">5</span><strong class="text-white">Teste na Ponta da Língua</strong></div>
+                <p class="text-gray-300">Coloque sobre a língua por 15 minutos SEM engolir o suco nem mastigar. Se sentir queimação, amargor cáustico ou salivação espumosa, cuspa.</p>
+              </div>
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">6</span><strong class="text-white">Mastigação de Teste</strong></div>
+                <p class="text-gray-300">Mastigue um pedaço minúsculo por 15 minutos completos na boca sem engolir. Se não houver irritação, engula o pedacinho.</p>
+              </div>
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">7</span><strong class="text-white">Jejum de Observação (8h)</strong></div>
+                <p class="text-gray-300">Permaneça 8 horas em repouso sem ingerir nenhum outro alimento. Monitore náuseas, dor abdominal, vômitos ou febre.</p>
+              </div>
+              <div class="metric-card">
+                <div class="flex items-center gap-2 mb-1"><span class="step-number-badge">8</span><strong class="text-white">Liberação Gradual</strong></div>
+                <p class="text-gray-300">Se passar nas 8 horas, cozinhe 1/4 de xícara da mesma parte e coma. Aguarde mais 4 horas. Se tudo correr bem, a parte é comestível.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="plants-container" class="grid-2">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           16. TAB: SANEAMENTO DE CAMPO & ÁGUA AVANÇADA
+           ================================================================= -->
+      <section class="tab-view" id="tab-water">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">POTABILIZAÇÃO &amp; HIGIENE EPIDEMIOLÓGICA</span>
+              <h2 class="page-title">🌊 Água Potável, Filtração &amp; Saneamento</h2>
+              <p class="page-subtitle">
+                Técnicas de desinfecção solar SODIS, montagem de filtro por gravidade com carvão ativado vegetal e construção de latrinas sanitárias de campo.
+              </p>
+            </div>
+            <button type="button" class="btn-export-gpx" onclick="window.print()">
+              <span>🖨️</span> Imprimir Protocolos de Água
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <!-- Left: Filter & SODIS -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🧪</span> Filtro Gravitacional em Camadas (Sobrevivência)
+              </div>
+              <p class="text-xs text-gray-300 mb-2">
+                Construído cortando o fundo de uma garrafa PET ou galão 5L invertido. Remove turbidez, sedimentos, odor e grande parte dos poluentes químicos.
+              </p>
+
+              <div class="water-filter-column mb-3">
+                <div class="filter-layer-row layer-gravel">
+                  <span>1. Camada Superior: Brita / Cascalho Pequeno (5 cm)</span>
+                  <span>Retém folhas e gravetos</span>
+                </div>
+                <div class="filter-layer-row layer-coarse-sand">
+                  <span>2. Camada Média: Areia Grossa Lavada (6 cm)</span>
+                  <span>Retém terra grossa e partículas</span>
+                </div>
+                <div class="filter-layer-row layer-fine-sand">
+                  <span>3. Camada Fina: Areia Fina / Quartzo (8 cm)</span>
+                  <span>Retém micropartículas e turbidez</span>
+                </div>
+                <div class="filter-layer-row layer-charcoal">
+                  <span>4. Camada de Carvão Ativado Moído (6 cm)</span>
+                  <span>Absorve toxinas, cloro, odores e químicos</span>
+                </div>
+                <div class="filter-layer-row layer-cloth">
+                  <span>5. Bico / Fundo: Algodão ou Pano Dobrado</span>
+                  <span>Impede que o carvão escorra</span>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <strong class="text-emerald-400 text-xs">COMO ATIVAR O CARVÃO DA FOGUEIRA NO CAMPO:</strong>
+                <p class="text-xs text-gray-300 mt-1">
+                  Pegue pedaços de carvão de madeira dura (não use briquetes comerciais com aditivos químicos). Triture até virar pó fino. Ferva em água com sal e limão ou vinagre por 10 minutos para abrir os microporos adsortivos antes de montar o filtro.
+                </p>
+              </div>
+            </div>
+
+            <!-- Right: SODIS & Chemicals -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>☀️</span> Desinfecção Solar SODIS (OMS / UNICEF)
+              </div>
+              <div class="space-y-2 text-xs text-gray-300 mb-3">
+                <div class="metric-card">
+                  <strong class="text-cyan-400">1. O que é o Método SODIS:</strong>
+                  <p class="mt-0.5">A radiação ultravioleta UVA do sol associada ao aquecimento térmico destrói o DNA de 99,9% de bactérias (cólera, febre tifóide), vírus e cistos de giárdia.</p>
+                </div>
+                <div class="metric-card">
+                  <strong class="text-amber-400">2. Como Aplicar:</strong>
+                  <ul class="space-y-1 mt-1 pl-3 list-disc">
+                    <li>Use garrafas PET transparentes e lisas de até 2 litros (sem riscos profundos).</li>
+                    <li>A água deve estar visualmente limpa (se turva, filtre antes pelo tecido ou areia).</li>
+                    <li>Encha a garrafa até 3/4, feche, agite vigorosamente por 20 segundos para oxigenar, complete até o topo e feche bem.</li>
+                    <li>Exponha deitada sobre telhado, pedra ou superfície reflexiva (folha de alumínio) exposta ao sol.</li>
+                  </ul>
+                </div>
+                <div class="metric-card">
+                  <strong class="text-emerald-400">3. Tempo de Exposição:</strong>
+                  <div class="flex justify-between mt-1 font-mono font-bold">
+                    <span class="text-white">Sol pleno direto: 6 HORAS</span>
+                    <span class="text-amber-400">Céu nublado (>50% nuvens): 2 DIAS</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-heading">
+                <span>🚾</span> Latrina Sanitária de Trincheira (Evacuação)
+              </div>
+              <div class="space-y-1 text-xs text-gray-300">
+                <div>📏 <strong>Distância de Segurança:</strong> Cavar a pelo menos <strong>60 metros</strong> de qualquer rio, poço, nascente ou área de preparação de alimentos.</div>
+                <div>⛏️ <strong>Dimensões:</strong> 30 a 40 cm de largura, 60 cm a 1 metro de profundidade.</div>
+                <div>🛡️ <strong>Higiene Diária:</strong> Mantenha uma pá com terra e cinzas de fogueira ao lado. Após cada uso, jogue 3 pás de terra/cinzas para selar odores e impedir moscas.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           17. TAB: NÓS & AMARRAÇÕES TÁTICAS
+           ================================================================= -->
+      <section class="tab-view" id="tab-knots">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">TÉCNICAS DE CORDA &amp; RESGATE VERTICAL</span>
+              <h2 class="page-title">🪢 Manual Tático de Nós &amp; Amarrações</h2>
+              <p class="page-subtitle">
+                Os 6 nós fundamentais para armar abrigos de lona sob ventania, içar mochilas, rebocar veículos e executar ancoragens de emergência.
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="chip-btn chip-highlight" onclick="filterKnots('all')">Todos (6 Nós)</button>
+              <button type="button" class="chip-btn" onclick="filterKnots('ancoragem')">Ancoragem</button>
+              <button type="button" class="chip-btn" onclick="filterKnots('tensao')">Tensionamento</button>
+              <button type="button" class="chip-btn" onclick="filterKnots('uniao')">União</button>
+            </div>
+          </div>
+
+          <div id="knots-container" class="grid-2">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           18. TAB: PLANO DE EMERGÊNCIA FAMILIAR (PEF)
+           ================================================================= -->
+      <section class="tab-view" id="tab-pef">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">COORDENAÇÃO FAMILIAR EM DESASTRES</span>
+              <h2 class="page-title">👨‍👩‍👧‍👦 Plano de Emergência Familiar (PEF)</h2>
+              <p class="page-subtitle">
+                Defina pontos de encontro da família, contatos fora do estado para triangulação e o checklist de evacuação em 15 minutos com persistência local.
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="btn-export-gpx" onclick="window.print()">
+                <span>🖨️</span> Imprimir Ficha da Família
+              </button>
+              <button type="button" class="btn-clear-route" onclick="resetPefForm()">
+                Resetar
+              </button>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- PEF Inputs -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>📍</span> Pontos de Encontro &amp; Comunicação
+              </div>
+
+              <div class="space-y-3">
+                <div class="form-group">
+                  <label class="form-label" for="pef-point1">Ponto de Encontro 1 (No Bairro - Imediato)</label>
+                  <input type="text" id="pef-point1" class="route-input" placeholder="Ex: Praça da Matriz / Portaria da Escola Estadual" oninput="savePefData()">
+                  <span class="text-xs text-gray-400">Local seguro fora de casa caso haja incêndio ou alagamento súbito na rua.</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="pef-point2">Ponto de Encontro 2 (Regional - Fora da Cidade)</label>
+                  <input type="text" id="pef-point2" class="route-input" placeholder="Ex: Sítio do Tio Marcos em Atibaia - Rodovia SP-065 km 78" oninput="savePefData()">
+                  <span class="text-xs text-gray-400">Destino seguro em caso de evacuação municipal ou colapso prolongado.</span>
+                </div>
+
+                <div class="metric-card" style="padding: 0.75rem;">
+                  <strong class="text-amber-400 text-xs">CONTATO FORA DE ÁREA (CENTRALIZADOR DE RECADO):</strong>
+                  <p class="text-xs text-gray-300 mt-0.5">
+                    Em grandes desastres, linhas locais colapsam, mas chamadas e SMS interestaduais/interurbanos continuam funcionando. Cadastre um parente em outro estado.
+                  </p>
+                  <div class="grid-2 gap-2 mt-2">
+                    <input type="text" id="pef-contact-name" class="route-input" placeholder="Nome do Parente" oninput="savePefData()">
+                    <input type="text" id="pef-contact-city" class="route-input" placeholder="Cidade / Estado (Ex: Curitiba-PR)" oninput="savePefData()">
+                  </div>
+                  <input type="text" id="pef-contact-phone" class="route-input mt-2 font-mono" placeholder="DDD + Telefone / WhatsApp" oninput="savePefData()">
+                </div>
+              </div>
+            </div>
+
+            <!-- Evacuation Checklist -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⚡</span> Protocolo de Saída Rápida (15 Minutos)
+              </div>
+
+              <div class="space-y-2 text-xs" id="pef-checklist-box">
+                <label class="bob-item-row">
+                  <input type="checkbox" id="pef_chk_gas" class="bob-checkbox" onchange="savePefData()">
+                  <span>Fechar registro do botijão de gás (GLP) ou válvula de corte da tubulação</span>
+                </label>
+                <label class="bob-item-row">
+                  <input type="checkbox" id="pef_chk_elec" class="bob-checkbox" onchange="savePefData()">
+                  <span>Desligar disjuntor geral do quadro de distribuição elétrica</span>
+                </label>
+                <label class="bob-item-row">
+                  <input type="checkbox" id="pef_chk_water" class="bob-checkbox" onchange="savePefData()">
+                  <span>Fechar registro geral do hidrômetro de água da rua</span>
+                </label>
+                <label class="bob-item-row">
+                  <input type="checkbox" id="pef_chk_pets" class="bob-checkbox" onchange="savePefData()">
+                  <span>Acomodar cães/gatos em caixas de transporte com coleira e guia</span>
+                </label>
+                <label class="bob-item-row">
+                  <input type="checkbox" id="pef_chk_docs" class="bob-checkbox" onchange="savePefData()">
+                  <span>Pegar pasta estanque de documentos (RG, CNH, Certidões e Escrituras)</span>
+                </label>
+                <label class="bob-item-row">
+                  <input type="checkbox" id="pef_chk_bob" class="bob-checkbox" onchange="savePefData()">
+                  <span>Carregar mochilas de emergência 72h (BOB) de cada integrante</span>
+                </label>
+                <label class="bob-item-row">
+                  <input type="checkbox" id="pef_chk_sms" class="bob-checkbox" onchange="savePefData()">
+                  <span>Disparar SMS de check-in para o contato fora da área informando saída</span>
+                </label>
+              </div>
+
+              <div class="metric-card mt-3">
+                <span class="metric-title">STATUS DO PLANO FAMILIAR</span>
+                <div class="text-sm font-bold text-emerald-400 mt-1" id="pef-status-summary">
+                  Preencha os campos para manter o plano ativo na memória local
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           19. TAB: METEOROLOGIA EMPÍRICA & NUVENS
+           ================================================================= -->
+      <section class="tab-view" id="tab-weather">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">PREVISÃO VISUAL DO TEMPO SEM INTERNET</span>
+              <h2 class="page-title">⛈️ Meteorologia Empírica &amp; Nuvens</h2>
+              <p class="page-subtitle">
+                Identificação de nuvens de tempestade, escala Beaufort de vento e cronômetro de distância de relâmpagos por propagação acústica.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Lightning Distance Stopwatch -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⚡</span> Calculadora de Distância de Raio (Regra do Som 340 m/s)
+              </div>
+              <p class="text-xs text-gray-300 mb-3">
+                A luz viaja instantaneamente, mas o som do trovão viaja a aproximadamente <strong>340 metros por segundo (1 km a cada ~3 segundos)</strong>.
+              </p>
+
+              <div class="storm-display-box mb-3">
+                <span class="metric-title">DISTÂNCIA ESTIMADA DO RAIO</span>
+                <div class="storm-km-val" id="storm-dist-display">0.0 km</div>
+                <div class="text-xs text-gray-400" id="storm-seconds-display">0.0 segundos decorridos</div>
+                <div class="text-xs font-bold mt-2" id="storm-danger-badge" style="color: var(--accent-green);">
+                  Pronto para medir: ao ver o relâmpago, toque em 'Vi o Clarão!'
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button type="button" class="btn-calc-route" style="flex:1;" id="btn-storm-flash" onclick="startLightningTimer()">
+                  <span>⚡</span> 1. Vi o Clarão! (Iniciar)
+                </button>
+                <button type="button" class="btn-export-gpx" style="flex:1;" id="btn-storm-thunder" onclick="stopLightningTimer()" disabled>
+                  <span>🔊</span> 2. Ouvi o Trovão! (Parar)
+                </button>
+              </div>
+
+              <div class="info-box mt-3" style="font-size: 0.75rem;">
+                <strong>REGRA 30/30 DE SEGURANÇA:</strong> Se o tempo entre o relâmpago e o trovão for menor que <strong>30 segundos</strong> (distância inferior a 10 km), você já está na zona de perigo de descarga elétrica. Procure abrigo fechado e aguarde 30 minutos após o último trovão antes de sair.
+              </div>
+            </div>
+
+            <!-- Cloud Guide -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>☁️</span> Nuvens Críticas no Brasil
+              </div>
+
+              <div class="space-y-2 text-xs">
+                <div class="metric-card">
+                  <div class="flex justify-between items-center">
+                    <strong class="text-red-400">Cumulonimbus (Cb)</strong>
+                    <span class="status-pill" style="border-color: #ef4444; color: #ef4444;">TEMPESTADE SEVERA</span>
+                  </div>
+                  <p class="text-gray-300 mt-1">Formato de bigorna gigante ou couve-flor escura. Traz pancadas violentas, ventania súbita, raios e granizo em 30 a 60 minutos.</p>
+                </div>
+
+                <div class="metric-card">
+                  <div class="flex justify-between items-center">
+                    <strong class="text-cyan-400">Cirrus (Ci)</strong>
+                    <span class="status-pill" style="border-color: #38bdf8; color: #38bdf8;">FRENTE FRIA EM 24H</span>
+                  </div>
+                  <p class="text-gray-300 mt-1">Nuvens altas de gelo, finas como fios de cabelo ou 'rabo de galo'. Se engrossarem em direção ao poente, indicam virada de tempo e frente fria no dia seguinte.</p>
+                </div>
+
+                <div class="metric-card">
+                  <div class="flex justify-between items-center">
+                    <strong class="text-amber-400">Altocumulus (Ac)</strong>
+                    <span class="status-pill" style="border-color: #f59e0b; color: #f59e0b;">INSTABILIDADE TÉRMICA</span>
+                  </div>
+                  <p class="text-gray-300 mt-1">'Céu encarneirado'. Indício clássico de calor excessivo e choque de massas de ar com alta probabilidade de temporais de verão no fim da tarde.</p>
+                </div>
+
+                <div class="metric-card">
+                  <div class="flex justify-between items-center">
+                    <strong class="text-gray-300">Nimbostratus (Ns)</strong>
+                    <span class="status-pill" style="border-color: #94a3b8; color: #cbd5e1;">CHUVA CONTÍNUA</span>
+                  </div>
+                  <p class="text-gray-300 mt-1">Manto cinzento escuro, sem forma definida, que cobre todo o céu. Provoca chuva ininterrupta e garoa fria durante dias, com risco de deslizamentos.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           20. TAB: MECÂNICA & DESATOLAMENTO 4X2 / 4X4
+           ================================================================= -->
+      <section class="tab-view" id="tab-vehicle">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">RECUPERAÇÃO VEICULAR &amp; SOCORRO MECÂNICO</span>
+              <h2 class="page-title">🚗 Mecânica de Emergência &amp; Desatolamento</h2>
+              <p class="page-subtitle">
+                Calibração tática de pneus para transpor lama e areia, técnicas de desatolamento sem guincho e reparos provisórios de campo.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Tire Pressure Strategy -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>🛞</span> Calibração Tática de Pneus (Aumento de Pegada)
+              </div>
+              <p class="text-xs text-gray-300 mb-2">
+                Esvaziar o pneu aumenta a área de contato em até 250%, fazendo o carro flutuar sobre a lama ou areia fofa em vez de cavar buracos.
+              </p>
+
+              <div class="space-y-2 text-xs">
+                <div class="metric-card">
+                  <div class="flex justify-between items-center font-bold">
+                    <span class="text-white">Asfalto / Estrada Boa:</span>
+                    <span class="text-emerald-400 font-mono">30 a 35 PSI</span>
+                  </div>
+                  <p class="text-gray-400 mt-0.5">Pressão padrão de manual. Máxima economia e controle em velocidade.</p>
+                </div>
+
+                <div class="metric-card">
+                  <div class="flex justify-between items-center font-bold">
+                    <span class="text-white">Estrada de Terra / Cascalho:</span>
+                    <span class="text-cyan-400 font-mono">22 a 26 PSI</span>
+                  </div>
+                  <p class="text-gray-400 mt-0.5">Amortece trepidação e reduz risco de corte de pneus em pedras pontiagudas.</p>
+                </div>
+
+                <div class="metric-card">
+                  <div class="flex justify-between items-center font-bold">
+                    <span class="text-white">Lama Pesada / Areia Fofa de Praia:</span>
+                    <span class="text-amber-400 font-mono">15 a 18 PSI</span>
+                  </div>
+                  <p class="text-gray-400 mt-0.5">Dobro de tração. Dirija devagar (&lt; 40 km/h) e evite manobras bruscas para não destalonar o pneu.</p>
+                </div>
+
+                <div class="metric-card">
+                  <div class="flex justify-between items-center font-bold">
+                    <span class="text-red-400">Desatolamento Extremo (Último Recurso):</span>
+                    <span class="text-red-400 font-mono">10 a 12 PSI</span>
+                  </div>
+                  <p class="text-gray-400 mt-0.5">Apenas para sair do atoleiro em linha reta. Calibre de volta imediatamente com o compressor 12V.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Unstuck Techniques -->
+            <div class="tactical-card">
+              <div class="section-heading">
+                <span>⛏️</span> Técnicas de Desatolamento Sem Guincho
+              </div>
+
+              <div class="space-y-3 text-xs text-gray-300">
+                <div class="metric-card">
+                  <strong class="text-cyan-400">1. Método da Tora Amarrada na Roda:</strong>
+                  <p class="mt-1">
+                    Amarre um pedaço de madeira firme (50cm) atravessado no pneu trator com corda ou fita catraca, passando pelos vãos da roda de aço. Ao girar a roda em marcha lenta, a madeira funciona como uma pá tratora impulsionando o carro para cima.
+                  </p>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-amber-400">2. Ancoragem do Estepe Enterrado:</strong>
+                  <p class="mt-1">
+                    Sem árvores por perto? Cave um buraco de 1 metro de profundidade a 20 metros à frente. Amarre o cabo de reboque no centro da roda do estepe e enterre-o deitado. Cubra com terra e compacte. O estepe vira uma âncora de tração sólida.
+                  </p>
+                </div>
+
+                <div class="metric-card">
+                  <strong class="text-emerald-400">3. Reparo de Mangueira de Radiador:</strong>
+                  <p class="mt-1">
+                    Se a mangueira furar: aguarde o motor esfriar completamente. Limpe a graxa, enrole fita vulcanizante ou câmara de ar de bicicleta com 5 voltas apertadas e finalize com Silver Tape e abraçadeiras plásticas. Ande devagar monitorando a temperatura.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           21. TAB: EXPORTAR PACOTE PORTÁTIL OFFLINE
+           ================================================================= -->
+      <section class="tab-view" id="tab-export">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">PORTABILIDADE MÁXIMA &amp; REDUNDÂNCIA</span>
+              <h2 class="page-title">📥 Pacote Portátil Offline (Arquivo Único)</h2>
+              <p class="page-subtitle">
+                Gere e baixe em 1 clique um arquivo HTML independente contendo todos os manuais médicos, frequências de rádio, catálogo de peçonhentos e calculadoras para rodar direto no celular sem precisar de servidor.
+              </p>
+            </div>
+          </div>
+
+          <div class="tactical-card text-center" style="padding: 2.5rem 1.5rem;">
+            <div style="font-size: 3.5rem; margin-bottom: 0.75rem;">📦</div>
+            <h3 class="text-xl font-bold text-white mb-2">Central Nomad Brasil Autocontida (.HTML)</h3>
+            <p class="text-xs text-gray-300 max-w-xl mx-auto mb-4">
+              Este arquivo compactado em HTML único contém os protocolos vitais, primeiros socorros, códigos de rádio, nós, plantas e ferramentas embutidas. Abra no navegador de qualquer computador, tablet ou celular em modo avião sem instalar nada.
+            </p>
+            <button type="button" class="btn-calc-route" style="display:inline-flex; padding: 0.85rem 1.75rem; font-size: 0.95rem;" onclick="exportPortableHtmlPackage()">
+              <span>📥</span> Baixar Pacote Portátil (nomad-brasil-offline.html)
+            </button>
+            <div class="text-xs text-gray-500 mt-3" id="export-status-message">
+              Tamanho estimado: ~1.2 MB &bull; Funciona sem internet em qualquer dispositivo
             </div>
           </div>
         </div>
