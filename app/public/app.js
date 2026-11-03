@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPlantsData();
   renderKnotsList();
   loadPefData();
+  calculateMarch();
 });
 
 // Mobile Sidebar Drawer Toggle
@@ -117,6 +118,9 @@ function switchTab(tabId) {
   }
   if (tabId === 'pef') {
     loadPefData();
+  }
+  if (tabId === 'march') {
+    calculateMarch();
   }
   if (tabId === 'solar') {
     calculateSolar();
@@ -2017,6 +2021,7 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
     loadPlantsData();
     renderKnotsList();
     loadPefData();
+    calculateMarch();
   }, 200);
 }
 
@@ -3146,5 +3151,77 @@ window.exportPortableHtmlPackage = async function() {
     console.error('Erro na exportação:', err);
     if (msgEl) msgEl.textContent = 'Erro ao compilar pacote: ' + err.message;
   }
+};
+
+// =====================================================================
+// 20. CALCULADORA DE MARCHA (REGRA DE NAISMITH) & GEODÉSICA
+// =====================================================================
+window.calculateMarch = function() {
+  const distKm = parseFloat(document.getElementById('march-dist-km')?.value) || 0;
+  const elevM = parseFloat(document.getElementById('march-elev-m')?.value) || 0;
+  const loadFactor = parseFloat(document.getElementById('march-load-type')?.value) || 1.2;
+
+  const flatTimeMin = (distKm / 5) * 60;
+  const climbTimeMin = (elevM / 300) * 30;
+  const rawTotalMin = (flatTimeMin + climbTimeMin) * loadFactor;
+
+  const restHours = Math.floor(rawTotalMin / 60);
+  const totalMin = Math.round(rawTotalMin + (restHours * 5));
+
+  const hours = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+
+  const waterLiters = ((totalMin / 60) * 0.65).toFixed(1);
+
+  const timeEl = document.getElementById('march-res-time');
+  const waterEl = document.getElementById('march-res-water');
+  const tipEl = document.getElementById('march-daylight-tip');
+
+  if (timeEl) timeEl.textContent = `${hours}h ${String(mins).padStart(2, '0')}m`;
+  if (waterEl) waterEl.textContent = `${waterLiters} Litros`;
+
+  if (tipEl) {
+    if (hours >= 8) {
+      tipEl.textContent = `⚠️ ATENÇÃO: Jornada longa (${hours}h)! Divida a marcha em 2 dias ou parta às 05:00 para não marchar no escuro.`;
+      tipEl.style.color = 'var(--accent-red)';
+    } else if (hours >= 5) {
+      tipEl.textContent = `⏱️ Marcha moderada (${hours}h). Programe saída antes das 07:00 e preveja parada para almoço.`;
+      tipEl.style.color = 'var(--accent-amber)';
+    } else {
+      tipEl.textContent = `✅ Jornada confortável (${hours}h). Mantenha ritmo constante de 60-68 passos duplos/100m.`;
+      tipEl.style.color = 'var(--accent-green)';
+    }
+  }
+};
+
+window.convertGeodeticCoords = function() {
+  const input = document.getElementById('geo-conv-in')?.value || '';
+  const outEl = document.getElementById('geo-conv-out');
+  if (!outEl) return;
+
+  const parts = input.split(',').map(s => parseFloat(s.trim()));
+  if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+    outEl.textContent = 'Formato inválido. Use: latitude, longitude (ex: -23.5505, -46.6333)';
+    outEl.style.color = 'var(--accent-red)';
+    return;
+  }
+
+  const [lat, lng] = parts;
+
+  function toDms(val, posChar, negChar) {
+    const dir = val >= 0 ? posChar : negChar;
+    const abs = Math.abs(val);
+    const deg = Math.floor(abs);
+    const minFloat = (abs - deg) * 60;
+    const min = Math.floor(minFloat);
+    const sec = ((minFloat - min) * 60).toFixed(1);
+    return `${deg}°${String(min).padStart(2, '0')}'${String(sec).padStart(4, '0')}"${dir}`;
+  }
+
+  const dmsLat = toDms(lat, 'N', 'S');
+  const dmsLng = toDms(lng, 'E', 'W');
+
+  outEl.textContent = `DMS: ${dmsLat} ${dmsLng} • Decimais: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  outEl.style.color = 'var(--accent-green)';
 };
 

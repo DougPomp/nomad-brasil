@@ -947,6 +947,10 @@
             <span class="tab-icon">🚑</span>
             <span>Primeiros Socorros</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="tccc" onclick="switchDemoTab('tccc')">
+            <span class="tab-icon">🩹</span>
+            <span>Trauma TCCC / MARCHE</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="venomous" onclick="switchDemoTab('venomous')">
             <span class="tab-icon">🐍</span>
             <span>Animais Peçonhentos</span>
@@ -958,6 +962,14 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="water" onclick="switchDemoTab('water')">
             <span class="tab-icon">🌊</span>
             <span>Água &amp; Saneamento</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="fire" onclick="switchDemoTab('fire')">
+            <span class="tab-icon">🔥</span>
+            <span>Fogo &amp; Fogueira Dakota</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="traps" onclick="switchDemoTab('traps')">
+            <span class="tab-icon">🏹</span>
+            <span>Pesca &amp; Armadilhas</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="knots" onclick="switchDemoTab('knots')">
             <span class="tab-icon">🪢</span>
@@ -971,9 +983,17 @@
             <span class="tab-icon">📻</span>
             <span>Rádio &amp; Antenas</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="satellites" onclick="switchDemoTab('satellites')">
+            <span class="tab-icon">🛰️</span>
+            <span>Satélites NOAA &amp; Luar</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="cipher" onclick="switchDemoTab('cipher')">
             <span class="tab-icon">🔐</span>
             <span>Cifra &amp; Código Tático</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="march" onclick="switchDemoTab('march')">
+            <span class="tab-icon">🥾</span>
+            <span>Calculadora de Marcha</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="weather" onclick="switchDemoTab('weather')">
             <span class="tab-icon">⛈️</span>
@@ -995,9 +1015,17 @@
             <span class="tab-icon">👨‍👩‍👧‍👦</span>
             <span>Plano Familiar (PEF)</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="perimeter" onclick="switchDemoTab('perimeter')">
+            <span class="tab-icon">🛡️</span>
+            <span>Segurança Perimetral</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="vehicle" onclick="switchDemoTab('vehicle')">
             <span class="tab-icon">🚗</span>
             <span>Mecânica &amp; 4x4</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="foodpres" onclick="switchDemoTab('foodpres')">
+            <span class="tab-icon">🥫</span>
+            <span>Conservação Alimentos</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="navigation" onclick="switchDemoTab('navigation')">
             <span class="tab-icon">🧭</span>
@@ -1896,6 +1924,262 @@
           </div>
         </section>
 
+        <!-- TAB 21: TRAUMA GRAVE & TCCC / MARCHE -->
+        <section class="tab-pane" id="tab-tccc">
+          <div class="card">
+            <h2 class="card-title">🩹 Trauma Grave: Protocolo TCCC / MARCHE</h2>
+            <p class="card-subtitle">
+              Sequência militar internacional de sobrevivência para conter hemorragias letais em segundos, desobstruir vias aéreas e prevenir a tríade da morte.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 0.5rem;">🩸 Protocolo MARCHE</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem;">
+                  <div><strong style="color: #ef4444;">M — Massive Bleeding:</strong> Aplique torniquete tático (C-A-T) 5-7cm acima da lesão. Se na virilha ou axila, realize empacotamento profundo com gaze e comprima por 3 min.</div>
+                  <div><strong style="color: #38bdf8;">A — Airway:</strong> Vítima inconsciente: tração mandibular (Jaw Thrust) sem mexer cervical. Se vômito/sangue, coloque em Posição Lateral de Segurança (PLS).</div>
+                  <div><strong style="color: #fbbf24;">R — Respiration:</strong> Ferimento no peito: aplique selo valvulado (ou plástico limpo colado em 3 pontas) para evitar colapso pulmonar.</div>
+                  <div><strong style="color: #34d399;">C — Circulation:</strong> Tempo de enchimento capilar lento (&gt;2s) indica choque hipovolêmico. Eleve membros inferiores e aqueça a vítima.</div>
+                  <div><strong style="color: #cbd5e1;">H — Hypothermia:</strong> Sangue frio não coagula! Isole do chão frio e envolva em manta térmica de mylar.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🧰 IFAK Individual de Trauma</h3>
+                <div style="font-size: 0.78rem; line-height: 1.4; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div>• <strong>1x Torniquete Tático (C-A-T G7)</strong> no cinto ou bolso externo.</div>
+                  <div>• <strong>1x Bandagem Israelense 6"</strong> com haste de pressão.</div>
+                  <div>• <strong>2x Gazes Compactadas Z-Fold</strong> para empacotamento.</div>
+                  <div>• <strong>1x Selo de Tórax Duplo Ventilado</strong> (entrada e saída).</div>
+                  <div>• <strong>1x Manta Térmica de Mylar</strong> à prova de vento.</div>
+                  <div>• <strong>1x Tesoura Ponta Romba (Joker 7.25")</strong> para corte de tecidos grossos.</div>
+                  <div>• <strong>1x Marcador Sharpie</strong> para anotar hora do torniquete na testa.</div>
+                  <div>• <strong>2x Pares de Luvas de Nitrilo</strong> pretas ou azuis.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 22: CONSERVAÇÃO ANCESTRAL DE ALIMENTOS -->
+        <section class="tab-pane" id="tab-foodpres">
+          <div class="card">
+            <h2 class="card-title">🥫 Conservação Ancestral de Alimentos</h2>
+            <p class="card-subtitle">
+              Métodos ancestrais para armazenar carnes e ovos no clima tropical brasileiro sem refrigeração ou eletricidade.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🥩 Carne de Lata &amp; Charque</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div><strong style="color: #38bdf8;">Carne de Lata (Confit):</strong> Cozinhe a carne lentamente na própria banha de porco até secar toda a água residual. Guarde em lata ou pote de barro totalmente submersa na banha. Dura mais de <strong>1 ano fora da geladeira</strong> em local fresco!</div>
+                  <div><strong style="color: #fbbf24;">Charque e Carne de Sol:</strong> Cubra a carne magra com sal grosso (10 a 15% do peso). Drene por 48h, retire o excesso de sal e pendure ao abrigo de moscas por 4 a 7 dias. O sal remove a água livre, inibindo bactérias.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🥚 Ovos em Cal &amp; Prevenção de Botulismo</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div><strong style="color: #34d399;">Water Glassing (Cal Hidratada):</strong> 30g de cal hidratada pura para 1L de água potável. Coloque ovos caipiras frescos <em>nunca lavados</em> no balde e cubra com a água de cal. A casca se sela e o ovo permanece fresco por até <strong>12 meses</strong> à temperatura ambiente.</div>
+                  <div><strong style="color: #ef4444;">Alerta Botulismo:</strong> Em conservas sem oxigênio, mantenha sempre o <strong>pH abaixo de 4,6</strong> adicionando vinagre. Ferva por 20 minutos conservas suspeitas antes de ingerir.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 23: FOGO EM CONDIÇÕES SEVERAS & FOGUEIRA DAKOTA -->
+        <section class="tab-pane" id="tab-fire">
+          <div class="card">
+            <h2 class="card-title">🔥 Fogo em Condições Severas &amp; Fogueira Dakota</h2>
+            <p class="card-subtitle">
+              Acendimento sob chuva torrencial e construção de fogueira subterrânea invisível imune ao vento com 80% menos fumaça.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">⛏️ Fogueira Subterrânea Dakota</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div><strong>1. Câmara Principal:</strong> Cave um buraco cilíndrico de 30 cm de diâmetro e 40 cm de profundidade.</div>
+                  <div><strong>2. Túnel de Alimentação de Ar:</strong> A 30 cm de distância, cave um túnel inclinado até a base da câmara principal no sentido do vento dominante.</div>
+                  <div><strong>3. Efeito Chaminé:</strong> O ar aquecido sobe pela câmara sugando ar oxigenado pelo duto, permitindo queima quase completa sem fumaça e sem clarão visível à distância.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🌧️ Iscas e Fogo na Chuva</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div><strong style="color: #fbbf24;">Nó-de-Pinho / Fatwood:</strong> Madeira resinada de pinus ou araucária caída. Repleta de terebintina natural impermeável; raspe lascas finas que acendem até encharcadas.</div>
+                  <div><strong style="color: #38bdf8;">Feather Sticks:</strong> Faça lascas encaracoladas no miolo seco de galhos grossos para captar calor inicial.</div>
+                  <div><strong style="color: #34d399;">Algodão com Vaselina:</strong> Guarde bolinhas de algodão embebidas em vaselina líquida ou sólida em canudos selados. Queimam por até 10 minutos sob vento.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 24: CALCULADORA DE MARCHA & NAVEGAÇÃO -->
+        <section class="tab-pane" id="tab-march">
+          <div class="card">
+            <h2 class="card-title">🥾 Calculadora de Marcha &amp; Navegação</h2>
+            <p class="card-subtitle">
+              Estimativa de tempo e hidratação pela Regra de Naismith, aferição de passos duplos e conversor geodésico de campo.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">⏱️ Estimador de Marcha (Regra de Naismith)</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Distância Total (km):</span>
+                    <input type="number" id="on-march-dist" class="form-input font-mono" style="width: 80px; text-align: center;" value="15" min="1" max="100" oninput="calcOnlineMarch()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Desnível de Subida (m):</span>
+                    <input type="number" id="on-march-elev" class="form-input font-mono" style="width: 80px; text-align: center;" value="300" min="0" max="5000" oninput="calcOnlineMarch()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Carga / Mochila:</span>
+                    <select id="on-march-load" class="form-input" style="width: 140px;" onchange="calcOnlineMarch()">
+                      <option value="1.0">Leve (&lt; 6 kg)</option>
+                      <option value="1.2" selected>BOB (~12 kg)</option>
+                      <option value="1.4">Pesada (&gt; 18 kg)</option>
+                    </select>
+                  </div>
+                  <div class="route-metrics-grid" style="margin-top: 0.4rem;">
+                    <div class="metric-card">
+                      <span class="metric-title">TEMPO ESTIMADO</span>
+                      <span class="metric-value font-mono" style="color: #38bdf8;" id="on-march-time">0h 00m</span>
+                      <span style="font-size: 0.65rem; color: var(--text-muted);">Com pausas de 5 min/h</span>
+                    </div>
+                    <div class="metric-card">
+                      <span class="metric-title">ÁGUA MÍNIMA</span>
+                      <span class="metric-value font-mono" style="color: #34d399;" id="on-march-water">0.0 L</span>
+                      <span style="font-size: 0.65rem; color: var(--text-muted);">Consumo em deslocamento</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">👣 Passo Duplo &amp; Coordenadas</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.5rem;">
+                  <div><strong>Passo Duplo (Pace Count):</strong> Conte apenas quando o pé esquerdo toca o chão. Em média, <strong>66 passos duplos = 100 metros</strong> em terreno plano. Use miçangas no cinto para registrar a quilometragem.</div>
+                  <div style="margin-top: 0.3rem;">
+                    <strong>Conversor Rápido (DD para DMS):</strong>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
+                      <input type="text" id="on-geo-in" class="form-input font-mono" value="-23.5505, -46.6333" style="flex: 1;" placeholder="-23.5505, -46.6333">
+                      <button type="button" class="chip-btn chip-highlight" onclick="convertOnlineCoords()">Converter</button>
+                    </div>
+                    <div id="on-geo-out" class="font-mono" style="color: #34d399; font-size: 0.82rem; margin-top: 0.35rem;">DMS: 23°33'01.8"S 46°37'59.9"W</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 25: PESCA & ARMADILHAS DE EMERGÊNCIA -->
+        <section class="tab-pane" id="tab-traps">
+          <div class="card">
+            <h2 class="card-title">🏹 Pesca &amp; Armadilhas de Emergência</h2>
+            <p class="card-subtitle">
+              Arapuca indígena tradicional brasileira, linhas de espera de pesca e respaldo da Lei de Crimes Ambientais para estado de necessidade.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🪤 Arapuca Piramidal &amp; Linhas de Espera</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div><strong style="color: #38bdf8;">Arapuca Tradicional:</strong> Monte gravetos em pirâmide de 4 lados travada com barbante ou cipó. Use gatilho em formato de '4' armado sobre sementes. Ao tocar na isca, a pirâmide cai sem machucar o animal.</div>
+                  <div><strong style="color: #fbbf24;">Linha de Espera com Varas Flexíveis:</strong> Amarre a linha de pesca com anzol na ponta de galhos elásticos curvados na beira do rio. O galho amortece os solavancos do peixe impedindo a quebra da linha enquanto você descansa.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">⚖️ Evisceração Sanitária &amp; Amparo Legal</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div><strong style="color: #34d399;">Evisceração Sem Romper Fel:</strong> Faça corte superficial do ânus até o queixo com lâmina para cima. NUNCA fure a vesícula biliar nem o intestino para não estragar a carne com gosto amargo e fezes. Cozinhe sempre acima de 75°C.</div>
+                  <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; padding: 0.5rem; border-radius: 4px;">
+                    <strong style="color: #fff;">Lei 9.605/98 (Art. 37):</strong> Não é crime o abate de animais quando realizado em estado de necessidade extrema para saciar a fome própria ou familiar.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 26: SEGURANÇA PERIMETRAL & ALERTAS -->
+        <section class="tab-pane" id="tab-perimeter">
+          <div class="card">
+            <h2 class="card-title">🛡️ Segurança Perimetral &amp; Alertas de Intrusão</h2>
+            <p class="card-subtitle">
+              Linhas de tropeço sonoras, disciplina de blackout com iluminação vermelha e métodos para camuflar pegadas na mata.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🔔 Linhas de Tropeço &amp; Blackout</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div><strong style="color: #38bdf8;">Tripwires de Monofilamento:</strong> Estique linha de pesca fina (0.35mm) a 15-20cm do chão, a 15 metros de raio do abrigo. Amarre a ponta a latas com pedrinhas ou guizos de pesca para alerta sonoro imediato no escuro.</div>
+                  <div><strong style="color: #ef4444;">Disciplina de Luz (Blackout):</strong> Luz branca de lanternas viaja mais de 3 km na noite aberta e destrói sua visão noturna adaptada. Use apenas luz vermelha ou verde fraca no interior do abrigo coberto.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">👣 Contra-Rastreamento de Trilha</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div>• Pise em pedras, cascalho e raízes secas em vez de terra fofa ou lama úmida.</div>
+                  <div>• Caminhe em pequenos trechos pelo leito de riachos com fundo pedregoso para quebrar rastros.</div>
+                  <div>• Nunca quebre galhos na altura do tórax ou da cabeça (indício visual óbvio de passagem humana).</div>
+                  <div>• Nas paradas, faça guarda voltado para trás observando a rota de aproximação.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 27: SATÉLITES NOAA & LUAR -->
+        <section class="tab-pane" id="tab-satellites">
+          <div class="card">
+            <h2 class="card-title">🛰️ Satélites Meteorológicos &amp; Luar</h2>
+            <p class="card-subtitle">
+              Frequências de satélites meteorológicos NOAA em órbita baixa, Estação Espacial Internacional (ISS) e calendário de iluminação lunar.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🛰️ Frequências de Satélites NOAA (VHF)</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.25rem 0;">
+                    <strong style="color: #fff;">NOAA-15 (APT):</strong><span class="font-mono" style="color: #38bdf8;">137.620 MHz FM</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.25rem 0;">
+                    <strong style="color: #fff;">NOAA-18 (APT):</strong><span class="font-mono" style="color: #38bdf8;">137.9125 MHz FM</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.25rem 0;">
+                    <strong style="color: #fff;">NOAA-19 (APT):</strong><span class="font-mono" style="color: #38bdf8;">137.100 MHz FM</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;">
+                    <strong style="color: #fbbf24;">Estação Espacial (ISS):</strong><span class="font-mono" style="color: #fbbf24;">145.800 MHz FM</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🌕 Fases da Lua &amp; Deslocamento Noturno</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div><strong>Lua Cheia (e ±3 dias):</strong> Iluminação até 0.25 lux; permite caminhar sem lanternas em campos abertos mantendo discrição e economizando baterias.</div>
+                  <div>• <strong>Lua Nova:</strong> Escuridão total. Marcha noturna desaconselhada.</div>
+                  <div>• <strong>Quarto Crescente:</strong> Luar na primeira metade da noite (das 18h às 00h).</div>
+                  <div>• <strong>Quarto Minguante:</strong> Luar na segunda metade da noite (das 00h ao amanhecer).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <footer>
@@ -2783,6 +3067,58 @@
       }
     }
 
+    // =====================================================================
+    // 18. CALCULADORA DE MARCHA (REGRA DE NAISMITH) & GEODÉSICA ONLINE
+    // =====================================================================
+    function calcOnlineMarch() {
+      const distKm = parseFloat(document.getElementById('on-march-dist')?.value) || 0;
+      const elevM = parseFloat(document.getElementById('on-march-elev')?.value) || 0;
+      const loadFactor = parseFloat(document.getElementById('on-march-load')?.value) || 1.2;
+
+      const flatTimeMin = (distKm / 5) * 60;
+      const climbTimeMin = (elevM / 300) * 30;
+      const rawTotalMin = (flatTimeMin + climbTimeMin) * loadFactor;
+
+      const restHours = Math.floor(rawTotalMin / 60);
+      const totalMin = Math.round(rawTotalMin + (restHours * 5));
+
+      const hours = Math.floor(totalMin / 60);
+      const mins = totalMin % 60;
+      const waterLiters = ((totalMin / 60) * 0.65).toFixed(1);
+
+      const timeEl = document.getElementById('on-march-time');
+      const waterEl = document.getElementById('on-march-water');
+      if (timeEl) timeEl.textContent = `${hours}h ${String(mins).padStart(2, '0')}m`;
+      if (waterEl) waterEl.textContent = `${waterLiters} Litros`;
+    }
+
+    function convertOnlineCoords() {
+      const input = document.getElementById('on-geo-in')?.value || '';
+      const outEl = document.getElementById('on-geo-out');
+      if (!outEl) return;
+
+      const parts = input.split(',').map(s => parseFloat(s.trim()));
+      if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+        outEl.textContent = 'Formato inválido. Use: latitude, longitude';
+        outEl.style.color = '#ef4444';
+        return;
+      }
+
+      const [lat, lng] = parts;
+      function toDms(val, posChar, negChar) {
+        const dir = val >= 0 ? posChar : negChar;
+        const abs = Math.abs(val);
+        const deg = Math.floor(abs);
+        const minFloat = (abs - deg) * 60;
+        const min = Math.floor(minFloat);
+        const sec = ((minFloat - min) * 60).toFixed(1);
+        return `${deg}°${String(min).padStart(2, '0')}'${String(sec).padStart(4, '0')}"${dir}`;
+      }
+
+      outEl.textContent = `DMS: ${toDms(lat, 'N', 'S')} ${toDms(lng, 'E', 'W')} • DD: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      outEl.style.color = '#34d399';
+    }
+
     // Service Worker PWA registration
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -2796,6 +3132,7 @@
     loadOnlinePef();
     calcSolarOnline();
     renderOnlineBob();
+    calcOnlineMarch();
   </script>
 </body>
 </html>
