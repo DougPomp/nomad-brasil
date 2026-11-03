@@ -951,6 +951,14 @@
             <span class="tab-icon">🩹</span>
             <span>Trauma TCCC / MARCHE</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="biosecurity" onclick="switchDemoTab('biosecurity')">
+            <span class="tab-icon">☣️</span>
+            <span>Biossegurança &amp; Epidemias</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="disasters" onclick="switchDemoTab('disasters')">
+            <span class="tab-icon">🛡️</span>
+            <span>Defesa Civil &amp; Desastres</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="venomous" onclick="switchDemoTab('venomous')">
             <span class="tab-icon">🐍</span>
             <span>Animais Peçonhentos</span>
@@ -971,6 +979,10 @@
             <span class="tab-icon">🏹</span>
             <span>Pesca &amp; Armadilhas</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="k9" onclick="switchDemoTab('k9')">
+            <span class="tab-icon">🐕</span>
+            <span>Cinotécnica &amp; APH Canino</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="knots" onclick="switchDemoTab('knots')">
             <span class="tab-icon">🪢</span>
             <span>Nós &amp; Amarrações</span>
@@ -982,6 +994,10 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="telecom" onclick="switchDemoTab('telecom')">
             <span class="tab-icon">📻</span>
             <span>Rádio &amp; Antenas</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="comms" onclick="switchDemoTab('comms')">
+            <span class="tab-icon">📢</span>
+            <span>Código Q &amp; ICAO</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="satellites" onclick="switchDemoTab('satellites')">
             <span class="tab-icon">🛰️</span>
@@ -995,6 +1011,10 @@
             <span class="tab-icon">🥾</span>
             <span>Calculadora de Marcha</span>
           </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="tracking" onclick="switchDemoTab('tracking')">
+            <span class="tab-icon">🐾</span>
+            <span>Sinais de Pista &amp; Rastreio</span>
+          </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="weather" onclick="switchDemoTab('weather')">
             <span class="tab-icon">⛈️</span>
             <span>Meteorologia &amp; Nuvens</span>
@@ -1006,6 +1026,10 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="solar" onclick="switchDemoTab('solar')">
             <span class="tab-icon">⚡</span>
             <span>Energia Solar 12V</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="altenergy" onclick="switchDemoTab('altenergy')">
+            <span class="tab-icon">🔋</span>
+            <span>Baterias 18650 &amp; Geradores</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="bob" onclick="switchDemoTab('bob')">
             <span class="tab-icon">🎒</span>
@@ -1026,6 +1050,10 @@
           <button type="button" class="demo-tab-btn" data-demo-tab="foodpres" onclick="switchDemoTab('foodpres')">
             <span class="tab-icon">🥫</span>
             <span>Conservação Alimentos</span>
+          </button>
+          <button type="button" class="demo-tab-btn" data-demo-tab="chem" onclick="switchDemoTab('chem')">
+            <span class="tab-icon">🧪</span>
+            <span>Química Prática &amp; Sabão</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="navigation" onclick="switchDemoTab('navigation')">
             <span class="tab-icon">🧭</span>
@@ -2180,6 +2208,273 @@
           </div>
         </section>
 
+        <!-- TAB 28: BIOSSEGURANÇA & EPIDEMIAS -->
+        <section class="tab-pane" id="tab-biosecurity">
+          <div class="card">
+            <h2 class="card-title">☣️ Biossegurança, Epidemias &amp; Quarentena</h2>
+            <p class="card-subtitle">
+              Procedimentos de barreira sanitária residencial, pedilúvio descontaminante, desinfecção de calçados e manejo de resíduos biológicos infectantes.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 0.5rem;">🚪 Eclusa Sanitária Residencial</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #ef4444;">1. Zona Vermelha (Porta):</strong> Deixe os calçados na bandeja com pedilúvio (solução de água sanitária a 0.5% — 200 ml por 800 ml de água) por 30 segundos.</div>
+                  <div><strong style="color: #fbbf24;">2. Zona Amarela (Transição):</strong> Retire as roupas externas e coloque diretamente em balde com água e sabão. Higienize as mãos com álcool 70% ou sabão.</div>
+                  <div><strong style="color: #34d399;">3. Zona Verde (Interior Limpo):</strong> Ambiente interno descontaminado para convívio seguro e descanso.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🥽 Máscaras PFF2 &amp; Descarte de Infectantes</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Reuso de PFF2/N95 em Crise:</strong> Pendure a máscara em local arejado e seco por 5 dias antes de reutilizar. NUNCA borrife álcool líquido (destrói as fibras eletrostáticas filtrantes).</div>
+                  <div><strong style="color: #fbbf24;">Descarte de Infectantes:</strong> Curativos e gazes com secreções devem ser umedecidos com água sanitária pura, ensacados em saco duplo e queimados ou enterrados a 1 metro de profundidade longe de poços de água.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 29: DEFESA CIVIL & DESASTRES NATURAIS -->
+        <section class="tab-pane" id="tab-disasters">
+          <div class="card">
+            <h2 class="card-title">🛡️ Defesa Civil &amp; Desastres Naturais do Brasil</h2>
+            <p class="card-subtitle">
+              Sinais geológicos de cabeças d’água em cachoeiras, deslizamentos de encostas e calculadora de reidratação oral (Soro Caseiro OMS).
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🌊 Cabeça d'Água &amp; Inundações</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Sinais de Tromba d'Água:</strong> Rio barrento de repente, folhas/espuma flutuando na tona e rugido surdo na serra. Suba encostas altas imediatamente!</div>
+                  <div><strong style="color: #fbbf24;">Sinais de Deslizamento:</strong> Postes e árvores inclinadas, trincas em 45° nas paredes e água barrenta minando do chão. Evacue a pé sem carregar peso.</div>
+                  <div><strong style="color: #ef4444;">Arraste de Água:</strong> 15 cm de correnteza derrubam adultos; 30 cm arrastam carros. NUNCA atravesse enxurradas de carro.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">💧 Soro Caseiro OMS &amp; Reidratação</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div class="font-mono" style="color: #34d399;">1L água potável + 1 colher de sopa de açúcar + 1 colher de café de sal</div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem;">
+                    <span>Peso Corporal (kg):</span>
+                    <input type="number" id="on-soro-kg" class="form-input font-mono" style="width: 80px; text-align: center;" value="70" min="5" max="150" oninput="calcOnlineSoro()">
+                  </div>
+                  <div class="route-metrics-grid" style="margin-top: 0.3rem;">
+                    <div class="metric-card">
+                      <span class="metric-title">DOSE ATAQUE (4H)</span>
+                      <span class="metric-value font-mono" style="color: #38bdf8;" id="on-soro-dose">3.5 L</span>
+                    </div>
+                    <div class="metric-card">
+                      <span class="metric-title">PÓS-EVACUAÇÃO</span>
+                      <span class="metric-value font-mono" style="color: #34d399;" id="on-soro-cup">200 ml</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 30: CINOTÉCNICA & APH CANINO -->
+        <section class="tab-pane" id="tab-k9">
+          <div class="card">
+            <h2 class="card-title">🐕 Cinotécnica &amp; APH Veterinário Canino</h2>
+            <p class="card-subtitle">
+              Alimentação canina sem ração industrializada, conduta em picadas de serpentes no focinho e leitura de sentinela animal.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 0.5rem;">🚑 APH de Campo para Cães</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #ef4444;">Picada no Focinho:</strong> O edema maciço oclui a passagem de ar. Improvise cânula traqueal de emergência (tubo plástico flexível na narina lubrificado) e NUNCA amarre a boca do animal.</div>
+                  <div><strong style="color: #38bdf8;">Cortes em Almofadas (Coxins):</strong> Lave e enfaixe com meia limpa fixada na canela com esparadrapo para estancar o sangramento sem garrotear a pata.</div>
+                  <div><strong style="color: #fbbf24;">Maca Improvisada:</strong> Inverta as mangas de uma jaqueta grossa para dentro e passe duas varas de madeira fortes pelas mangas para carregar o cão ferido.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🥩 Dieta de Crise &amp; Sentinela</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #34d399;">Alimentação sem Ração:</strong> 60% carnes ou miúdos cozidos + 30% carboidratos (arroz/abóbora cozida) + 10% cálcio (farinha de casca de ovo seca moída fina).</div>
+                  <div><strong style="color: #f87171;">Tóxicos Fatais para Cães:</strong> Chocolate, cebola, alho cru em excesso e uvas passas.</div>
+                  <div><strong style="color: #38bdf8;">Leitura Sentinela:</strong> Cães ouvem até 45 kHz. Se o animal arrepiar a espinha e rosnar fixando o olhar no breu, há aproximação humana a até 100m.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 31: QUÍMICA PRÁTICA & SABÃO DE CINZAS -->
+        <section class="tab-pane" id="tab-chem">
+          <div class="card">
+            <h2 class="card-title">🧪 Química Prática &amp; Sabão de Cinzas</h2>
+            <p class="card-subtitle">
+              Fabricação de lixívia de potássio e sabão artesanal de cinzas, calculadora de diluição de hipoclorito e carvão ativado medicinal.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🧼 Sabão Artesanal de Cinzas</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #fbbf24;">1. Lixívia de Madeira Dura:</strong> Despeje água de chuva fervendo sobre cinzas brancas de fogueira em balde com fundo furado e palha. O líquido marrom que goteja é a lixívia cáustica.</div>
+                  <div><strong style="color: #38bdf8;">2. Saponificação:</strong> Aqueça banha animal derretida e verta a lixívia mexendo com colher de pau por 40 minutos até atingir o ponto de pasta grossa.</div>
+                  <div><strong style="color: #34d399;">3. Maturação:</strong> Despeje em forma de madeira forrada, corte após 48h e aguarde 3 semanas de cura antes de usar na pele.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🧪 Diluição de Água Sanitária (2.5%)</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Finalidade:</span>
+                    <select id="on-bleach-usage" class="form-input" style="width: 160px;" onchange="calcOnlineBleach()">
+                      <option value="water_clean">Água Potável Limpa</option>
+                      <option value="water_turbid">Água Potável Turva</option>
+                      <option value="veggies">Higienizar Verduras</option>
+                      <option value="surfaces">Superfícies &amp; Pisos</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Litros de Água:</span>
+                    <input type="number" id="on-bleach-liters" class="form-input font-mono" style="width: 80px; text-align: center;" value="10" min="1" max="500" oninput="calcOnlineBleach()">
+                  </div>
+                  <div class="metric-card" style="margin-top: 0.3rem;">
+                    <span class="metric-title">DOSE DE HIPOCLORITO</span>
+                    <div id="on-bleach-qty" class="font-mono text-emerald-400 font-bold" style="font-size: 1.05rem;">20 gotas (~1.0 ml)</div>
+                    <div id="on-bleach-hint" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Adicione, misture e aguarde 30 min antes de beber.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 32: BATERIAS 18650 & ENERGIA ALTERNATIVA -->
+        <section class="tab-pane" id="tab-altenergy">
+          <div class="card">
+            <h2 class="card-title">🔋 Baterias 18650 &amp; Geradores Alternativos</h2>
+            <p class="card-subtitle">
+              Recuperação de células de lítio 18650 de sucatas de notebook, módulos step-down para recarga de rádios e calculadora de autonomia.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🔋 Triagem de Células de Lítio</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div>• <strong>Acima de 3.0V:</strong> Célula em ótimo estado. Pode carregar e usar.</div>
+                  <div>• <strong>Entre 2.0V e 2.9V:</strong> Célula recuperável com carga lenta em carregador inteligente.</div>
+                  <div>• <strong>Abaixo de 1.5V:</strong> Célula em curto. Descarte em balde de areia.</div>
+                  <div><strong style="color: #34d399;">Módulo Buck 5V 2A:</strong> Conecte qualquer bateria 12V em módulo conversor DC-DC step-down para ter porta USB potente de emergência.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">⏱️ Estimador de Autonomia de Banco</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.8rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Tensão (V):</span>
+                    <select id="on-batt-v" class="form-input" style="width: 140px;" onchange="calcOnlineBatt()">
+                      <option value="3.7">3.7V (1S Lítio)</option>
+                      <option value="7.4">7.4V (2S Baofeng)</option>
+                      <option value="12.0" selected>12.0V (Bateria Carro/Moto)</option>
+                    </select>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Capacidade (Ah):</span>
+                    <input type="number" id="on-batt-ah" class="form-input font-mono" style="width: 80px; text-align: center;" value="7.0" min="0.5" max="200" step="0.5" oninput="calcOnlineBatt()">
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Consumo (Watts):</span>
+                    <input type="number" id="on-batt-w" class="form-input font-mono" style="width: 80px; text-align: center;" value="5.0" min="0.5" max="500" step="0.5" oninput="calcOnlineBatt()">
+                  </div>
+                  <div class="route-metrics-grid" style="margin-top: 0.3rem;">
+                    <div class="metric-card">
+                      <span class="metric-title">ENERGIA ARMAZENADA</span>
+                      <span class="metric-value font-mono" style="color: #38bdf8;" id="on-batt-wh">84.0 Wh</span>
+                    </div>
+                    <div class="metric-card">
+                      <span class="metric-title">AUTONOMIA</span>
+                      <span class="metric-value font-mono" style="color: #34d399;" id="on-batt-hours">14.3 horas</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 33: SINAIS DE PISTA & RASTREAMENTO -->
+        <section class="tab-pane" id="tab-tracking">
+          <div class="card">
+            <h2 class="card-title">🐾 Sinais de Pista &amp; Rastreamento Selvagem</h2>
+            <p class="card-subtitle">
+              Código universal de comunicação por elementos naturais no solo, leitura de pegadas da fauna brasileira e cálculo de idade do rastro.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🪨 Sinais com Pedras e Gravetos</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #38bdf8;">Direção Segura:</strong> 3 pedras empilhadas com a do topo inclinada para o rumo certo; ou galho quebrado apontando à frente.</div>
+                  <div><strong style="color: #ef4444;">Perigo / Caminho Proibido:</strong> Gravetos cruzados em "X" sobre a trilha.</div>
+                  <div><strong style="color: #34d399;">Água Potável:</strong> Triângulo de gravetos com pedra no centro apontando para a fonte.</div>
+                  <div><strong style="color: #fbbf24;">Mensagem Escondida:</strong> Círculo de pedras com graveto central fincado indicando a direção do esconderijo.</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #fbbf24; font-size: 0.95rem; margin-bottom: 0.5rem;">🐆 Identificação de Pegadas Brasileiras</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #fbbf24;">Onças (Pintada e Parda):</strong> Unhas retráteis; <em>NÃO deixam marca de garras</em> na lama; almofada traseira com 3 lóbulos.</div>
+                  <div><strong style="color: #38bdf8;">Cães e Lobos-Guará:</strong> Garras evidentes e afiadas cravadas à frente dos 4 dedos.</div>
+                  <div><strong style="color: #ef4444;">Javaporco / Javali:</strong> Casco bipartido com unhas acessórias atrás; animal agressivo.</div>
+                  <div><strong style="color: #34d399;">Idade do Rastro:</strong> Terra escura úmida = &lt; 1h; bordas esfareladas secas = 3 a 6h; teia de aranha cruzando a pegada = &gt; 12h.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 34: CÓDIGO Q, ALFABETO ICAO & HELIÓGRAFO -->
+        <section class="tab-pane" id="tab-comms">
+          <div class="card">
+            <h2 class="card-title">📢 Código Q, Alfabeto ICAO &amp; Heliógrafo</h2>
+            <p class="card-subtitle">
+              Tabela de códigos internacionais de rádio de emergência, alfabeto fonético aeronáutico e técnica de espelho heliógrafo para socorro aéreo.
+            </p>
+
+            <div class="grid-2">
+              <div class="metric-card">
+                <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">📻 Código Q Tático de Emergência</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.78rem;">
+                  <div><strong style="color: #38bdf8;" class="font-mono">QAP:</strong> Na escuta / Permaneça ouvindo</div>
+                  <div><strong style="color: #34d399;" class="font-mono">QSL:</strong> Mensagem recebida e confirmada</div>
+                  <div><strong style="color: #fbbf24;" class="font-mono">QTH:</strong> Posição / Localização geográfica</div>
+                  <div><strong style="color: #38bdf8;" class="font-mono">QSO:</strong> Comunicado direto entre operadores</div>
+                  <div><strong style="color: #cbd5e1;" class="font-mono">QRX:</strong> Aguarde um momento em espera</div>
+                  <div><strong style="color: #ef4444;" class="font-mono">QRT:</strong> Fim de transmissão / Desligando rádio</div>
+                  <div><strong style="color: #fbbf24;" class="font-mono">QRM:</strong> Interferência humana na frequência</div>
+                  <div><strong style="color: #f87171;" class="font-mono">QRN:</strong> Estática atmosférica de tempestade</div>
+                  <div><strong style="color: #38bdf8;" class="font-mono">QSY:</strong> Mudando para outra frequência</div>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h3 style="color: #34d399; font-size: 0.95rem; margin-bottom: 0.5rem;">🔤 Alfabeto ICAO &amp; Espelho Heliógrafo</h3>
+                <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.4rem;">
+                  <div><strong style="color: #34d399;">Soletração ICAO:</strong> A-Alfa, B-Bravo, C-Charlie, D-Delta, E-Echo, F-Foxtrot, G-Golf, H-Hotel, I-India, J-Juliett, K-Kilo, L-Lima, M-Mike, N-November, O-Oscar, P-Papa, Q-Quebec, R-Romeo, S-Sierra, T-Tango, U-Uniform, V-Victor, W-Whiskey, X-Xray, Y-Yankee, Z-Zulu.</div>
+                  <div><strong style="color: #fbbf24;">Heliógrafo (Espelho de Luz):</strong> Visível a mais de 25 km por aeronaves. Estique o polegar apontando para o avião, aproxime o espelho do olho e ajuste até que o reflexo do sol cubra a ponta do dedo. Pisque o reflexo em ritmo Morse (SOS: ... --- ...).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <footer>
@@ -3119,6 +3414,54 @@
       outEl.style.color = '#34d399';
     }
 
+    function calcOnlineSoro() {
+      const kg = parseFloat(document.getElementById('on-soro-kg')?.value) || 70;
+      const attackL = ((kg * 50) / 1000).toFixed(1);
+      const cupMl = Math.min(300, Math.max(100, Math.round(kg * 3)));
+      const doseEl = document.getElementById('on-soro-dose');
+      const cupEl = document.getElementById('on-soro-cup');
+      if (doseEl) doseEl.textContent = `${attackL} L`;
+      if (cupEl) cupEl.textContent = `${cupMl} ml`;
+    }
+
+    function calcOnlineBleach() {
+      const usage = document.getElementById('on-bleach-usage')?.value || 'water_clean';
+      const liters = parseFloat(document.getElementById('on-bleach-liters')?.value) || 10;
+      const qtyEl = document.getElementById('on-bleach-qty');
+      const hintEl = document.getElementById('on-bleach-hint');
+      if (!qtyEl || !hintEl) return;
+
+      if (usage === 'water_clean') {
+        const drops = liters * 2;
+        qtyEl.textContent = `${drops} gotas (~${(drops/20).toFixed(1)} ml)`;
+        hintEl.textContent = 'Adicione, misture e aguarde 30 min em recipiente fechado.';
+      } else if (usage === 'water_turbid') {
+        const drops = liters * 4;
+        qtyEl.textContent = `${drops} gotas (~${(drops/20).toFixed(1)} ml)`;
+        hintEl.textContent = 'Filtre previamente em pano limpo. Deixe agir por 45 min.';
+      } else if (usage === 'veggies') {
+        const ml = Math.round(liters * 15);
+        qtyEl.textContent = `${ml} ml (~${ml/15} colheres de sopa)`;
+        hintEl.textContent = 'Mergulhe hortaliças por 15 min e enxágue com água potável.';
+      } else if (usage === 'surfaces') {
+        const ml = Math.round(liters * 200);
+        qtyEl.textContent = `${ml} ml (~${(ml/200).toFixed(1)} copos americanos)`;
+        hintEl.textContent = 'Solução hospitalar 0.5% para pisos e solados. Deixe agir 10 min.';
+      }
+    }
+
+    function calcOnlineBatt() {
+      const v = parseFloat(document.getElementById('on-batt-v')?.value) || 12.0;
+      const ah = parseFloat(document.getElementById('on-batt-ah')?.value) || 7.0;
+      const w = parseFloat(document.getElementById('on-batt-w')?.value) || 5.0;
+      const totalWh = v * ah;
+      const hours = ((totalWh * 0.85) / w).toFixed(1);
+      const whEl = document.getElementById('on-batt-wh');
+      const hEl = document.getElementById('on-batt-hours');
+      if (whEl) whEl.textContent = `${totalWh.toFixed(1)} Wh`;
+      if (hEl) hEl.textContent = `${hours} horas`;
+    }
+
     // Service Worker PWA registration
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -3133,6 +3476,9 @@
     calcSolarOnline();
     renderOnlineBob();
     calcOnlineMarch();
+    calcOnlineSoro();
+    calcOnlineBleach();
+    calcOnlineBatt();
   </script>
 </body>
 </html>

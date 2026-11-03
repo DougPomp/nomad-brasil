@@ -3225,3 +3225,76 @@ window.convertGeodeticCoords = function() {
   outEl.style.color = 'var(--accent-green)';
 };
 
+// =====================================================================
+// 21. CALCULADORA DE SORO CASEIRO OMS
+// =====================================================================
+window.calculateSoroDose = function() {
+  const weight = parseFloat(document.getElementById('soro-weight-input')?.value) || 70;
+  const attackMl = weight * 50;
+  const attackL = (attackMl / 1000).toFixed(1);
+  const cupMl = Math.min(300, Math.max(100, Math.round(weight * 3)));
+
+  const doseEl = document.getElementById('soro-res-dose');
+  const cupEl = document.getElementById('soro-res-cup');
+  if (doseEl) doseEl.textContent = `${attackL} L`;
+  if (cupEl) cupEl.textContent = `${cupMl} ml`;
+};
+
+// =====================================================================
+// 22. CALCULADORA DE DILUIÇÃO DE HIPOCLORITO (ÁGUA SANITÁRIA)
+// =====================================================================
+window.calculateBleachDilution = function() {
+  const usage = document.getElementById('bleach-usage-type')?.value || 'water_clean';
+  const liters = parseFloat(document.getElementById('bleach-volume-liters')?.value) || 10;
+  const qtyEl = document.getElementById('bleach-res-qty');
+  const instEl = document.getElementById('bleach-res-instructions');
+  if (!qtyEl || !instEl) return;
+
+  if (usage === 'water_clean') {
+    const drops = liters * 2;
+    const ml = (drops / 20).toFixed(1);
+    qtyEl.textContent = `${drops} gotas (~${ml} ml)`;
+    instEl.textContent = 'Adicione na água limpa, misture bem e aguarde 30 minutos em recipiente tampado.';
+  } else if (usage === 'water_turbid') {
+    const drops = liters * 4;
+    const ml = (drops / 20).toFixed(1);
+    qtyEl.textContent = `${drops} gotas (~${ml} ml)`;
+    instEl.textContent = 'Filtre previamente em pano limpo. Deixe agir por 45 minutos antes do consumo.';
+  } else if (usage === 'veggies') {
+    const ml = Math.round(liters * 15);
+    const spoons = (ml / 15).toFixed(0);
+    qtyEl.textContent = `${ml} ml (~${spoons} colheres de sopa)`;
+    instEl.textContent = 'Mergulhe hortaliças e frutas por 15 minutos e enxágue em água potável filtrada.';
+  } else if (usage === 'surfaces') {
+    const ml = Math.round(liters * 200);
+    const cups = (ml / 200).toFixed(1);
+    qtyEl.textContent = `${ml} ml (~${cups} copos americanos)`;
+    instEl.textContent = 'Solução hospitalar 0.5%: Use para pisos, solados e maçanetas com luvas. Ação em 10 min.';
+  }
+};
+
+// =====================================================================
+// 23. CALCULADORA DE AUTONOMIA DE BANCO DE BATERIAS
+// =====================================================================
+window.calculateBatteryAutonomy = function() {
+  const volts = parseFloat(document.getElementById('batt-volts-input')?.value) || 12.0;
+  const ah = parseFloat(document.getElementById('batt-ah-input')?.value) || 7.0;
+  const watts = parseFloat(document.getElementById('batt-watts-input')?.value) || 5.0;
+
+  const totalWh = volts * ah;
+  const usableWh = totalWh * 0.85;
+  const hours = (usableWh / watts).toFixed(1);
+
+  const whEl = document.getElementById('batt-res-wh');
+  const hoursEl = document.getElementById('batt-res-hours');
+  if (whEl) whEl.textContent = `${totalWh.toFixed(1)} Wh`;
+  if (hoursEl) hoursEl.textContent = `${hours} horas`;
+};
+
+// Auto-init new calculators
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.calculateSoroDose) window.calculateSoroDose();
+  if (window.calculateBleachDilution) window.calculateBleachDilution();
+  if (window.calculateBatteryAutonomy) window.calculateBatteryAutonomy();
+});
+
