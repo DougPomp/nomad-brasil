@@ -742,11 +742,11 @@ window.planRouteToSelectedCity = function() {
   const toInput = document.getElementById('route-to-input');
   if (toInput) toInput.value = routeDest.label;
 
-  // If origin is not set, set origin to Louveira or Sao Paulo
+  // If origin is not set, set origin to Sao Paulo or Campinas
   if (!routeOrigin) {
-    const defaultOrigin = currentSelectedCity.id === 'sp-louveira' ?
-      citiesList.find(c => c.id === 'sp-sao-paulo') :
-      citiesList.find(c => c.id === 'sp-louveira');
+    const defaultOrigin = currentSelectedCity.id === 'sp-sao-paulo' ?
+      citiesList.find(c => c.id === 'sp-campinas') :
+      citiesList.find(c => c.id === 'sp-sao-paulo');
 
     if (defaultOrigin) {
       routeOrigin = {
