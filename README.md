@@ -103,6 +103,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 56. **Química Prática & Sabão de Cinzas:** Saponificação tradicional utilizando lixívia de cinzas de madeira e gordura animal.
 - **Cartão Tático de Bolso Imprimível (A4 Dobrável):** Folha única ultra-compacta contendo todas as frequências vitais, ficha médica, nós e protocolos de choque.
 - **Pacote Portátil Offline:** Exportação compacta em arquivo único para armazenamento seguro em pen-drives criptografados.
+- **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Checklist da Mochila 72h (BOB) e Plano de Comunicação PACE.
 
 ---
 
@@ -173,8 +174,8 @@ nomad-brasil/
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
-│   ├── index.html              # Showcase completo das ferramentas táticas
-│   ├── sw.js                   # Service Worker do GitHub Pages (v9)
+│   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Backup JSON
+│   ├── sw.js                   # Service Worker do GitHub Pages (v10)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -216,6 +217,23 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 2. **Camada 2 — Cache Permanente em Disco:** Qualquer rota pesquisada uma única vez é gravada localmente em `app/data/routes_cache/`.
 3. **Camada 3 — Grafo A\* Offline sobre Tiles MVT Locais (até 30 km):** Sem internet e sem rota prévia em cache, o servidor extrai a malha viária dos tiles locais (`z=13` e `detail_tiles_cache` `z=14`) e calcula uma rota curva a curva real pelo algoritmo A\* com hierarquia viária.
 4. **Camada 4 — Corredor Tático de Contingência:** Para trajetos intermunicipais inéditos acima de 30 km sem sinal, calcula o corredor com fator de curvatura nacional (`1,28x`) e municípios de apoio no percurso, mantendo exportação **GPX** universal para Garmin e OsmAnd.
+
+---
+
+## 📡 Referência de Endpoints da API Local (`:8000`)
+
+| Método & Rota | Descrição Operacional |
+| :--- | :--- |
+| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`) e livro primário (`primaryZimBook`). |
+| `GET /api/cities` | Lista e filtra os 5.571 municípios brasileiros por nome, UF, região, código IBGE e prefixo DDD. |
+| `GET /api/streets` | Busca híbrida de ruas, avenidas, rodovias (`ref`) e POIs em SQLite FTS5 com sinônimos brasileiros, prioridade por proximidade e auto-aprendizado online opcional (`Photon`/`Nominatim`). |
+| `GET /api/streets/reverse` | Geocodificação reversa offline (`?lat=...&lng=...`) sobre tiles MVT locais (`z=13`/`z=14`) retornando a via mais próxima, distância em metros, município e POIs próximos. |
+| `GET /api/nearby-support` | Radar de apoio próximo (`?lat=...&lng=...&radiusKm=25&category=all`) combinando base estratégica (`pois.json`) e POIs extraídos do mapa vetorial no SQLite. |
+| `GET / POST /api/maps/prefetch-city` | Pré-carrega em lote os tiles vetoriais `z=14` ao redor de uma cidade e indexa automaticamente todas as vias residenciais no `brazil-streets.sqlite`. |
+| `GET / POST /api/waypoints` | Lê e persiste em disco (`storage/user_waypoints.json`) os marcadores táticos pessoais do mapa. |
+| `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com quádruplo fallback: OSRM online -> cache permanente em disco -> grafo A\* offline sobre MVT (`forceOfflineGraph=1` força o modo offline) -> corredor tático. |
+| `GET /api/route/gpx` | Exporta qualquer rota calculada em arquivo `.gpx` padrão para Garmin, OsmAnd e aplicativos offline. |
+| `GET /api/kiwix/resolve` | Detecta os livros `.zim` instalados em `storage/zim/` e resolve URLs diretas de artigo e busca para o leitor Kiwix (`:8090`). |
 
 ---
 
