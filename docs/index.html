@@ -7,8 +7,8 @@
   <!-- Primary Meta Tags & SEO -->
   <title>NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline</title>
   <meta name="title" content="NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline">
-  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), rotas A* offline sobre MVT, geocodificação reversa DEC/DMS/UTM, radar de socorro, Wikipédia completa e 56 módulos táticos.">
-  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
+  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), estante Multi-ZIM (Wikivoyage, NHS, CDC, FAS), rotas A* + parada Via + corredor 5 km, régua de azimute/rádio, efemérides solar/lunar, LAN QR Code, dossiê A4 e 56 módulos táticos.">
+  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, parada via corredor 5km, estante multi zim wikivoyage nhs cdc, efemerides solar lunar, lan qr code offline, dossie tatico a4, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
   <meta name="author" content="DougPomp">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#090d10">
@@ -1357,6 +1357,70 @@
                   <span class="intel-label">REGIÃO</span>
                   <div class="intel-val" id="intel-city-regiao">-</div>
                 </div>
+                <div class="intel-card">
+                  <span class="intel-label">NASCER / PÔR DO SOL</span>
+                  <div class="intel-val font-mono" style="font-size: 0.9rem; color: #fde047;" id="intel-city-sun">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">CREPÚSCULO / LUZ DO DIA</span>
+                  <div class="intel-val font-mono" style="font-size: 0.85rem; color: #38bdf8;" id="intel-city-twilight">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">FASE &amp; ILUMINAÇÃO LUNAR</span>
+                  <div class="intel-val font-mono" style="font-size: 0.85rem; color: #c084fc;" id="intel-city-moon">-</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card" style="margin-top: 1.25rem; border-left: 3px solid var(--accent-cyan); gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <h3 style="color: #fff; font-size: 0.96rem; margin: 0;">📐 Simulador de Régua Tática: Azimute Real/Magnético (-21°), Marcha &amp; Horizonte Rádio</h3>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button type="button" class="chip-btn" onclick="setOnlineMeasurePoint('a')">📍 Usar Cidade Atual como Origem (A)</button>
+                  <button type="button" class="chip-btn chip-highlight" onclick="setOnlineMeasurePoint('b')">🎯 Usar Cidade Atual como Destino (B)</button>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 115px;">
+                    <span class="stat-label">LAT ORIGEM (A)</span>
+                    <input type="number" step="0.0001" id="on-meas-lat1" class="route-input font-mono" value="-23.5505" oninput="calcOnlineTacticalMeasure()">
+                  </div>
+                  <div style="flex: 1; min-width: 115px;">
+                    <span class="stat-label">LNG ORIGEM (A)</span>
+                    <input type="number" step="0.0001" id="on-meas-lng1" class="route-input font-mono" value="-46.6333" oninput="calcOnlineTacticalMeasure()">
+                  </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 115px;">
+                    <span class="stat-label">LAT DESTINO (B)</span>
+                    <input type="number" step="0.0001" id="on-meas-lat2" class="route-input font-mono" value="-22.9068" oninput="calcOnlineTacticalMeasure()">
+                  </div>
+                  <div style="flex: 1; min-width: 115px;">
+                    <span class="stat-label">LNG DESTINO (B)</span>
+                    <input type="number" step="0.0001" id="on-meas-lng2" class="route-input font-mono" value="-43.1729" oninput="calcOnlineTacticalMeasure()">
+                  </div>
+                </div>
+              </div>
+
+              <div class="route-metrics-grid">
+                <div class="metric-card">
+                  <span class="metric-title">DISTÂNCIA LINEAR</span>
+                  <span class="metric-value font-mono" style="color: #34d399; font-size: 1rem;" id="on-meas-dist">-</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">AZIMUTE REAL / MAG (-21°)</span>
+                  <span class="metric-value font-mono" style="color: #fbbf24; font-size: 0.92rem;" id="on-meas-az">-</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">TEMPO EST. MARCHA / 4X4</span>
+                  <span class="metric-value font-mono" style="color: #38bdf8; font-size: 0.92rem;" id="on-meas-time">-</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">HORIZONTE RÁDIO VHF/UHF</span>
+                  <span class="metric-value font-mono" style="color: #c084fc; font-size: 0.86rem;" id="on-meas-los">-</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1649,6 +1713,55 @@
               <div class="metric-card">
                 <h4 style="color: #a78bfa; margin-bottom: 0.35rem;">📐 Azimute, Corredor 5 km, LAN QR &amp; Dossiê A4</h4>
                 <p style="font-size: 0.82rem; color: var(--text-secondary);">Parada intermediária (<code>viaLat</code>/<code>viaLng</code>) e POIs no corredor da rota (5 km), régua com azimute real/magnético e horizonte rádio, efemérides solar/lunar, modal LAN com QR Code SVG offline e impressão de dossiê A4.</p>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 1.15rem;">
+              <div class="metric-card">
+                <h4 style="color: #60a5fa; margin-bottom: 0.5rem;">📚 Estante Multi-ZIM Suportada (11 Acervos)</h4>
+                <div class="table-responsive">
+                  <table class="tactical-table" style="font-size: 0.76rem;">
+                    <thead>
+                      <tr><th>Acervo ZIM</th><th>Categoria</th><th>Tamanho</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>🌐 Wikipédia PT Completa</td><td><code>wikipedia</code></td><td>19,2 GB</td></tr>
+                      <tr><td>📚 Wikipédia PT Top</td><td><code>wikipedia</code></td><td>2,8 GB</td></tr>
+                      <tr><td>🩺 Wikipédia Médica PT</td><td><code>medicine</code></td><td>281 MB</td></tr>
+                      <tr><td>🧭 Wikivoyage PT (Guias)</td><td><code>travel</code></td><td>54 MB</td></tr>
+                      <tr><td>📖 Wikilivros / Manuais PT</td><td><code>books</code></td><td>162 MB</td></tr>
+                      <tr><td>🩹 FAS Military Medicine</td><td><code>medicine</code></td><td>78 MB</td></tr>
+                      <tr><td>💊 NHS Medicamentos</td><td><code>medicine</code></td><td>16 MB</td></tr>
+                      <tr><td>☣️ CDC Doenças &amp; Saúde</td><td><code>medicine</code></td><td>170 MB</td></tr>
+                      <tr><td>🏥 Guia Médico Compacto</td><td><code>medicine</code></td><td>67 MB</td></tr>
+                      <tr><td>🌍 Wikipedia EN Top / 100</td><td><code>wikipedia</code></td><td>316 / 4 MB</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="metric-card">
+                <h4 style="color: #34d399; margin-bottom: 0.5rem;">📡 Referência de Endpoints Locais (:8000)</h4>
+                <div class="table-responsive">
+                  <table class="tactical-table" style="font-size: 0.76rem;">
+                    <thead>
+                      <tr><th>Endpoint</th><th>Função Operacional</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td><code>GET /api/status</code></td><td>Diagnóstico + <code>port</code> e <code>lanIps</code></td></tr>
+                      <tr><td><code>GET /api/cities</code></td><td>5.571 municípios IBGE, DDD e lat/lng</td></tr>
+                      <tr><td><code>GET /api/streets</code></td><td>Busca FTS5 com sinônimos + cache online</td></tr>
+                      <tr><td><code>GET /api/streets/reverse</code></td><td>Via mais próxima + dist. em m (MVT)</td></tr>
+                      <tr><td><code>GET /api/nearby-support</code></td><td>Radar de socorro 10/25/50 km</td></tr>
+                      <tr><td><code>GET/POST /api/maps/prefetch-city</code></td><td>Prefetch em lote de tiles <code>z=14</code></td></tr>
+                      <tr><td><code>GET/POST /api/waypoints</code></td><td>Waypoints persistidos em disco</td></tr>
+                      <tr><td><code>GET /api/route</code></td><td>OSRM + Cache + A* + <code>viaLat/Lng</code> + <code>corridorSupport</code></td></tr>
+                      <tr><td><code>GET /api/route/gpx</code></td><td>Exportação GPX com <code>&lt;wpt&gt;</code> da parada Via</td></tr>
+                      <tr><td><code>GET /api/kiwix/books</code></td><td>Catálogo JSON dos <code>.zim</code> instalados</td></tr>
+                      <tr><td><code>GET /api/kiwix/resolve</code></td><td>Ponte por <code>?book=</code> ou <code>?category=</code> (:8090)</td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -3575,6 +3688,7 @@
     }
 
     function displayCityIntel(city) {
+      window.currentOnlineCity = city;
       const lat = Number(city.lat);
       const lng = Number(city.lng);
       document.getElementById('city-intel-result').style.display = 'block';
@@ -3588,6 +3702,20 @@
       if (dmsEl) dmsEl.textContent = (!isNaN(lat) && !isNaN(lng)) ? formatOnlineCoordsDMS(lat, lng) : 'N/A';
       if (utmEl) utmEl.textContent = (!isNaN(lat) && !isNaN(lng)) ? formatOnlineCoordsUTM(lat, lng) : 'N/A';
       document.getElementById('intel-city-regiao').textContent = city.region || city.regiao || 'Brasil';
+
+      const sunEl = document.getElementById('intel-city-sun');
+      const twiEl = document.getElementById('intel-city-twilight');
+      const moonEl = document.getElementById('intel-city-moon');
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const ep = computeOfflineSunMoon(lat, lng);
+        if (sunEl) sunEl.textContent = `🌅 ${ep.sunrise} • 🌇 ${ep.sunset}`;
+        if (twiEl) twiEl.textContent = `${ep.dawn}–${ep.dusk} (${ep.daylightStr})`;
+        if (moonEl) moonEl.textContent = `${ep.moonIcon} ${ep.moonPhaseName} (${ep.moonIllum}%)`;
+      } else {
+        if (sunEl) sunEl.textContent = 'N/A';
+        if (twiEl) twiEl.textContent = 'N/A';
+        if (moonEl) moonEl.textContent = 'N/A';
+      }
     }
 
     function setDaysOnline(d) {
@@ -4786,6 +4914,152 @@
       return `${zone}${clampedLat >= 0 ? 'N' : 'S'} ${Math.round(easting)}E ${Math.round(northing)}N`;
     }
 
+    function computeOfflineSunMoon(lat, lng, date = new Date()) {
+      const rad = Math.PI / 180;
+      const startOfYear = new Date(date.getFullYear(), 0, 0);
+      const doy = Math.floor((date - startOfYear) / 86400000);
+      const tzOffsetHours = -date.getTimezoneOffset() / 60;
+
+      const gamma = ((2 * Math.PI) / 365) * (doy - 1);
+      const eqTime = 229.18 * (
+        0.000075 +
+        0.001868 * Math.cos(gamma) -
+        0.032077 * Math.sin(gamma) -
+        0.014615 * Math.cos(2 * gamma) -
+        0.040849 * Math.sin(2 * gamma)
+      );
+      const decl =
+        0.006918 -
+        0.399912 * Math.cos(gamma) +
+        0.070257 * Math.sin(gamma) -
+        0.006758 * Math.cos(2 * gamma) +
+        0.000907 * Math.sin(2 * gamma) -
+        0.002697 * Math.cos(3 * gamma) +
+        0.00148 * Math.sin(3 * gamma);
+
+      const calcSunTime = (zenithDeg, isSunrise) => {
+        const cosHA = Math.cos(zenithDeg * rad) / (Math.cos(lat * rad) * Math.cos(decl)) - Math.tan(lat * rad) * Math.tan(decl);
+        const clamped = Math.max(-0.999, Math.min(0.999, cosHA));
+        const haDeg = Math.acos(clamped) / rad;
+        const solarNoonUtcMin = 720 - 4 * lng - eqTime;
+        const utcMin = isSunrise ? solarNoonUtcMin - 4 * haDeg : solarNoonUtcMin + 4 * haDeg;
+        return utcMin + tzOffsetHours * 60;
+      };
+
+      const fmtMin = (m) => {
+        const wrapped = ((Math.round(m) % 1440) + 1440) % 1440;
+        const hh = Math.floor(wrapped / 60);
+        const mm = wrapped % 60;
+        return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+      };
+
+      const dawnMin = calcSunTime(96, true);
+      const sunriseMin = calcSunTime(90.833, true);
+      const sunsetMin = calcSunTime(90.833, false);
+      const duskMin = calcSunTime(96, false);
+
+      const daylightMin = Math.max(0, Math.round(sunsetMin - sunriseMin));
+      const daylightStr = `${Math.floor(daylightMin / 60)}h${String(daylightMin % 60).padStart(2, '0')}m`;
+
+      const synodicDays = 29.530588853;
+      const refNewMoon = Date.UTC(2000, 0, 6, 18, 14, 0);
+      const ageDays = ((date.getTime() - refNewMoon) / 86400000) % synodicDays;
+      const normAge = ageDays < 0 ? ageDays + synodicDays : ageDays;
+      const frac = normAge / synodicDays;
+      const moonIllum = Math.round((1 - Math.cos(frac * 2 * Math.PI)) * 50);
+
+      let moonPhaseName = 'Lua Nova';
+      let moonIcon = '🌑';
+      if (frac >= 0.0625 && frac < 0.1875) { moonPhaseName = 'Crescente'; moonIcon = '🌒'; }
+      else if (frac >= 0.1875 && frac < 0.3125) { moonPhaseName = 'Quarto Crescente'; moonIcon = '🌓'; }
+      else if (frac >= 0.3125 && frac < 0.4375) { moonPhaseName = 'Crescente Gibosa'; moonIcon = '🌔'; }
+      else if (frac >= 0.4375 && frac < 0.5625) { moonPhaseName = 'Lua Cheia'; moonIcon = '🌕'; }
+      else if (frac >= 0.5625 && frac < 0.6875) { moonPhaseName = 'Minguante Gibosa'; moonIcon = '🌖'; }
+      else if (frac >= 0.6875 && frac < 0.8125) { moonPhaseName = 'Quarto Minguante'; moonIcon = '🌗'; }
+      else if (frac >= 0.8125 && frac < 0.9375) { moonPhaseName = 'Minguante'; moonIcon = '🌘'; }
+
+      return {
+        dawn: fmtMin(dawnMin),
+        sunrise: fmtMin(sunriseMin),
+        sunset: fmtMin(sunsetMin),
+        dusk: fmtMin(duskMin),
+        daylightStr,
+        moonPhaseName,
+        moonIcon,
+        moonIllum
+      };
+    }
+
+    function setOnlineMeasurePoint(which) {
+      const city = window.currentOnlineCity;
+      if (!city) return;
+      const lat = Number(city.lat);
+      const lng = Number(city.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+      if (which === 'a') {
+        document.getElementById('on-meas-lat1').value = lat.toFixed(4);
+        document.getElementById('on-meas-lng1').value = lng.toFixed(4);
+      } else {
+        document.getElementById('on-meas-lat2').value = lat.toFixed(4);
+        document.getElementById('on-meas-lng2').value = lng.toFixed(4);
+      }
+      calcOnlineTacticalMeasure();
+    }
+
+    function calcOnlineTacticalMeasure() {
+      const lat1 = parseFloat(document.getElementById('on-meas-lat1')?.value);
+      const lng1 = parseFloat(document.getElementById('on-meas-lng1')?.value);
+      const lat2 = parseFloat(document.getElementById('on-meas-lat2')?.value);
+      const lng2 = parseFloat(document.getElementById('on-meas-lng2')?.value);
+      const distEl = document.getElementById('on-meas-dist');
+      const azEl = document.getElementById('on-meas-az');
+      const timeEl = document.getElementById('on-meas-time');
+      const losEl = document.getElementById('on-meas-los');
+      if (!distEl || !azEl || !timeEl || !losEl) return;
+
+      if ([lat1, lng1, lat2, lng2].some(v => isNaN(v))) {
+        distEl.textContent = '-';
+        azEl.textContent = '-';
+        timeEl.textContent = '-';
+        losEl.textContent = '-';
+        return;
+      }
+
+      const toRad = Math.PI / 180;
+      const R = 6371.0;
+      const dLat = (lat2 - lat1) * toRad;
+      const dLon = (lng2 - lng1) * toRad;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) * (Math.sin(dLon / 2) ** 2);
+      const distKm = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      const y = Math.sin(dLon) * Math.cos(lat2 * toRad);
+      const x = Math.cos(lat1 * toRad) * Math.sin(lat2 * toRad) - Math.sin(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.cos(dLon);
+      const trueAz = ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+      const magAz = (trueAz - (-21) + 360) % 360;
+
+      const dirs = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
+      const dirLabel = dirs[Math.round(trueAz / 45) % 8];
+
+      const fmtDur = (hours) => {
+        const totalMin = Math.round(hours * 60);
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        return h > 0 ? `${h}h${String(m).padStart(2, '0')}m` : `${m}m`;
+      };
+
+      const marchH = distKm / 4.2;
+      const driveH = distKm / 55.0;
+      const losHandheldKm = 3.57 * (Math.sqrt(2) + Math.sqrt(2));
+      const losBaseKm = 3.57 * (Math.sqrt(15) + Math.sqrt(2));
+
+      distEl.textContent = distKm < 1 ? `${Math.round(distKm * 1000)} m` : `${distKm.toFixed(2)} km`;
+      azEl.textContent = `${Math.round(trueAz)}° (${dirLabel}) • Mag ${Math.round(magAz)}°`;
+      timeEl.textContent = `🥾 ${fmtDur(marchH)} | 🚙 ${fmtDur(driveH)}`;
+      losEl.textContent = distKm <= losHandheldKm
+        ? `✅ Direto (${losHandheldKm.toFixed(1)} km 2m↔2m)`
+        : (distKm <= losBaseKm ? `⚠️ Base 15m (${losBaseKm.toFixed(1)} km)` : `❌ >${losBaseKm.toFixed(0)} km (HF/Relé)`);
+    }
+
     function exportOnlineFullBackup() {
       const safeParse = (key) => {
         try {
@@ -4907,6 +5181,7 @@
     calcOnlineFortification();
     calcOnlineBlacksmith();
     calcOnlineCharcoal();
+    calcOnlineTacticalMeasure();
   </script>
 </body>
 </html>

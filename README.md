@@ -51,7 +51,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 14. **Suturas & Tratamento de Feridas na Mata:** Técnicas de assepsia de campo, aproximação com tiras adesivas, pontos simples e curativos com mel puro.
 15. **Odontologia de Emergência & APH Bucomaxilar:** Alívio imediato de pulpite aguda, reimplante de dente avulsionado e hemostasia oral.
 16. **Cinotécnica & APH Veterinário Canino (K9):** Parâmetros vitais de cães de trabalho, contenção tática, estancamento e intoxicação canina.
-17. **Wikipédia Médica Completa:** Mais de 50.000 artigos médicos e farmacológicos servidos pelo Kiwix.
+17. **Estante Médica & Enciclopédica Multi-ZIM (11 Acervos Offline):** *Wikipédia Médica PT*, *NHS Medicamentos*, *CDC Doenças & Saúde*, *FAS Military Medicine* e *Guia Médico Compacto*, integrados com busca médica rápida na aba de Emergências, *Wikipédia PT Completa*, *Wikivoyage PT* e *Wikilivros PT*.
 
 ### 3. 📻 Telecomunicações, Rádio & Sinais de Emergência
 18. **Central de Sinais de Socorro & Morse Ativo:** Sinalizador visual estroboscópico de tela, tradutor de texto para Morse e **sintetizador de áudio de 800 Hz** com trava de segurança anti-sobreposição.
@@ -104,6 +104,8 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 - **Cartão Tático de Bolso Imprimível (A4 Dobrável):** Folha única ultra-compacta contendo todas as frequências vitais, ficha médica, nós e protocolos de choque.
 - **Pacote Portátil Offline:** Exportação compacta em arquivo único para armazenamento seguro em pen-drives criptografados.
 - **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Checklist da Mochila 72h (BOB) e Plano de Comunicação PACE.
+- **Dossiê Tático de Movimento Imprimível (A4):** Ordem de Movimento gerada em 1 clique a partir da rota traçada com coordenadas Decimal/DMS/UTM de Origem, Parada (`Via`) e Destino, POIs de apoio até 5 km no corredor, passo a passo, estimativa de combustível/água/calorias, janela de luz solar no destino, PEF e plano PACE.
+- **Modo Acampamento / Rede Local (LAN QR Code SVG):** Modal de compartilhamento local (`:8000` e `:8090`) com gerador nativo de QR Code SVG 100% offline (ISO-18004) para celulares e tablets na mesma rede Wi-Fi/hotspot.
 
 ---
 
@@ -175,7 +177,7 @@ nomad-brasil/
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
 │   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v11)
+│   ├── sw.js                   # Service Worker do GitHub Pages (v12)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -207,6 +209,7 @@ A pesquisa e inspeção de logradouros opera em 5 camadas integradas:
 3. **Pré-carregamento Urbano por Cidade (`z=14` em 1 Clique):** No painel lateral da cidade selecionada, o botão **"Baixar Todas as Ruas da Cidade (Offline z=14)"** baixa em lote os tiles `z=14` ao redor do município via `/api/maps/prefetch-city`, salva em `storage/maps/detail_tiles_cache/` e indexa automaticamente todas as ruas residenciais no SQLite FTS5.
 4. **Tiles Vetoriais de Detalhe sob Demanda (`z=14`):** Ao navegar por bairros no mapa, os tiles visitados também são persistidos e indexados em segundo plano.
 5. **Descoberta Online Sob Demanda (`Photon` / `Nominatim`) com Persistência Offline:** Quando há conexão e uma rua residencial ainda não consta localmente, o backend consulta `Photon`/`Nominatim` e grava a via descoberta permanentemente no `brazil-streets.sqlite`.
+6. **Efemérides Astronômicas Offline & Régua Tática (`📐 Medir`):** Cálculo matemático local de alvorada/crepúsculo civil, nascer/pôr do sol, duração do dia e fase/iluminação lunar por coordenada, além de medição multiponto no mapa com distância geodésica, azimute verdadeiro, azimute magnético (declinação média `-21°`), tempo de marcha e horizonte de linha de visada VHF/UHF.
 
 ---
 
@@ -217,6 +220,27 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 2. **Camada 2 — Cache Permanente em Disco:** Qualquer rota pesquisada uma única vez é gravada localmente em `app/data/routes_cache/`.
 3. **Camada 3 — Grafo A\* Offline sobre Tiles MVT Locais (até 30 km):** Sem internet e sem rota prévia em cache, o servidor extrai a malha viária dos tiles locais (`z=13` e `detail_tiles_cache` `z=14`) e calcula uma rota curva a curva real pelo algoritmo A\* com hierarquia viária.
 4. **Camada 4 — Corredor Tático de Contingência:** Para trajetos intermunicipais inéditos acima de 30 km sem sinal, calcula o corredor com fator de curvatura nacional (`1,28x`) e municípios de apoio no percurso, mantendo exportação **GPX** universal para Garmin e OsmAnd.
+5. **Parada Intermediária (`Via` — `viaLat`/`viaLng`/`viaLabel`):** Suporte a ponto intermediário tanto no motor OSRM quanto no grafo A\* 100% offline em 2 trechos sobre tiles MVT locais, com exportação de waypoint `<wpt>` no arquivo `.gpx`.
+6. **Corredor de Segurança de 5 km (`corridorSupport`):** Escaneamento automático ao longo da geometria da rota identificando hospitais, bombeiros, polícia, postos de combustível e fontes de água até 5 km do eixo, com distância lateral e quilômetro da rota.
+7. **Dossiê Tático da Rota Imprimível em A4 (`printCurrentRouteDossier`):** Geração de Ordem de Movimento em folha A4 pronta para impressão ou salvamento offline em HTML.
+
+---
+
+## 📚 Estante Multi-ZIM Kiwix (11 Acervos Suportados)
+
+| Arquivo `.zim` (`storage/zim/`) | Título no Portal | Categoria | Tamanho |
+| :--- | :--- | :--- | :--- |
+| `wikipedia_pt_all_maxi_2026-05.zim` | 🌐 Wikipédia PT Completa | `wikipedia` | 19,2 GB |
+| `wikipedia_pt_top_maxi_2026-10.zim` | 📚 Wikipédia PT Top | `wikipedia` | 2,8 GB |
+| `wikipedia_pt_medicine_maxi_2026-10.zim` | 🩺 Wikipédia Médica PT | `medicine` | 281 MB |
+| `wikivoyage_pt_all_maxi_2026-09.zim` | 🧭 Wikivoyage PT (Guias) | `travel` | 54 MB |
+| `wikibooks_pt_all_maxi_2026-10.zim` | 📖 Wikilivros / Manuais PT | `books` | 162 MB |
+| `fas-military-medicine_en_2025-06.zim` | 🩹 FAS Military Medicine | `medicine` | 78 MB |
+| `nhs.uk_en_medicines_2025-12.zim` | 💊 NHS Medicamentos | `medicine` | 16 MB |
+| `wwwnc.cdc.gov_en_all_2024-11.zim` | ☣️ CDC Doenças & Saúde | `medicine` | 170 MB |
+| `zimgit-medicine_en_2024-08.zim` | 🏥 Guia Médico Compacto | `medicine` | 67 MB |
+| `wikipedia_en_top_mini_2026-06.zim` | 🌍 Wikipedia EN Top | `wikipedia` | 316 MB |
+| `wikipedia_en_100_mini_2026-01.zim` | 📘 Wikipedia EN 100 | `wikipedia` | 4 MB |
 
 ---
 
