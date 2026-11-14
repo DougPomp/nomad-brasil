@@ -414,6 +414,10 @@ function initMap() {
     mapInstance.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
     mapInstance.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
 
+    mapInstance.on('load', () => {
+      ensureStreetHighlightLayer();
+    });
+
     // Render POIs & User Waypoints once map is ready
     if (typeof renderPoiMarkers === 'function') renderPoiMarkers();
     if (typeof renderUserWptMarkers === 'function') renderUserWptMarkers();
@@ -459,15 +463,242 @@ function initMap() {
   }
 }
 
-// City Search
+function escapeHtmlSafe(str) {
+  return String(str || '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+function normalizeSearchStr(str) {
+  return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function ensureStreetHighlightLayer() {
+  if (!mapInstance) return;
+  try {
+    if (!mapInstance.getSource('street-highlight-source')) {
+      mapInstance.addSource('street-highlight-source', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+    }
+    if (!mapInstance.getLayer('street-highlight-layer')) {
+      const beforeId = mapInstance.getLayer('roads_labels') ? 'roads_labels' : undefined;
+      mapInstance.addLayer({
+        id: 'street-highlight-layer',
+        type: 'line',
+        source: 'street-highlight-source',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 6,
+          'line-opacity': 0.85,
+          'line-blur': 1
+        }
+      }, beforeId);
+    }
+  } catch (e) {
+    // map style may not be loaded yet
+  }
+}
+
+function highlightRenderedStreet(streetName) {
+  if (!mapInstance || !streetName) return;
+  ensureStreetHighlightLayer();
+  const src = mapInstance.getSource('street-highlight-source');
+  if (!src) return;
+
+  try {
+    const targetNorm = normalizeSearchStr(streetName).trim();
+    const layers = ['roads_minor', 'roads_medium', 'roads_major'].filter(id => mapInstance.getLayer(id));
+    if (layers.length === 0) return;
+
+    const features = mapInstance.queryRenderedFeatures({ layers });
+    const matching = [];
+    for (const f of features) {
+      const p = f.properties || {};
+      const fname = p['name:pt'] || p['name:latin'] || p.name || p.ref || '';
+      if (fname && normalizeSearchStr(fname) === targetNorm && f.geometry) {
+        matching.push({
+          type: 'Feature',
+          properties: { name: fname },
+          geometry: f.geometry
+        });
+      }
+    }
+    src.setData({ type: 'FeatureCollection', features: matching });
+  } catch (e) {
+    // ignore highlight errors if tiles are still loading
+  }
+}
+
+function findRenderedViewportStreets(normQuery, limit = 5) {
+  if (!mapInstance || !normQuery || normQuery.length < 3) return [];
+  try {
+    const layers = ['roads_minor', 'roads_medium', 'roads_major'].filter(id => mapInstance.getLayer(id));
+    if (layers.length === 0) return [];
+    const features = mapInstance.queryRenderedFeatures({ layers });
+    const seen = new Set();
+    const results = [];
+    for (const f of features) {
+      const p = f.properties || {};
+      const fname = (p['name:pt'] || p['name:latin'] || p.name || p.ref || '').trim();
+      if (!fname) continue;
+      const fn = normalizeSearchStr(fname);
+      if (!fn.includes(normQuery) || seen.has(fn)) continue;
+      const geom = f.geometry;
+      let lngLat = null;
+      if (geom && geom.type === 'LineString' && geom.coordinates.length > 0) {
+        lngLat = geom.coordinates[Math.floor(geom.coordinates.length / 2)];
+      } else if (geom && geom.type === 'MultiLineString' && geom.coordinates[0]?.length > 0) {
+        const line = geom.coordinates[0];
+        lngLat = line[Math.floor(line.length / 2)];
+      }
+      if (!lngLat) continue;
+      seen.add(fn);
+      results.push({
+        name: fname,
+        city: 'No Mapa Atual',
+        state: 'LOCAL',
+        kind: 'Via',
+        lat: lngLat[1],
+        lng: lngLat[0]
+      });
+      if (results.length >= limit) break;
+    }
+    return results;
+  } catch (e) {
+    return [];
+  }
+}
+
+async function fetchHybridSearchResults(q, cityLimit = 5, streetLimit = 15, signal = null) {
+  const normQ = normalizeSearchStr(q.trim());
+  const cityMatches = citiesList.filter(c => {
+    const normName = normalizeSearchStr(c.name);
+    const normState = (c.state || '').toLowerCase();
+    return normName.includes(normQ) || normState === normQ;
+  }).sort((a, b) => {
+    const aNorm = normalizeSearchStr(a.name);
+    const bNorm = normalizeSearchStr(b.name);
+    const aStarts = aNorm.startsWith(normQ);
+    const bStarts = bNorm.startsWith(normQ);
+    if (aStarts && !bStarts) return -1;
+    if (!aStarts && bStarts) return 1;
+    if (a.capital && !b.capital) return -1;
+    if (!a.capital && b.capital) return 1;
+    return a.name.localeCompare(b.name);
+  }).slice(0, cityLimit);
+
+  let streetMatches = [];
+  if (normQ.length >= 2) {
+    try {
+      const opts = signal ? { signal } : {};
+      const res = await fetch(`/api/streets?q=${encodeURIComponent(q)}&limit=${streetLimit}`, opts);
+      if (res.ok) {
+        streetMatches = await res.json();
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') throw e;
+    }
+  }
+
+  // Merge local rendered streets from current viewport if not already present in SQLite hits
+  const localStreets = findRenderedViewportStreets(normQ, 4);
+  if (localStreets.length > 0) {
+    const existingNames = new Set(streetMatches.map(s => normalizeSearchStr(s.name)));
+    for (const ls of localStreets) {
+      if (!existingNames.has(normalizeSearchStr(ls.name))) {
+        streetMatches.push(ls);
+      }
+    }
+  }
+
+  return { cities: cityMatches, streets: streetMatches.slice(0, streetLimit) };
+}
+
+// City & Street Search
 function setupMapSearch() {
   const input = document.getElementById('map-city-search');
   const dropdown = document.getElementById('map-search-results');
   if (!input || !dropdown) return;
 
+  let searchTimer = null;
+  let searchAbort = null;
+  let lastRenderItems = [];
+
+  function renderDropdown(cityMatches, streetMatches) {
+    lastRenderItems = [];
+    const htmlParts = [];
+
+    for (const c of cityMatches) {
+      const idx = lastRenderItems.length;
+      lastRenderItems.push({ type: 'city', data: c });
+      htmlParts.push(`
+        <div class="search-item" data-result-idx="${idx}">
+          <div>
+            <span class="search-item-title">${escapeHtmlSafe(c.name)}</span>
+            <span class="search-item-state">${escapeHtmlSafe(c.state)}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            ${c.capital ? '<span class="text-[10px] uppercase font-bold text-amber-400 bg-amber-900/30 px-1 rounded border border-amber-600/40">Capital</span>' : ''}
+            <span class="search-item-badge">${c.pop ? (c.pop / 1000).toFixed(0) + 'k hab' : (c.ddd ? 'DDD ' + c.ddd : escapeHtmlSafe(c.state))}</span>
+          </div>
+        </div>
+      `);
+    }
+
+    for (const s of streetMatches) {
+      const idx = lastRenderItems.length;
+      lastRenderItems.push({ type: 'street', data: s });
+      const kindBadge = s.kind === 'Bairro' ? 'BAIRRO' : (s.kind === 'POI' ? 'POI' : 'VIA');
+      htmlParts.push(`
+        <div class="search-item" data-result-idx="${idx}">
+          <div>
+            <div class="search-item-title">${escapeHtmlSafe(s.name)}</div>
+            <div class="text-xs text-gray-400">${escapeHtmlSafe(s.city)} &bull; ${escapeHtmlSafe(s.state)}</div>
+          </div>
+          <span class="search-item-badge">${kindBadge}</span>
+        </div>
+      `);
+    }
+
+    if (htmlParts.length === 0) {
+      dropdown.innerHTML = `
+        <div class="p-3 text-xs text-gray-400 text-center">
+          Nenhuma rua ou cidade encontrada. Tente termo diferente ou coordenadas (ex: -23.55, -46.63)
+        </div>
+      `;
+    } else {
+      dropdown.innerHTML = htmlParts.join('');
+      dropdown.querySelectorAll('.search-item[data-result-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+          const item = lastRenderItems[parseInt(el.getAttribute('data-result-idx'), 10)];
+          if (!item) return;
+          if (item.type === 'city') {
+            flyToCity(item.data.id);
+          } else {
+            const s = item.data;
+            flyToStreet(s.lat, s.lng, s.name, s.city, s.state, s.kind);
+          }
+        });
+      });
+    }
+    dropdown.classList.add('visible');
+  }
+
   function doSearch() {
-    const q = input.value.trim().toLowerCase();
+    const q = input.value.trim();
     if (!q) {
+      if (searchTimer) clearTimeout(searchTimer);
+      if (searchAbort) searchAbort.abort();
       dropdown.classList.remove('visible');
       dropdown.innerHTML = '';
       return;
@@ -493,48 +724,36 @@ function setupMapSearch() {
       }
     }
 
-    // Filter cities across all 5,571 municipalities
-    const normQ = q.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const matches = citiesList.filter(c => {
-      const normName = c.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      const normState = c.state.toLowerCase();
-      return normName.includes(normQ) || normState === normQ;
+    // Immediate city + viewport street results while debouncing SQLite FTS5 fetch
+    const normQ = normalizeSearchStr(q);
+    const instantCities = citiesList.filter(c => {
+      return normalizeSearchStr(c.name).includes(normQ) || (c.state || '').toLowerCase() === normQ;
     }).sort((a, b) => {
-      const aNorm = a.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      const bNorm = b.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      const aStarts = aNorm.startsWith(normQ);
-      const bStarts = bNorm.startsWith(normQ);
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
+      const aS = normalizeSearchStr(a.name).startsWith(normQ);
+      const bS = normalizeSearchStr(b.name).startsWith(normQ);
+      if (aS && !bS) return -1;
+      if (!aS && bS) return 1;
       if (a.capital && !b.capital) return -1;
       if (!a.capital && b.capital) return 1;
       return a.name.localeCompare(b.name);
-    }).slice(0, 12);
+    }).slice(0, 5);
 
-    if (matches.length === 0) {
-      dropdown.innerHTML = `
-        <div class="p-3 text-xs text-gray-400 text-center">
-          Nenhuma cidade encontrada com este termo. Tente coordenadas (ex: -23.55, -46.63)
-        </div>
-      `;
-      dropdown.classList.add('visible');
-      return;
+    const localStreets = findRenderedViewportStreets(normQ, 4);
+    if (instantCities.length > 0 || localStreets.length > 0) {
+      renderDropdown(instantCities, localStreets);
     }
 
-    dropdown.innerHTML = matches.map(c => `
-      <div class="search-item" onclick="flyToCity('${c.id}')">
-        <div>
-          <span class="search-item-title">${c.name}</span>
-          <span class="search-item-state">${c.state}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          ${c.capital ? '<span class="text-[10px] uppercase font-bold text-amber-400 bg-amber-900/30 px-1 rounded border border-amber-600/40">Capital</span>' : ''}
-          <span class="search-item-badge">${c.pop ? (c.pop / 1000).toFixed(0) + 'k hab' : (c.ddd ? 'DDD ' + c.ddd : c.state)}</span>
-        </div>
-      </div>
-    `).join('');
-
-    dropdown.classList.add('visible');
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+      if (searchAbort) searchAbort.abort();
+      searchAbort = new AbortController();
+      try {
+        const { cities, streets } = await fetchHybridSearchResults(q, 5, 15, searchAbort.signal);
+        renderDropdown(cities, streets);
+      } catch (e) {
+        // aborted on newer keystroke
+      }
+    }, 180);
   }
 
   input.addEventListener('input', doSearch);
@@ -680,10 +899,95 @@ window.flyToCity = function(cityId) {
   flyToCoords(city.lat, city.lng, `${city.name} (${city.state})`, 13);
 };
 
-window.flyToCoords = function(lat, lng, label = 'Ponto Selecionado', zoom = 12) {
+window.setStreetAsRoutePoint = function(role, lat, lng, name, city, state) {
+  const numLat = Number(lat);
+  const numLng = Number(lng);
+  const label = city && state && state !== 'LOCAL' ? `${name} (${city}-${state})` : name;
+
+  toggleRoutePlanner(true);
+
+  if (role === 'origin') {
+    routeOrigin = { lat: numLat, lng: numLng, label };
+    const fromInput = document.getElementById('route-from-input');
+    if (fromInput) fromInput.value = label;
+  } else {
+    routeDest = { lat: numLat, lng: numLng, label };
+    const toInput = document.getElementById('route-to-input');
+    if (toInput) toInput.value = label;
+
+    if (!routeOrigin) {
+      const fallbackCity = currentSelectedCity ||
+        citiesList.find(c => normalizeSearchStr(c.name) === normalizeSearchStr(city) && c.state === state) ||
+        citiesList.find(c => c.id === 'sp-sao-paulo');
+      if (fallbackCity) {
+        routeOrigin = {
+          lat: fallbackCity.lat,
+          lng: fallbackCity.lng,
+          label: `${fallbackCity.name} (${fallbackCity.state})`
+        };
+        const fromInput = document.getElementById('route-from-input');
+        if (fromInput) fromInput.value = routeOrigin.label;
+      }
+    }
+  }
+
+  if (routeOrigin && routeDest) {
+    calculateRoute();
+  }
+};
+
+window.flyToStreet = function(lat, lng, name, city, state, kind = 'Via') {
+  if (currentTab !== 'map') {
+    switchTab('map');
+  }
+
+  const dropdown = document.getElementById('map-search-results');
+  if (dropdown) dropdown.classList.remove('visible');
+
+  const input = document.getElementById('map-city-search');
+  if (input) {
+    input.value = city && state && state !== 'LOCAL' ? `${name} - ${city}/${state}` : name;
+  }
+
+  const numLat = Number(lat);
+  const numLng = Number(lng);
+  const label = city && state && state !== 'LOCAL' ? `${name} (${city}-${state})` : name;
+
+  const popupDom = document.createElement('div');
+  popupDom.style.cssText = 'color:#0f141a;font-family:-apple-system,sans-serif;padding:4px;min-width:210px;';
+  popupDom.innerHTML = `
+    <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#047857;margin-bottom:2px;">${escapeHtmlSafe(kind)} &bull; ${escapeHtmlSafe(city || '')} ${state && state !== 'LOCAL' ? '- ' + escapeHtmlSafe(state) : ''}</div>
+    <h4 style="margin:0 0 4px;font-weight:800;font-size:13px;color:#090d10;">${escapeHtmlSafe(name)}</h4>
+    <div style="font-size:11px;color:#374454;font-family:monospace;margin-bottom:8px;">LAT: ${numLat.toFixed(5)} | LNG: ${numLng.toFixed(5)}</div>
+    <div style="display:flex;gap:6px;">
+      <button type="button" data-role="origin" style="flex:1;padding:5px 7px;background:#0f172a;color:#34d399;border:1px solid #10b981;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">🅰️ Origem</button>
+      <button type="button" data-role="dest" style="flex:1;padding:5px 7px;background:#10b981;color:#06281c;border:none;border-radius:4px;font-size:11px;font-weight:800;cursor:pointer;">🅱️ Rota até Aqui</button>
+    </div>
+  `;
+  popupDom.querySelectorAll('button[data-role]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setStreetAsRoutePoint(btn.getAttribute('data-role'), numLat, numLng, name, city, state);
+    });
+  });
+
+  flyToCoords(numLat, numLng, label, 16, popupDom);
+
+  if (mapInstance) {
+    let done = false;
+    const triggerHighlight = () => {
+      if (done) return;
+      done = true;
+      highlightRenderedStreet(name);
+    };
+    mapInstance.once('moveend', triggerHighlight);
+    setTimeout(triggerHighlight, 1750);
+  }
+};
+
+window.flyToCoords = function(lat, lng, label = 'Ponto Selecionado', zoom = 12, customPopupContent = null) {
   if (!mapInstance) {
     initMap();
-    setTimeout(() => flyToCoords(lat, lng, label, zoom), 300);
+    setTimeout(() => flyToCoords(lat, lng, label, zoom, customPopupContent), 300);
     return;
   }
 
@@ -698,19 +1002,28 @@ window.flyToCoords = function(lat, lng, label = 'Ponto Selecionado', zoom = 12) 
     mapMarker.remove();
   }
 
+  // Clear previous street highlight when flying to generic city/point
+  if (!customPopupContent && mapInstance.getSource('street-highlight-source')) {
+    mapInstance.getSource('street-highlight-source').setData({ type: 'FeatureCollection', features: [] });
+  }
+
   // Tactical pulsing marker
   const wrap = document.createElement('div');
   wrap.className = 'tactical-marker-wrap';
   wrap.innerHTML = '<div class="tactical-marker-radar"></div><div class="tactical-marker-dot"></div>';
   wrap.style.cursor = 'pointer';
 
-  const popup = new maplibregl.Popup({ offset: 18 })
-    .setHTML(`
+  const popup = new maplibregl.Popup({ offset: 18 });
+  if (customPopupContent instanceof HTMLElement) {
+    popup.setDOMContent(customPopupContent);
+  } else {
+    popup.setHTML(customPopupContent || `
       <div style="color: #0f141a; font-family: -apple-system, sans-serif; padding: 4px;">
-        <h4 style="margin: 0 0 2px; font-weight: 800; font-size: 13px; color: #090d10;">${label}</h4>
+        <h4 style="margin: 0 0 2px; font-weight: 800; font-size: 13px; color: #090d10;">${escapeHtmlSafe(label)}</h4>
         <div style="font-size: 11px; color: #374454; font-family: monospace;">LAT: ${lat.toFixed(4)} | LNG: ${lng.toFixed(4)}</div>
       </div>
     `);
+  }
 
   mapMarker = new maplibregl.Marker({ element: wrap })
     .setLngLat([lng, lat])
@@ -794,22 +1107,22 @@ window.planRouteToSelectedCity = function() {
 
 // Autocomplete search for origin and destination inputs
 function setupRouteSearch() {
-  setupCityAutocomplete('route-from-input', 'route-from-dropdown', (city) => {
+  setupCityAutocomplete('route-from-input', 'route-from-dropdown', (item) => {
     routeOrigin = {
-      lat: city.lat,
-      lng: city.lng,
-      label: `${city.name} (${city.state})`
+      lat: item.lat,
+      lng: item.lng,
+      label: item.isStreet ? `${item.streetName} (${item.cityName}-${item.state})` : `${item.name} (${item.state})`
     };
     const input = document.getElementById('route-from-input');
     if (input) input.value = routeOrigin.label;
     if (routeOrigin && routeDest) calculateRoute();
   });
 
-  setupCityAutocomplete('route-to-input', 'route-to-dropdown', (city) => {
+  setupCityAutocomplete('route-to-input', 'route-to-dropdown', (item) => {
     routeDest = {
-      lat: city.lat,
-      lng: city.lng,
-      label: `${city.name} (${city.state})`
+      lat: item.lat,
+      lng: item.lng,
+      label: item.isStreet ? `${item.streetName} (${item.cityName}-${item.state})` : `${item.name} (${item.state})`
     };
     const input = document.getElementById('route-to-input');
     if (input) input.value = routeDest.label;
@@ -822,56 +1135,110 @@ function setupCityAutocomplete(inputId, dropdownId, onSelect) {
   const dropdown = document.getElementById(dropdownId);
   if (!input || !dropdown) return;
 
+  let acTimer = null;
+  let acAbort = null;
+  let lastItems = [];
+
+  function renderAcDropdown(cityMatches, streetMatches) {
+    lastItems = [];
+    const parts = [];
+
+    for (const c of cityMatches) {
+      const idx = lastItems.length;
+      lastItems.push({
+        isStreet: false,
+        name: c.name,
+        state: c.state,
+        lat: c.lat,
+        lng: c.lng
+      });
+      parts.push(`
+        <div class="search-item" data-ac-idx="${idx}">
+          <div>
+            <span class="search-item-title">${escapeHtmlSafe(c.name)}</span>
+            <span class="search-item-state">${escapeHtmlSafe(c.state)}</span>
+          </div>
+          <span class="search-item-badge">DDD ${c.ddd || escapeHtmlSafe(c.state)}</span>
+        </div>
+      `);
+    }
+
+    for (const s of streetMatches) {
+      const idx = lastItems.length;
+      lastItems.push({
+        isStreet: true,
+        streetName: s.name,
+        cityName: s.city,
+        name: `${s.name} (${s.city})`,
+        state: s.state,
+        lat: s.lat,
+        lng: s.lng
+      });
+      const kindBadge = s.kind === 'Bairro' ? 'BAIRRO' : (s.kind === 'POI' ? 'POI' : 'VIA');
+      parts.push(`
+        <div class="search-item" data-ac-idx="${idx}">
+          <div>
+            <div class="search-item-title">${escapeHtmlSafe(s.name)}</div>
+            <div class="text-xs text-gray-400">${escapeHtmlSafe(s.city)} &bull; ${escapeHtmlSafe(s.state)}</div>
+          </div>
+          <span class="search-item-badge">${kindBadge}</span>
+        </div>
+      `);
+    }
+
+    if (parts.length === 0) {
+      dropdown.innerHTML = `<div class="p-2.5 text-xs text-gray-400 text-center">Nenhuma rua ou município encontrado</div>`;
+    } else {
+      dropdown.innerHTML = parts.join('');
+      dropdown.querySelectorAll('.search-item[data-ac-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+          const item = lastItems[parseInt(el.getAttribute('data-ac-idx'), 10)];
+          if (item) {
+            onSelect(item);
+            dropdown.classList.remove('visible');
+          }
+        });
+      });
+    }
+    dropdown.classList.add('visible');
+  }
+
   function doSearch() {
-    const q = input.value.trim().toLowerCase();
+    const q = input.value.trim();
     if (!q) {
+      if (acTimer) clearTimeout(acTimer);
+      if (acAbort) acAbort.abort();
       dropdown.classList.remove('visible');
       dropdown.innerHTML = '';
       return;
     }
 
-    const normQ = q.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const matches = citiesList.filter(c => {
-      const normName = c.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      const normState = c.state.toLowerCase();
-      return normName.includes(normQ) || normState === normQ;
+    const normQ = normalizeSearchStr(q);
+    const instantCities = citiesList.filter(c => {
+      return normalizeSearchStr(c.name).includes(normQ) || (c.state || '').toLowerCase() === normQ;
     }).sort((a, b) => {
-      const aNorm = a.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      const bNorm = b.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      const aStarts = aNorm.startsWith(normQ);
-      const bStarts = bNorm.startsWith(normQ);
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
+      const aS = normalizeSearchStr(a.name).startsWith(normQ);
+      const bS = normalizeSearchStr(b.name).startsWith(normQ);
+      if (aS && !bS) return -1;
+      if (!aS && bS) return 1;
       return a.name.localeCompare(b.name);
-    }).slice(0, 8);
+    }).slice(0, 4);
 
-    if (matches.length === 0) {
-      dropdown.innerHTML = `<div class="p-2.5 text-xs text-gray-400 text-center">Nenhum município encontrado</div>`;
-      dropdown.classList.add('visible');
-      return;
+    if (instantCities.length > 0) {
+      renderAcDropdown(instantCities, []);
     }
 
-    dropdown.innerHTML = matches.map(c => `
-      <div class="search-item" data-id="${c.id}">
-        <div>
-          <span class="search-item-title">${c.name}</span>
-          <span class="search-item-state">${c.state}</span>
-        </div>
-        <span class="search-item-badge">DDD ${c.ddd || c.state}</span>
-      </div>
-    `).join('');
-
-    dropdown.querySelectorAll('.search-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const c = citiesList.find(x => x.id === item.getAttribute('data-id'));
-        if (c) {
-          onSelect(c);
-          dropdown.classList.remove('visible');
-        }
-      });
-    });
-
-    dropdown.classList.add('visible');
+    if (acTimer) clearTimeout(acTimer);
+    acTimer = setTimeout(async () => {
+      if (acAbort) acAbort.abort();
+      acAbort = new AbortController();
+      try {
+        const { cities, streets } = await fetchHybridSearchResults(q, 4, 10, acAbort.signal);
+        renderAcDropdown(cities, streets);
+      } catch (e) {
+        // aborted
+      }
+    }, 180);
   }
 
   input.addEventListener('input', doSearch);
@@ -1002,7 +1369,7 @@ window.calculateRoute = async function() {
   }
 
   try {
-    const url = `/api/route?fromLat=${routeOrigin.lat}&fromLng=${routeOrigin.lng}&toLat=${routeDest.lat}&toLng=${routeDest.lng}&profile=${routeProfile}`;
+    const url = `/api/route?fromLat=${routeOrigin.lat}&fromLng=${routeOrigin.lng}&toLat=${routeDest.lat}&toLng=${routeDest.lng}&profile=${routeProfile}&fromLabel=${encodeURIComponent(routeOrigin.label || '')}&toLabel=${encodeURIComponent(routeDest.label || '')}`;
     const res = await fetch(url);
     const data = await res.json();
     currentRouteData = data;
@@ -1114,7 +1481,7 @@ function renderRouteOnMap(data) {
   const bounds = coords.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(coords[0], coords[0]));
   mapInstance.fitBounds(bounds, {
     padding: { top: 90, bottom: 90, left: 420, right: 90 },
-    maxZoom: 14,
+    maxZoom: 16,
     duration: 1500
   });
 }

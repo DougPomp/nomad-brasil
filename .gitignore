@@ -1,6 +1,8 @@
 # Storage and heavy offline datasets (Download via setup-nomad-brasil)
 storage/zim/*.zim
 storage/maps/*.pmtiles
+storage/maps/*.sqlite
+storage/maps/*.sqlite-*
 storage/routes_cache/
 app/data/routes_cache/
 

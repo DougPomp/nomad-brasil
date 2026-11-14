@@ -2,12 +2,30 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = parseInt(process.env.PORT || '8000', 10);
 const STORAGE_PATH = process.env.STORAGE_PATH || path.join(__dirname, '..', 'storage');
+
+// Open FTS5 Street Index (Option 2 - 100% Offline)
+const streetsDbPath = path.join(STORAGE_PATH, 'maps', 'brazil-streets.sqlite');
+let streetsDb = null;
+let streetsSearchStmt = null;
+if (fs.existsSync(streetsDbPath)) {
+  try {
+    streetsDb = new DatabaseSync(streetsDbPath, { readOnly: true });
+    streetsSearchStmt = streetsDb.prepare(
+      "SELECT rowid AS id, name, city, state, kind, lat, lng, bm25(streets_fts, 10.0, 4.0, 1.0, 2.0) AS score FROM streets_fts WHERE streets_fts MATCH ? ORDER BY score LIMIT ?"
+    );
+  } catch (err) {
+    console.warn('[NOMAD Brasil] Aviso ao carregar índice SQLite de ruas:', err.message);
+    streetsDb = null;
+    streetsSearchStmt = null;
+  }
+}
 
 // Load datasets
 const citiesPath = path.join(__dirname, 'data', 'cities.json');
@@ -67,38 +85,42 @@ function distToSegment(px, py, vx, vy, wx, wy) {
 }
 
 // Generate realistic offline tactical corridor
-function generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile = 'driving') {
+function generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile = 'driving', fromLabel = '', toLabel = '') {
   const directDist = haversine(fromLat, fromLng, toLat, toLng);
   const winding = profile === 'walking' ? 1.18 : 1.25;
   const distanceKm = Math.round(directDist * winding * 10) / 10;
 
-  let speedKmh = 75;
-  if (profile === 'tactical') speedKmh = 48;
+  let speedKmh = directDist < 35 ? (profile === 'walking' ? 4.5 : 32) : 75;
+  if (profile === 'tactical') speedKmh = directDist < 35 ? 25 : 48;
   if (profile === 'walking') speedKmh = 4.5;
 
-  const durationMin = Math.round((distanceKm / speedKmh) * 60);
+  const durationMin = Math.max(1, Math.round((distanceKm / speedKmh) * 60));
   const fuelLiters = profile === 'walking' ? 0 : Math.round((distanceKm / (profile === 'tactical' ? 8 : 12)) * 10) / 10;
   const waterLiters = profile === 'walking' ? Math.max(0.5, Math.round(((durationMin / 60) / 8) * 3.5 * 10) / 10) : 0;
   const caloriesKcal = profile === 'walking' ? Math.round((durationMin / 60) * 380) : 0;
 
-  // Find intermediate cities near corridor
-  const intermediate = [];
-  const minLat = Math.min(fromLat, toLat) - 0.25;
-  const maxLat = Math.max(fromLat, toLat) + 0.25;
-  const minLng = Math.min(fromLng, toLng) - 0.25;
-  const maxLng = Math.max(fromLng, toLng) + 0.25;
+  const isUrban = directDist < 35;
 
-  for (const c of cities) {
-    if (c.lat >= minLat && c.lat <= maxLat && c.lng >= minLng && c.lng <= maxLng) {
-      const d = distToSegment(c.lng, c.lat, fromLng, fromLat, toLng, toLat);
-      if (d <= 25 && haversine(c.lat, c.lng, fromLat, fromLng) > 5 && haversine(c.lat, c.lng, toLat, toLng) > 5) {
-        const distFromStart = haversine(fromLat, fromLng, c.lat, c.lng);
-        intermediate.push({ ...c, distFromStart });
+  // Find intermediate cities near corridor for regional trips
+  const intermediate = [];
+  if (!isUrban) {
+    const minLat = Math.min(fromLat, toLat) - 0.25;
+    const maxLat = Math.max(fromLat, toLat) + 0.25;
+    const minLng = Math.min(fromLng, toLng) - 0.25;
+    const maxLng = Math.max(fromLng, toLng) + 0.25;
+
+    for (const c of cities) {
+      if (c.lat >= minLat && c.lat <= maxLat && c.lng >= minLng && c.lng <= maxLng) {
+        const d = distToSegment(c.lng, c.lat, fromLng, fromLat, toLng, toLat);
+        if (d <= 25 && haversine(c.lat, c.lng, fromLat, fromLng) > 5 && haversine(c.lat, c.lng, toLat, toLng) > 5) {
+          const distFromStart = haversine(fromLat, fromLng, c.lat, c.lng);
+          intermediate.push({ ...c, distFromStart });
+        }
       }
     }
-  }
 
-  intermediate.sort((a, b) => a.distFromStart - b.distFromStart);
+    intermediate.sort((a, b) => a.distFromStart - b.distFromStart);
+  }
   const pickedWaypoints = intermediate.slice(0, 6);
 
   const coords = [[fromLng, fromLat]];
@@ -106,32 +128,50 @@ function generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile = 'drivin
   coords.push([toLng, toLat]);
 
   const steps = [];
-  steps.push({
-    instruction: `Partida do ponto de origem em direção ao corredor rodoviário`,
-    distanceKm: Math.round((pickedWaypoints.length > 0 ? pickedWaypoints[0].distFromStart : distanceKm) * 10) / 10,
-    type: 'depart'
-  });
+  if (isUrban) {
+    steps.push({
+      instruction: `Partida de ${fromLabel || 'ponto de origem'} em direção à via de ligação`,
+      distanceKm: Math.round((distanceKm / 2) * 10) / 10,
+      type: 'depart'
+    });
+    steps.push({
+      instruction: `Deslocamento pelo corredor viário urbano (modo offline direto)`,
+      distanceKm: Math.round((distanceKm / 2) * 10) / 10,
+      type: 'waypoint'
+    });
+    steps.push({
+      instruction: `Aproximação e chegada em ${toLabel || 'ponto de destino'}`,
+      distanceKm: 0,
+      type: 'arrive'
+    });
+  } else {
+    steps.push({
+      instruction: `Partida de ${fromLabel || 'ponto de origem'} em direção ao corredor rodoviário`,
+      distanceKm: Math.round((pickedWaypoints.length > 0 ? pickedWaypoints[0].distFromStart : distanceKm) * 10) / 10,
+      type: 'depart'
+    });
 
-  for (let i = 0; i < pickedWaypoints.length; i++) {
-    const wp = pickedWaypoints[i];
-    const nextDist = i < pickedWaypoints.length - 1 ? 
-      Math.round(haversine(wp.lat, wp.lng, pickedWaypoints[i+1].lat, pickedWaypoints[i+1].lng) * winding * 10) / 10 :
-      Math.round(haversine(wp.lat, wp.lng, toLat, toLng) * winding * 10) / 10;
+    for (let i = 0; i < pickedWaypoints.length; i++) {
+      const wp = pickedWaypoints[i];
+      const nextDist = i < pickedWaypoints.length - 1 ? 
+        Math.round(haversine(wp.lat, wp.lng, pickedWaypoints[i+1].lat, pickedWaypoints[i+1].lng) * winding * 10) / 10 :
+        Math.round(haversine(wp.lat, wp.lng, toLat, toLng) * winding * 10) / 10;
+
+      steps.push({
+        instruction: `Passagem por ${wp.name} (${wp.state}) &bull; Apoio: SAMU 192 / PM 190 / DDD ${wp.ddd || '--'}`,
+        distanceKm: nextDist,
+        type: 'waypoint',
+        cityName: wp.name,
+        state: wp.state
+      });
+    }
 
     steps.push({
-      instruction: `Passagem por ${wp.name} (${wp.state}) &bull; Apoio: SAMU 192 / PM 190 / DDD ${wp.ddd || '--'}`,
-      distanceKm: nextDist,
-      type: 'waypoint',
-      cityName: wp.name,
-      state: wp.state
+      instruction: `Aproximação e chegada em ${toLabel || 'ponto de destino'}`,
+      distanceKm: 0,
+      type: 'arrive'
     });
   }
-
-  steps.push({
-    instruction: `Aproximação e chegada ao ponto de destino`,
-    distanceKm: 0,
-    type: 'arrive'
-  });
 
   return {
     source: 'offline_corridor',
@@ -189,7 +229,8 @@ const server = http.createServer((req, res) => {
         emergenciesCount: emergencies.length,
         survivalCount: survivalManuals.length,
         pmtilesAvailable: pmtilesExists,
-        pmtilesSizeBytes: pmtilesSize
+        pmtilesSizeBytes: pmtilesSize,
+        streetsIndexAvailable: Boolean(streetsDb && streetsSearchStmt)
       }
     }));
     return;
@@ -225,6 +266,47 @@ const server = http.createServer((req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(results.slice(0, limit)));
+    return;
+  }
+
+  // 2.1 API: Offline Streets / Roads / POIs search via SQLite FTS5
+  if (pathname === '/api/streets') {
+    const rawQ = (urlObj.searchParams.get('q') || '').trim();
+    const limit = Math.min(50, Math.max(1, parseInt(urlObj.searchParams.get('limit') || '20', 10) || 20));
+
+    if (!streetsSearchStmt || !rawQ) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('[]');
+      return;
+    }
+
+    const cleaned = rawQ.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+    const tokens = cleaned.split(/\s+/).filter(t => t.length >= 2);
+    if (tokens.length === 0) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('[]');
+      return;
+    }
+
+    const matchExpr = tokens.map(t => `"${t}"*`).join(' AND ');
+    try {
+      const rawRows = streetsSearchStmt.all(matchExpr, Math.min(80, limit * 3));
+      const kindRank = (k) => (k === 'Via' ? 0 : k === 'Bairro' ? 1 : 2);
+      const rows = rawRows
+        .sort((a, b) => {
+          if (Math.abs(a.score - b.score) > 0.5) return a.score - b.score;
+          const kr = kindRank(a.kind) - kindRank(b.kind);
+          if (kr !== 0) return kr;
+          return a.name.length - b.name.length;
+        })
+        .slice(0, limit)
+        .map(({ score, ...rest }) => rest);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(rows));
+    } catch (err) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('[]');
+    }
     return;
   }
 
@@ -292,6 +374,8 @@ const server = http.createServer((req, res) => {
     const toLat = parseFloat(urlObj.searchParams.get('toLat'));
     const toLng = parseFloat(urlObj.searchParams.get('toLng'));
     const profile = urlObj.searchParams.get('profile') || 'driving';
+    const fromLabel = (urlObj.searchParams.get('fromLabel') || '').trim();
+    const toLabel = (urlObj.searchParams.get('toLabel') || '').trim();
 
     if (isNaN(fromLat) || isNaN(fromLng) || isNaN(toLat) || isNaN(toLng)) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -387,7 +471,7 @@ const server = http.createServer((req, res) => {
       })
       .catch(() => {
         // Fallback to offline tactical corridor
-        const fallbackResult = generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile);
+        const fallbackResult = generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel);
         try { fs.writeFileSync(cachePath, JSON.stringify(fallbackResult, null, 2), 'utf8'); } catch(e){}
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(fallbackResult));
