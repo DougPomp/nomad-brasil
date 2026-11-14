@@ -10,8 +10,20 @@ tools/*.exe
 # Node & Docker
 node_modules/
 npm-debug.log*
+docker-compose.override.yml
 .DS_Store
 Thumbs.db
 *.tmp
 *.log
+
+# Secrets & local environment
+.env
+.env.*
+*.pem
+*.key
+.secrets/
+
+# Editor / IDE
+.vscode/
+.idea/
 
