@@ -1291,7 +1291,7 @@
                 </ol>
                 <div class="install-box">git clone https://github.com/DougPomp/nomad-brasil.git<br>cd nomad-brasil</div>
                 <div style="font-size: 0.84rem; color: var(--text-secondary);">
-                  Execute <strong><code>setup-nomad-brasil.bat</code></strong>. Ele baixa os mapas vetoriais do Brasil (1,57 GB), a Wikipédia em Português e sobe os contêineres automaticamente.
+                  Execute <strong><code>setup-nomad-brasil.bat</code></strong>. Ele baixa os mapas vetoriais do Brasil (1,57 GB), gera o índice de 416 mil+ ruas em SQLite FTS5, baixa a Wikipédia em Português e sobe os contêineres automaticamente.
                 </div>
               </div>
 
@@ -1609,16 +1609,16 @@
 
             <div class="grid-3">
               <div class="metric-card">
-                <h4 style="color: #34d399; margin-bottom: 0.35rem;">🗺️ Mapas PMTiles Locais</h4>
-                <p style="font-size: 0.83rem; color: var(--text-secondary);">1,57 GB contendo malha viária, rios, relevo e municípios do Brasil servidos via HTTP Range 206 com fontes PBF locais.</p>
+                <h4 style="color: #34d399; margin-bottom: 0.35rem;">🗺️ Mapas PMTiles &amp; Índice de Ruas SQLite</h4>
+                <p style="font-size: 0.83rem; color: var(--text-secondary);">1,57 GB com malha viária do Brasil + índice SQLite FTS5 de 416 mil+ logradouros com sinônimos, tiles de detalhe z=14 e auto-aprendizado em disco.</p>
               </div>
               <div class="metric-card">
                 <h4 style="color: #38bdf8; margin-bottom: 0.35rem;">📚 Wikipédia em Português</h4>
                 <p style="font-size: 0.83rem; color: var(--text-secondary);">Mais de 1 milhão de artigos ilustrados e enciclopédia médica em formato ZIM servidos pelo contêiner Kiwix na porta 8090.</p>
               </div>
               <div class="metric-card">
-                <h4 style="color: #fbbf24; margin-bottom: 0.35rem;">🧭 Rotas &amp; Exportação GPX</h4>
-                <p style="font-size: 0.83rem; color: var(--text-secondary);">Cálculo de deslocamento veicular, 4x4 e marcha a pé com estimativa de combustível/água e download GPX para GPS Garmin/OsmAnd.</p>
+                <h4 style="color: #fbbf24; margin-bottom: 0.35rem;">🧭 Rotas Porta a Porta &amp; Exportação GPX</h4>
+                <p style="font-size: 0.83rem; color: var(--text-secondary);">Rotas por rua/logradouro ou entre municípios (veicular, 4x4 e a pé) com estimativa de combustível/água, cache em disco e download GPX.</p>
               </div>
             </div>
           </div>

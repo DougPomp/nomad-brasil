@@ -27,6 +27,7 @@ echo [*] Configurando estrutura de diretórios...
 if not exist "storage\zim" mkdir "storage\zim"
 if not exist "storage\maps\basemaps-assets\fonts" mkdir "storage\maps\basemaps-assets\fonts"
 if not exist "storage\maps\basemaps-assets\sprites" mkdir "storage\maps\basemaps-assets\sprites"
+if not exist "storage\maps\detail_tiles_cache" mkdir "storage\maps\detail_tiles_cache"
 if not exist "app\data\routes_cache" mkdir "app\data\routes_cache"
 echo [OK] Diretórios configurados!
 echo.
@@ -45,6 +46,23 @@ if not exist "storage\maps\brazil-streets.pmtiles" (
     echo [OK] Mapa vetorial (brazil-streets.pmtiles) já presente no armazenamento.
 )
 echo.
+
+:: 3b. Construir índice nacional de ruas offline (SQLite FTS5)
+if exist "storage\maps\brazil-streets.pmtiles" (
+    if not exist "storage\maps\brazil-streets.sqlite" (
+        echo [*] Construindo índice nacional de ruas e POIs - SQLite FTS5...
+        echo     Isso leva cerca de 1 minuto na primeira execução.
+        docker run --rm -v "%cd%:/repo" node:22-slim node /repo/app/build_streets_index.js
+        if errorlevel 1 (
+            echo [AVISO] Falha ao indexar ruas agora. Você poderá executar manualmente: app\build_streets_index.js
+        ) else (
+            echo [OK] Índice nacional de ruas criado em storage\maps\brazil-streets.sqlite!
+        )
+    ) else (
+        echo [OK] Índice offline de ruas brazil-streets.sqlite já presente.
+    )
+    echo.
+)
 
 :: 4. Download da Wikipédia Offline (Kiwix ZIM)
 echo [*] Verificando acervo da Wikipédia Offline...

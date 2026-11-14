@@ -18,7 +18,7 @@ echo ""
 
 # 2. Criar Estrutura de Diretórios
 echo "[*] Configurando estrutura de diretórios..."
-mkdir -p storage/zim storage/maps/basemaps-assets/fonts storage/maps/basemaps-assets/sprites app/data/routes_cache
+mkdir -p storage/zim storage/maps/basemaps-assets/fonts storage/maps/basemaps-assets/sprites storage/maps/detail_tiles_cache app/data/routes_cache
 echo "[OK] Diretórios configurados!"
 echo ""
 
@@ -28,6 +28,15 @@ if [ ! -f "storage/maps/brazil-streets.pmtiles" ]; then
     curl -L -o "storage/maps/brazil-streets.pmtiles" "https://build.protomaps.com/20261101.pmtiles" --progress-bar
 else
     echo "[OK] Mapa vetorial (brazil-streets.pmtiles) já presente."
+fi
+echo ""
+
+# 3b. Índice offline de ruas e POIs (SQLite FTS5)
+if [ -f "storage/maps/brazil-streets.pmtiles" ] && [ ! -f "storage/maps/brazil-streets.sqlite" ]; then
+    echo "[*] Construindo índice nacional de ruas e POIs (SQLite FTS5)..."
+    docker run --rm -v "$(pwd):/repo" node:22-slim node /repo/app/build_streets_index.js || echo "[AVISO] Falha ao indexar ruas agora."
+elif [ -f "storage/maps/brazil-streets.sqlite" ]; then
+    echo "[OK] Índice offline de ruas (brazil-streets.sqlite) já presente."
 fi
 echo ""
 
