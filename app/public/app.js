@@ -102,8 +102,9 @@ function switchTab(tabId) {
   // Load Kiwix iframe if switching to wiki
   if (tabId === 'wiki') {
     const iframe = document.getElementById('kiwix-iframe');
+    const primaryBook = window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
     if (iframe && !iframe.getAttribute('src')) {
-      iframe.setAttribute('src', 'http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05');
+      iframe.setAttribute('src', `http://localhost:8090/content/${encodeURIComponent(primaryBook)}`);
     }
   }
 
@@ -133,19 +134,38 @@ function switchTab(tabId) {
 }
 
 // Load data from API
+function renderStatusSummaryFromData(statusData) {
+  const statsEl = document.getElementById('status-summary');
+  if (!statsEl || !statusData || !statusData.datasets) return;
+  const ds = statusData.datasets;
+  const parts = [
+    `<span class="text-emerald-400 font-bold">${ds.citiesCount || 0}</span> cidades`
+  ];
+  if (typeof ds.streetsCount === 'number' && ds.streetsCount > 0) {
+    parts.push(`<span class="text-cyan-400 font-bold">${ds.streetsCount.toLocaleString('pt-BR')}</span> ruas offline`);
+  }
+  if (typeof ds.detailTilesCachedCount === 'number' && ds.detailTilesCachedCount > 0) {
+    parts.push(`<span class="text-emerald-400 font-bold">${ds.detailTilesCachedCount}</span> blocos z=14`);
+  }
+  if (typeof ds.routesCachedCount === 'number' && ds.routesCachedCount > 0) {
+    parts.push(`<span class="text-sky-400 font-bold">${ds.routesCachedCount}</span> rotas em cache`);
+  }
+  if (typeof ds.zimFilesCount === 'number' && ds.zimFilesCount > 0) {
+    parts.push(`<span class="text-amber-400 font-bold">${ds.zimFilesCount}</span> ZIMs`);
+  }
+  parts.push(`<span class="text-emerald-400 font-bold">${ds.emergenciesCount || 0}</span> protocolos médicos`);
+  parts.push(`<span class="text-emerald-400 font-bold">${ds.survivalCount || 0}</span> manuais de campo`);
+  statsEl.innerHTML = parts.join(' &bull; ');
+}
+
 async function loadData() {
   try {
-    // 1. Status
+    // 1. Status & Live Diagnostics
     const statusRes = await fetch('/api/status');
     const statusData = await statusRes.json();
-    const statsEl = document.getElementById('status-summary');
-    if (statsEl) {
-      statsEl.innerHTML = `
-        <span class="text-emerald-400 font-bold">${statusData.datasets.citiesCount}</span> cidades mapeadas &bull; 
-        <span class="text-emerald-400 font-bold">${statusData.datasets.emergenciesCount}</span> protocolos médicos &bull; 
-        <span class="text-emerald-400 font-bold">${statusData.datasets.survivalCount}</span> manuais de campo
-      `;
-    }
+    window.nomadStatusData = statusData;
+    window.nomadPrimaryZimBook = (statusData.datasets && statusData.datasets.primaryZimBook) || 'wikipedia_pt_all_maxi_2026-05';
+    renderStatusSummaryFromData(statusData);
 
     // 2. Cities (todos os 5.571 municípios do IBGE)
     const citiesRes = await fetch('/api/cities?limit=6000');
@@ -502,13 +522,19 @@ function initMap() {
       }
     });
 
-    // Interactive Map Click
+    // Interactive Map Click & Right-Click Offline Reverse Geocoding
     mapInstance.on('click', (e) => {
       const { lng, lat } = e.lngLat;
 
-      // If user is picking route origin or destination on map
+      // If user is picking route origin, destination or waypoint on map
       if (mapPickMode) {
         handleMapPickedPoint(lat, lng, mapPickMode);
+        return;
+      }
+
+      // At street zoom (>= 12.5), inspect street/coordinates instead of jumping back to city center
+      if (mapInstance.getZoom() >= 12.5) {
+        openReverseGeocodePopup(lat, lng);
         return;
       }
 
@@ -527,8 +553,14 @@ function initMap() {
       if (nearest && minDist <= 25) {
         flyToCity(nearest.id);
       } else {
-        flyToCoords(lat, lng, 'Ponto no Mapa', mapInstance.getZoom());
+        openReverseGeocodePopup(lat, lng);
       }
+    });
+
+    mapInstance.on('contextmenu', (e) => {
+      e.preventDefault();
+      if (mapPickMode) return;
+      openReverseGeocodePopup(e.lngLat.lat, e.lngLat.lng);
     });
 
   } catch (err) {
@@ -917,8 +949,15 @@ window.showCityIntel = function(city) {
     }
   }
 
+  // Reset city street prefetch status
+  const prefetchBtn = document.getElementById('btn-prefetch-city');
+  const prefetchStatus = document.getElementById('drawer-prefetch-status');
+  if (prefetchBtn) prefetchBtn.disabled = false;
+  if (prefetchStatus) prefetchStatus.textContent = '';
+
   // Exact Wikipedia offline article link (Kiwix port 8090)
   if (wikiLinkEl) {
+    const primaryBook = window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
     let wikiTarget = city.name;
     if (city.wiki_query) {
       wikiTarget = city.wiki_query;
@@ -926,7 +965,15 @@ window.showCityIntel = function(city) {
       wikiTarget = `${city.name}_(${city.state_name || city.state})`;
     }
     const cleanTarget = wikiTarget.replace(/ /g, '_');
-    wikiLinkEl.href = `http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05/${encodeURIComponent(cleanTarget)}`;
+    wikiLinkEl.href = `http://localhost:8090/content/${encodeURIComponent(primaryBook)}/${encodeURIComponent(cleanTarget)}`;
+    fetch(`/api/kiwix/resolve?q=${encodeURIComponent(city.wiki_query || city.name)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(resolved => {
+        if (resolved && resolved.ok && resolved.articleUrl && currentSelectedCity && currentSelectedCity.id === city.id) {
+          wikiLinkEl.href = resolved.articleUrl;
+        }
+      })
+      .catch(() => {});
   }
 
   drawer.classList.add('open');
@@ -1133,15 +1180,19 @@ window.toggleRoutePlanner = function(forceState) {
   const btn = document.getElementById('btn-toggle-route-panel');
   const wptDrawer = document.getElementById('waypoints-drawer');
   const wptBtn = document.getElementById('layer-btn-waypoints');
+  const supportDrawer = document.getElementById('nearby-support-drawer');
+  const supportBtn = document.getElementById('btn-toggle-nearby-support');
   if (!panel) return;
 
   const isOpen = panel.classList.contains('open');
   const targetState = typeof forceState === 'boolean' ? forceState : !isOpen;
 
   if (targetState) {
-    // Close waypoints drawer so left drawers never collide
+    // Close other left drawers so drawers never collide
     if (wptDrawer) wptDrawer.classList.remove('open');
     if (wptBtn) wptBtn.classList.remove('active');
+    if (supportDrawer) supportDrawer.classList.remove('open');
+    if (supportBtn) supportBtn.classList.remove('active');
     if (window.innerWidth <= 900) closeCityDrawer();
 
     panel.classList.add('open');
@@ -1393,19 +1444,9 @@ window.cancelMapPick = function() {
   if (banner) banner.style.display = 'none';
 };
 
-function handleMapPickedPoint(lat, lng, mode) {
+async function handleMapPickedPoint(lat, lng, mode) {
   cancelMapPick();
-  
-  if (mode === 'waypoint') {
-    const latIn = document.getElementById('wpt-lat-input');
-    const lngIn = document.getElementById('wpt-lng-input');
-    if (latIn) latIn.value = lat.toFixed(4);
-    if (lngIn) lngIn.value = lng.toFixed(4);
-    toggleWaypointsDrawer(true);
-    return;
-  }
 
-  let label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   let nearest = null;
   let minDist = Infinity;
   for (const c of citiesList) {
@@ -1416,8 +1457,40 @@ function handleMapPickedPoint(lat, lng, mode) {
     }
   }
 
-  if (nearest && minDist <= 15) {
+  let streetInfo = null;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 1200);
+    const res = await fetch(`/api/streets/reverse?lat=${lat}&lng=${lng}`, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (res.ok) {
+      const rev = await res.json();
+      if (rev && rev.street && rev.street.name) {
+        streetInfo = rev;
+      }
+    }
+  } catch (e) {}
+
+  let label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  if (streetInfo && streetInfo.street) {
+    const ufPart = streetInfo.street.state || (nearest ? nearest.state : '');
+    const cityPart = streetInfo.street.city || (nearest ? nearest.name : '');
+    label = cityPart ? `${streetInfo.street.name} (${cityPart}/${ufPart})` : streetInfo.street.name;
+  } else if (nearest && minDist <= 15) {
     label = `${nearest.name} (${nearest.state})`;
+  }
+
+  if (mode === 'waypoint') {
+    const latIn = document.getElementById('wpt-lat-input');
+    const lngIn = document.getElementById('wpt-lng-input');
+    const nameIn = document.getElementById('wpt-name-input');
+    if (latIn) latIn.value = lat.toFixed(5);
+    if (lngIn) lngIn.value = lng.toFixed(5);
+    if (nameIn && !nameIn.value.trim() && streetInfo && streetInfo.street) {
+      nameIn.value = streetInfo.street.name;
+    }
+    toggleWaypointsDrawer(true);
+    return;
   }
 
   if (mode === 'origin') {
@@ -1621,6 +1694,9 @@ function renderRouteMetricsAndSteps(data) {
     if (data.source === 'osrm_online') {
       sourceEl.textContent = data.cached ? 'CACHE DISCO' : 'OSRM RODOVIAS';
       sourceEl.className = 'metric-badge text-emerald-400';
+    } else if (data.source === 'offline_graph') {
+      sourceEl.textContent = 'GRAFO OFFLINE (RUAS)';
+      sourceEl.className = 'metric-badge text-cyan-400';
     } else {
       sourceEl.textContent = 'CORREDOR OFFLINE';
       sourceEl.className = 'metric-badge text-amber-400';
@@ -1806,6 +1882,43 @@ const WPT_ICONS = {
   danger: '⚠️'
 };
 
+function syncWaypointsWithServer() {
+  fetch('/api/waypoints')
+    .then(r => (r.ok ? r.json() : null))
+    .then(serverList => {
+      if (!Array.isArray(serverList)) return;
+      const byId = new Map();
+      let serverMissingLocal = false;
+      for (const item of serverList) {
+        if (item && item.id) byId.set(item.id, item);
+      }
+      for (const localItem of userWaypoints) {
+        if (localItem && localItem.id && !byId.has(localItem.id)) {
+          byId.set(localItem.id, localItem);
+          serverMissingLocal = true;
+        }
+      }
+      const merged = Array.from(byId.values());
+      if (merged.length !== userWaypoints.length || merged.some((m, i) => !userWaypoints[i] || userWaypoints[i].id !== m.id)) {
+        userWaypoints = merged;
+        try {
+          localStorage.setItem('nomad_brasil_waypoints', JSON.stringify(userWaypoints));
+        } catch (e) {}
+        updateWaypointsBadges();
+        renderWaypointList();
+        if (mapInstance) renderUserWptMarkers();
+      }
+      if (serverMissingLocal) {
+        fetch('/api/waypoints', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userWaypoints)
+        }).catch(() => {});
+      }
+    })
+    .catch(() => {});
+}
+
 function loadUserWaypoints() {
   try {
     const raw = localStorage.getItem('nomad_brasil_waypoints');
@@ -1816,6 +1929,7 @@ function loadUserWaypoints() {
   updateWaypointsBadges();
   renderWaypointList();
   if (mapInstance) renderUserWptMarkers();
+  syncWaypointsWithServer();
 }
 
 function saveUserWaypointsToStorage() {
@@ -1825,6 +1939,11 @@ function saveUserWaypointsToStorage() {
   updateWaypointsBadges();
   renderWaypointList();
   renderUserWptMarkers();
+  fetch('/api/waypoints', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userWaypoints)
+  }).catch(() => {});
 }
 
 function updateWaypointsBadges() {
@@ -1839,6 +1958,8 @@ window.toggleWaypointsDrawer = function(force) {
   const btn = document.getElementById('layer-btn-waypoints');
   const routePanel = document.getElementById('route-planner-panel');
   const routeBtn = document.getElementById('btn-toggle-route-panel');
+  const supportDrawer = document.getElementById('nearby-support-drawer');
+  const supportBtn = document.getElementById('btn-toggle-nearby-support');
   if (!drawer) return;
 
   const isOpen = drawer.classList.contains('open');
@@ -1847,6 +1968,8 @@ window.toggleWaypointsDrawer = function(force) {
   if (shouldOpen) {
     if (routePanel) routePanel.classList.remove('open');
     if (routeBtn) routeBtn.classList.remove('active');
+    if (supportDrawer) supportDrawer.classList.remove('open');
+    if (supportBtn) supportBtn.classList.remove('active');
     if (window.innerWidth <= 900) closeCityDrawer();
     drawer.classList.add('open');
     if (btn) btn.classList.add('active');
@@ -4050,3 +4173,560 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.calculateCharcoal) window.calculateCharcoal();
 });
 
+
+// =====================================================================
+// 32. OFFLINE REVERSE GEOCODING, PREFETCH z=14, SOCORRO & BACKUP JSON
+// =====================================================================
+
+function formatCoordsDMS(lat, lng) {
+  function toDms(val, posChar, negChar) {
+    const hemi = val >= 0 ? posChar : negChar;
+    const abs = Math.abs(val);
+    const deg = Math.floor(abs);
+    const minFloat = (abs - deg) * 60;
+    const min = Math.floor(minFloat);
+    const sec = ((minFloat - min) * 60).toFixed(1);
+    return `${deg}°${String(min).padStart(2, '0')}'${sec.padStart(4, '0')}"${hemi}`;
+  }
+  return `${toDms(lat, 'N', 'S')} ${toDms(lng, 'E', 'W')}`;
+}
+
+function formatCoordsUTM(lat, lng) {
+  const clampedLat = Math.max(-80, Math.min(84, lat));
+  const rad = Math.PI / 180;
+  const a = 6378137.0;
+  const f = 1 / 298.257223563;
+  const e2 = 2 * f - f * f;
+  const ep2 = e2 / (1 - e2);
+  const k0 = 0.9996;
+
+  const zone = Math.floor((lng + 180) / 6) + 1;
+  const lonOrigin = (zone - 1) * 6 - 180 + 3;
+  const latRad = clampedLat * rad;
+  const lonRad = lng * rad;
+  const lonOriginRad = lonOrigin * rad;
+
+  const sinLat = Math.sin(latRad);
+  const cosLat = Math.cos(latRad);
+  const tanLat = Math.tan(latRad);
+
+  const N = a / Math.sqrt(1 - e2 * sinLat * sinLat);
+  const T = tanLat * tanLat;
+  const C = ep2 * cosLat * cosLat;
+  const A = cosLat * (lonRad - lonOriginRad);
+
+  const M = a * (
+    (1 - e2 / 4 - (3 * e2 * e2) / 64 - (5 * e2 * e2 * e2) / 256) * latRad -
+    ((3 * e2) / 8 + (3 * e2 * e2) / 32 + (45 * e2 * e2 * e2) / 1024) * Math.sin(2 * latRad) +
+    ((15 * e2 * e2) / 256 + (45 * e2 * e2 * e2) / 1024) * Math.sin(4 * latRad) -
+    ((35 * e2 * e2 * e2) / 3072) * Math.sin(6 * latRad)
+  );
+
+  const easting = k0 * N * (
+    A + ((1 - T + C) * A ** 3) / 6 + ((5 - 18 * T + T * T + 72 * C - 58 * ep2) * A ** 5) / 120
+  ) + 500000.0;
+
+  let northing = k0 * (
+    M + N * tanLat * (
+      (A * A) / 2 +
+      ((5 - T + 9 * C + 4 * C * C) * A ** 4) / 24 +
+      ((61 - 58 * T + T * T + 600 * C - 330 * ep2) * A ** 6) / 720
+    )
+  );
+  if (clampedLat < 0) northing += 10000000.0;
+
+  return `${zone}${clampedLat >= 0 ? 'N' : 'S'} ${Math.round(easting)}E ${Math.round(northing)}N`;
+}
+
+window.copyCustomCoordsText = function(text) {
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`Coordenadas copiadas:\n${text}`);
+    }).catch(() => {});
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    alert(`Coordenadas copiadas:\n${text}`);
+  }
+};
+
+window.setRouteOriginPoint = function(lat, lng, label) {
+  toggleRoutePlanner(true);
+  routeOrigin = { lat, lng, label };
+  const fromInput = document.getElementById('route-from-input');
+  if (fromInput) fromInput.value = label;
+  if (routeOrigin && routeDest) calculateRoute();
+};
+
+window.quickAddWaypointAt = function(lat, lng, suggestedName) {
+  const nameIn = document.getElementById('wpt-name-input');
+  const latIn = document.getElementById('wpt-lat-input');
+  const lngIn = document.getElementById('wpt-lng-input');
+  if (latIn) latIn.value = Number(lat).toFixed(5);
+  if (lngIn) lngIn.value = Number(lng).toFixed(5);
+  if (nameIn && suggestedName) nameIn.value = suggestedName;
+  toggleWaypointsDrawer(true);
+  if (nameIn) nameIn.focus();
+};
+
+let reverseGeocodePopup = null;
+
+async function openReverseGeocodePopup(lat, lng) {
+  if (!mapInstance || typeof maplibregl === 'undefined') return;
+  if (reverseGeocodePopup) {
+    reverseGeocodePopup.remove();
+    reverseGeocodePopup = null;
+  }
+
+  const decStr = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const dmsStr = formatCoordsDMS(lat, lng);
+  const utmStr = formatCoordsUTM(lat, lng);
+
+  const container = document.createElement('div');
+  container.style.cssText = 'color:#e2e8f0;font-family:sans-serif;font-size:12px;min-width:235px;max-width:285px;padding:4px;';
+  container.innerHTML = `<div style="font-weight:700;color:#38bdf8;">🔎 Identificando via e coordenadas...</div><div style="font-size:10px;color:#94a3b8;margin-top:4px;">${escapeHtmlSafe(decStr)}</div>`;
+
+  reverseGeocodePopup = new maplibregl.Popup({ closeButton: true, maxWidth: '305px' })
+    .setLngLat([lng, lat])
+    .setDOMContent(container)
+    .addTo(mapInstance);
+
+  let rev = null;
+  try {
+    const res = await fetch(`/api/streets/reverse?lat=${lat}&lng=${lng}`);
+    if (res.ok) rev = await res.json();
+  } catch (e) {}
+
+  let titleText = 'Ponto Tático no Mapa';
+  let subText = '';
+  let pointLabel = decStr;
+
+  if (rev && rev.street && rev.street.name) {
+    titleText = rev.street.name;
+    const distInfo = typeof rev.distanceMeters === 'number' ? ` (~${rev.distanceMeters} m)` : '';
+    const cityUf = rev.street.city ? `${rev.street.city}/${rev.street.state || ''}` : (rev.city ? `${rev.city.name}/${rev.city.state}` : '');
+    subText = `${rev.street.kind || 'Via'}${distInfo}${cityUf ? ' • ' + cityUf : ''}`;
+    pointLabel = cityUf ? `${rev.street.name} (${cityUf})` : rev.street.name;
+  } else if (rev && rev.city) {
+    titleText = `${rev.city.name} (${rev.city.state})`;
+    subText = `Região municipal • IBGE ${rev.city.codigo_ibge || ''}`;
+    pointLabel = `${rev.city.name} (${rev.city.state})`;
+  } else if (citiesList && citiesList.length > 0) {
+    let nearest = null;
+    let minDist = Infinity;
+    for (const c of citiesList) {
+      const d = getDistanceFromLatLonInKm(lat, lng, c.lat, c.lng);
+      if (d < minDist) {
+        minDist = d;
+        nearest = c;
+      }
+    }
+    if (nearest) {
+      subText = `Próx. a ${nearest.name}/${nearest.state} (~${minDist.toFixed(1)} km)`;
+      pointLabel = `${nearest.name} (${nearest.state})`;
+    }
+  }
+
+  let poisHtml = '';
+  if (rev && Array.isArray(rev.nearbyPois) && rev.nearbyPois.length > 0) {
+    const topPoi = rev.nearbyPois[0];
+    poisHtml = `<div style="margin-top:6px;padding:4px 6px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:6px;font-size:10px;color:#6ee7b7;">
+      <strong>Apoio +próximo:</strong> ${escapeHtmlSafe(topPoi.name)} (${topPoi.distanceKm} km)
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div style="font-weight:800;font-size:13px;color:#34d399;margin-bottom:2px;">📍 ${escapeHtmlSafe(titleText)}</div>
+    ${subText ? `<div style="font-size:11px;color:#cbd5e1;margin-bottom:6px;">${escapeHtmlSafe(subText)}</div>` : ''}
+    <div style="background:rgba(15,23,42,0.85);border:1px solid rgba(148,163,184,0.22);border-radius:6px;padding:5px 7px;font-family:monospace;font-size:10px;color:#e2e8f0;line-height:1.45;">
+      <div><strong>DEC:</strong> ${escapeHtmlSafe(decStr)}</div>
+      <div><strong>DMS:</strong> ${escapeHtmlSafe(dmsStr)}</div>
+      <div><strong>UTM:</strong> ${escapeHtmlSafe(utmStr)}</div>
+    </div>
+    ${poisHtml}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:7px;">
+      <button type="button" data-act="origin" style="padding:4px 6px;border-radius:5px;border:1px solid rgba(16,185,129,0.4);background:rgba(16,185,129,0.18);color:#6ee7b7;font-size:10px;font-weight:700;cursor:pointer;">🏁 Origem Rota</button>
+      <button type="button" data-act="dest" style="padding:4px 6px;border-radius:5px;border:1px solid rgba(56,189,248,0.4);background:rgba(56,189,248,0.18);color:#7dd3fc;font-size:10px;font-weight:700;cursor:pointer;">🧭 Destino Rota</button>
+      <button type="button" data-act="wpt" style="padding:4px 6px;border-radius:5px;border:1px solid rgba(251,191,36,0.4);background:rgba(251,191,36,0.15);color:#fde68a;font-size:10px;font-weight:700;cursor:pointer;">📌 Salvar Ponto</button>
+      <button type="button" data-act="support" style="padding:4px 6px;border-radius:5px;border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.16);color:#fca5a5;font-size:10px;font-weight:700;cursor:pointer;">🚑 Socorro Aqui</button>
+    </div>
+    <button type="button" data-act="copy" style="width:100%;margin-top:4px;padding:4px 6px;border-radius:5px;border:1px solid rgba(148,163,184,0.3);background:rgba(30,41,59,0.85);color:#cbd5e1;font-size:10px;font-weight:600;cursor:pointer;">📋 Copiar DEC / DMS / UTM</button>
+  `;
+
+  container.querySelector('[data-act="origin"]')?.addEventListener('click', () => {
+    window.setRouteOriginPoint(lat, lng, pointLabel);
+  });
+  container.querySelector('[data-act="dest"]')?.addEventListener('click', () => {
+    window.setRouteDestination(lat, lng, pointLabel);
+  });
+  container.querySelector('[data-act="wpt"]')?.addEventListener('click', () => {
+    window.quickAddWaypointAt(lat, lng, titleText);
+  });
+  container.querySelector('[data-act="support"]')?.addEventListener('click', () => {
+    window.toggleNearbySupportDrawer(true, lat, lng, pointLabel);
+  });
+  container.querySelector('[data-act="copy"]')?.addEventListener('click', () => {
+    window.copyCustomCoordsText(`DEC: ${decStr} | DMS: ${dmsStr} | UTM: ${utmStr}`);
+  });
+}
+
+// =====================================================================
+// PREFETCH DE RUAS z=14 POR CIDADE & PONTE KIWIX NO PORTAL
+// =====================================================================
+
+window.prefetchSelectedCityStreets = async function() {
+  if (!currentSelectedCity) return;
+  const btn = document.getElementById('btn-prefetch-city');
+  const statusEl = document.getElementById('drawer-prefetch-status');
+  if (btn) btn.disabled = true;
+  if (statusEl) {
+    statusEl.className = 'text-xs text-cyan-400 mt-2';
+    statusEl.textContent = `⏳ Baixando blocos z=14 e indexando ruas de ${currentSelectedCity.name}...`;
+  }
+
+  try {
+    const res = await fetch('/api/maps/prefetch-city', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lat: currentSelectedCity.lat,
+        lng: currentSelectedCity.lng,
+        radiusKm: 3.2
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Falha no servidor');
+    }
+    if (statusEl) {
+      statusEl.className = 'text-xs text-emerald-400 mt-2';
+      statusEl.textContent = `✅ ${data.tilesDownloaded} novos blocos (${data.tilesCached} em cache) • +${data.streetsLearnedNow} ruas indexadas (Total: ${(data.totalStreetsInDb || 0).toLocaleString('pt-BR')})`;
+    }
+    try {
+      const sRes = await fetch('/api/status');
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        window.nomadStatusData = sData;
+        renderStatusSummaryFromData(sData);
+      }
+    } catch (e) {}
+  } catch (err) {
+    if (statusEl) {
+      statusEl.className = 'text-xs text-amber-400 mt-2';
+      statusEl.textContent = `⚠️ Não foi possível baixar agora (verifique conexão): ${err.message || err}`;
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+window.openSelectedCityInWikiTab = async function() {
+  if (!currentSelectedCity) return;
+  const city = currentSelectedCity;
+  const primaryBook = window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
+  const targetSlug = (city.wiki_query || `${city.name}_(${city.state_name || city.state})`).replace(/ /g, '_');
+  let finalUrl = `http://localhost:8090/content/${encodeURIComponent(primaryBook)}/${encodeURIComponent(targetSlug)}`;
+
+  try {
+    const res = await fetch(`/api/kiwix/resolve?q=${encodeURIComponent(city.wiki_query || city.name)}`);
+    if (res.ok) {
+      const resolved = await res.json();
+      if (resolved && resolved.ok) {
+        finalUrl = resolved.articleUrl || resolved.searchUrl || finalUrl;
+      }
+    }
+  } catch (e) {}
+
+  switchTab('wiki');
+  const iframe = document.getElementById('kiwix-iframe');
+  if (iframe) {
+    iframe.setAttribute('src', finalUrl);
+  }
+};
+
+// =====================================================================
+// RADAR DE SOCORRO & APOIO PRÓXIMO
+// =====================================================================
+
+let nearbySupportRadiusKm = 25;
+let nearbySupportCategory = 'all';
+let nearbySupportMarkers = [];
+let nearbySupportAnchor = null;
+
+const SUPPORT_CAT_ICONS = {
+  hospital: '🏥',
+  rescue: '🚒',
+  police: '🚓',
+  fuel: '⛽',
+  water: '💧',
+  shelter: '🏕️',
+  default: '🚑'
+};
+
+function clearNearbySupportMarkers() {
+  if (Array.isArray(nearbySupportMarkers)) {
+    nearbySupportMarkers.forEach(m => m.remove());
+  }
+  nearbySupportMarkers = [];
+}
+
+window.toggleNearbySupportDrawer = function(force, customLat, customLng, customLabel) {
+  const drawer = document.getElementById('nearby-support-drawer');
+  const btn = document.getElementById('btn-toggle-nearby-support');
+  const routePanel = document.getElementById('route-planner-panel');
+  const routeBtn = document.getElementById('btn-toggle-route-panel');
+  const wptDrawer = document.getElementById('waypoints-drawer');
+  const wptBtn = document.getElementById('layer-btn-waypoints');
+  if (!drawer) return;
+
+  const isOpen = drawer.classList.contains('open');
+  const shouldOpen = typeof force === 'boolean' ? force : !isOpen;
+
+  if (shouldOpen) {
+    if (routePanel) routePanel.classList.remove('open');
+    if (routeBtn) routeBtn.classList.remove('active');
+    if (wptDrawer) wptDrawer.classList.remove('open');
+    if (wptBtn) wptBtn.classList.remove('active');
+    if (window.innerWidth <= 900 && typeof closeCityDrawer === 'function') closeCityDrawer();
+
+    drawer.classList.add('open');
+    if (btn) btn.classList.add('active');
+    if (typeof currentTab !== 'undefined' && currentTab !== 'map') switchTab('map');
+    window.loadNearbySupportResults(customLat, customLng, customLabel);
+  } else {
+    drawer.classList.remove('open');
+    if (btn) btn.classList.remove('active');
+    clearNearbySupportMarkers();
+  }
+};
+
+window.setNearbySupportRadius = function(km) {
+  nearbySupportRadiusKm = km;
+  document.querySelectorAll('.nearby-radius-chip').forEach(el => {
+    const val = parseFloat(el.getAttribute('data-radius'));
+    el.classList.toggle('active', val === km);
+  });
+  if (nearbySupportAnchor) {
+    window.loadNearbySupportResults(nearbySupportAnchor.lat, nearbySupportAnchor.lng, nearbySupportAnchor.label);
+  } else {
+    window.loadNearbySupportResults();
+  }
+};
+
+window.setNearbySupportCategory = function(cat) {
+  nearbySupportCategory = cat || 'all';
+  document.querySelectorAll('.nearby-cat-chip').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-cat') === nearbySupportCategory);
+  });
+  if (nearbySupportAnchor) {
+    window.loadNearbySupportResults(nearbySupportAnchor.lat, nearbySupportAnchor.lng, nearbySupportAnchor.label);
+  } else {
+    window.loadNearbySupportResults();
+  }
+};
+
+window.loadNearbySupportResults = async function(customLat, customLng, customLabel) {
+  const listEl = document.getElementById('nearby-support-list');
+  const summaryEl = document.getElementById('nearby-support-summary');
+  const centerEl = document.getElementById('nearby-center-label');
+
+  let lat = -15.7942;
+  let lng = -47.8822;
+  let anchorText = 'Centro do Mapa';
+
+  if (typeof customLat === 'number' && typeof customLng === 'number' && !isNaN(customLat) && !isNaN(customLng)) {
+    lat = customLat;
+    lng = customLng;
+    anchorText = customLabel || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    nearbySupportAnchor = { lat, lng, label: anchorText };
+  } else {
+    nearbySupportAnchor = null;
+    if (mapInstance) {
+      const c = mapInstance.getCenter();
+      lat = c.lat;
+      lng = c.lng;
+      anchorText = `Mapa (${lat.toFixed(3)}, ${lng.toFixed(3)})`;
+    }
+  }
+
+  if (centerEl) centerEl.textContent = anchorText;
+  if (listEl) listEl.innerHTML = '<div class="text-xs text-cyan-400 py-3 text-center">📡 Escaneando apoio offline na área...</div>';
+  clearNearbySupportMarkers();
+
+  try {
+    const res = await fetch(
+      `/api/nearby-support?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radiusKm=${encodeURIComponent(nearbySupportRadiusKm)}&category=${encodeURIComponent(nearbySupportCategory)}`
+    );
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      if (summaryEl) summaryEl.textContent = `0 pontos em ${nearbySupportRadiusKm} km`;
+      if (listEl) {
+        listEl.innerHTML = `<div class="text-xs text-gray-400 py-3 text-center">Nenhum ponto encontrado em ${nearbySupportRadiusKm} km para esta categoria. Tente aumentar o raio para 50 km ou navegar para a área urbana.</div>`;
+      }
+      return;
+    }
+
+    if (summaryEl) summaryEl.textContent = `${items.length} ponto(s) em até ${nearbySupportRadiusKm} km`;
+    if (listEl) {
+      listEl.innerHTML = '';
+      items.forEach(item => {
+        const icon = SUPPORT_CAT_ICONS[item.category] || SUPPORT_CAT_ICONS.default;
+        const card = document.createElement('div');
+        card.className = 'wpt-item';
+        const subPlace = [item.city, item.state].filter(Boolean).join('/');
+        const metaParts = [`<strong>${item.distanceKm} km</strong>`];
+        if (subPlace) metaParts.push(escapeHtmlSafe(subPlace));
+        if (item.phone) metaParts.push(`☎️ ${escapeHtmlSafe(item.phone)}`);
+
+        card.innerHTML = `
+          <span class="wpt-icon">${icon}</span>
+          <div class="wpt-details" style="min-width:0;flex:1;">
+            <div class="wpt-title">${escapeHtmlSafe(item.name)}</div>
+            <div class="wpt-coords">${metaParts.join(' &bull; ')}</div>
+            ${item.details ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${escapeHtmlSafe(item.details)}</div>` : ''}
+          </div>
+          <div class="wpt-actions">
+            <button type="button" class="wpt-act-btn" data-act="focus" title="Ver no mapa">🔍</button>
+            <button type="button" class="wpt-act-btn route" data-act="route" title="Traçar rota até aqui">🧭</button>
+          </div>
+        `;
+        card.querySelector('[data-act="focus"]')?.addEventListener('click', () => {
+          flyToCoords(item.lat, item.lng, item.name, 15);
+        });
+        card.querySelector('[data-act="route"]')?.addEventListener('click', () => {
+          window.setRouteDestination(item.lat, item.lng, item.name);
+        });
+        listEl.appendChild(card);
+
+        if (mapInstance && typeof maplibregl !== 'undefined' && typeof item.lat === 'number' && typeof item.lng === 'number') {
+          const el = document.createElement('div');
+          el.innerHTML = `<div style="background:rgba(239,68,68,0.92);border:2px solid #fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 0 10px rgba(239,68,68,0.65);cursor:pointer;">${icon}</div>`;
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([item.lng, item.lat])
+            .setPopup(
+              new maplibregl.Popup({ offset: 18 }).setHTML(
+                `<div style="color:#fff;font-family:sans-serif;font-size:12px;padding:3px;">
+                  <div style="font-weight:800;color:#fca5a5;">${icon} ${escapeHtmlSafe(item.name)}</div>
+                  <div style="font-size:10px;color:#cbd5e1;margin:2px 0;">${item.distanceKm} km${subPlace ? ' • ' + escapeHtmlSafe(subPlace) : ''}</div>
+                  ${item.phone ? `<div style="font-size:10px;color:#6ee7b7;">☎️ ${escapeHtmlSafe(item.phone)}</div>` : ''}
+                </div>`
+              )
+            )
+            .addTo(mapInstance);
+          nearbySupportMarkers.push(marker);
+        }
+      });
+    }
+  } catch (err) {
+    if (summaryEl) summaryEl.textContent = 'Erro no radar offline';
+    if (listEl) listEl.innerHTML = '<div class="text-xs text-red-400 py-3 text-center">Falha ao consultar /api/nearby-support.</div>';
+  }
+};
+
+// =====================================================================
+// BACKUP & RESTAURAÇÃO COMPLETA (.JSON: WAYPOINTS, PEF, BOB, PACE)
+// =====================================================================
+
+window.exportFullTacticalBackup = function() {
+  const safeParse = (key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const payload = {
+    app: 'nomad-brasil',
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    waypoints: Array.isArray(userWaypoints) ? userWaypoints : [],
+    pef: safeParse('nomad_pef_data_v1'),
+    bob: safeParse('nomad_bob_checked_state_v1'),
+    pace: safeParse('nomad_pace_plan_v1')
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `nomad-brasil-backup-${dateStamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  const msgEl = document.getElementById('backup-status-message');
+  if (msgEl) {
+    msgEl.className = 'text-xs text-emerald-400 mt-3';
+    msgEl.textContent = `✅ Backup exportado (${payload.waypoints.length} waypoints, PEF, BOB e PACE).`;
+  }
+};
+
+window.importFullTacticalBackup = function(event) {
+  const file = event && event.target && event.target.files ? event.target.files[0] : null;
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const msgEl = document.getElementById('backup-status-message');
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed || typeof parsed !== 'object') {
+        throw new Error('Estrutura JSON inválida');
+      }
+
+      const restoredSections = [];
+
+      if (Array.isArray(parsed.waypoints)) {
+        userWaypoints = parsed.waypoints.filter(w => w && typeof w.lat === 'number' && typeof w.lng === 'number');
+        saveUserWaypointsToStorage();
+        restoredSections.push(`Waypoints (${userWaypoints.length})`);
+      }
+
+      if (parsed.pef && typeof parsed.pef === 'object') {
+        localStorage.setItem('nomad_pef_data_v1', JSON.stringify(parsed.pef));
+        if (typeof window.loadPefData === 'function') window.loadPefData();
+        restoredSections.push('PEF');
+      }
+
+      if (parsed.bob && typeof parsed.bob === 'object') {
+        localStorage.setItem('nomad_bob_checked_state_v1', JSON.stringify(parsed.bob));
+        if (typeof renderBobKit === 'function') renderBobKit();
+        restoredSections.push('BOB');
+      }
+
+      if (parsed.pace && typeof parsed.pace === 'object') {
+        localStorage.setItem('nomad_pace_plan_v1', JSON.stringify(parsed.pace));
+        if (typeof window.loadPacePlan === 'function') window.loadPacePlan();
+        restoredSections.push('PACE');
+      }
+
+      if (restoredSections.length === 0) {
+        throw new Error('Nenhum bloco reconhecido (waypoints, pef, bob, pace) encontrado neste arquivo.');
+      }
+
+      if (msgEl) {
+        msgEl.className = 'text-xs text-emerald-400 mt-3';
+        msgEl.textContent = `✅ Restauração concluída: ${restoredSections.join(', ')}.`;
+      }
+      alert(`Backup restaurado com sucesso:\n${restoredSections.join(', ')}`);
+    } catch (err) {
+      if (msgEl) {
+        msgEl.className = 'text-xs text-red-400 mt-3';
+        msgEl.textContent = `❌ Falha ao restaurar backup: ${err.message || err}`;
+      }
+      alert(`Erro ao restaurar arquivo JSON: ${err.message || err}`);
+    } finally {
+      if (event && event.target) event.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+};

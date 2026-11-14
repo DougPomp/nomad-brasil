@@ -873,7 +873,8 @@ select option:checked, select option:hover {
   border-color: var(--accent-green);
 }
 
-.chip-highlight {
+.chip-highlight,
+.chip-btn.active {
   background: rgba(16, 185, 129, 0.18);
   border-color: var(--accent-green);
   color: #34d399;

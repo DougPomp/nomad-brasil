@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomad-brasil-v9';
+const CACHE_NAME = 'nomad-brasil-v10';
 const OFFLINE_URLS = [
   '/',
   '/index.html',
@@ -59,11 +59,35 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Street search API: Network-First so newly learned SQLite entries always reflect immediately
-  if (url.pathname.startsWith('/api/streets')) {
+  // Status endpoint: Network-First with cache fallback so live diagnostics update online & survive offline
+  if (url.pathname === '/api/status') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Dynamic operational APIs: Network-First without stale cache
+  if (
+    url.pathname.startsWith('/api/streets') ||
+    url.pathname === '/api/waypoints' ||
+    url.pathname === '/api/nearby-support' ||
+    url.pathname === '/api/maps/prefetch-city' ||
+    url.pathname === '/api/kiwix/resolve' ||
+    url.pathname === '/api/route'
+  ) {
+    const emptyBody = (url.pathname === '/api/streets' || url.pathname === '/api/waypoints' || url.pathname === '/api/nearby-support') ? '[]' : '{"error":"offline"}';
     event.respondWith(
       fetch(event.request).catch(() =>
-        new Response('[]', {
+        new Response(emptyBody, {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
         })

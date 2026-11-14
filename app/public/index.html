@@ -518,6 +518,9 @@
               <button type="button" class="btn-toggle-routes" id="btn-toggle-route-panel" onclick="toggleRoutePlanner()">
                 <span>🧭</span> <span class="btn-text-hide-sm">Rotas</span>
               </button>
+              <button type="button" class="btn-toggle-wpts" id="btn-toggle-nearby-support" onclick="toggleNearbySupportDrawer()">
+                <span>🚑</span> <span class="btn-text-hide-sm">Socorro</span>
+              </button>
               <button type="button" class="btn-toggle-wpts" id="layer-btn-waypoints" onclick="toggleWaypointsDrawer()">
                 <span>📌</span> <span class="btn-text-hide-sm">Pontos</span> (<span id="user-wpt-badge">0</span>)
               </button>
@@ -743,6 +746,53 @@
             </div>
           </div>
 
+          <!-- Drawer 2B: Nearby Emergency & Support Radar -->
+          <div id="nearby-support-drawer" class="route-planner-panel">
+            <div class="route-panel-header">
+              <div class="flex items-center gap-2">
+                <span class="route-badge" style="background: rgba(239,68,68,0.18); color: #f87171; border-color: rgba(239,68,68,0.4);">SOCORRO</span>
+                <span class="text-sm font-bold text-white">Radar de Apoio Próximo</span>
+              </div>
+              <button type="button" class="drawer-close-btn" onclick="toggleNearbySupportDrawer(false)" title="Fechar">&times;</button>
+            </div>
+
+            <div class="route-panel-body">
+              <div class="route-inputs-card">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-bold text-gray-300 uppercase">Raio de Busca</span>
+                  <span class="text-xs text-emerald-400 font-mono" id="nearby-center-label">Centro do Mapa</span>
+                </div>
+                <div class="flex gap-1 mb-2">
+                  <button type="button" class="chip-btn nearby-radius-chip" data-radius="10" onclick="setNearbySupportRadius(10)">10 km</button>
+                  <button type="button" class="chip-btn nearby-radius-chip active" data-radius="25" onclick="setNearbySupportRadius(25)">25 km</button>
+                  <button type="button" class="chip-btn nearby-radius-chip" data-radius="50" onclick="setNearbySupportRadius(50)">50 km</button>
+                </div>
+
+                <div class="text-xs font-bold text-gray-300 uppercase mb-1">Categoria</div>
+                <div class="flex flex-wrap gap-1 mb-2">
+                  <button type="button" class="chip-btn nearby-cat-chip active" data-cat="all" onclick="setNearbySupportCategory('all')">Todos</button>
+                  <button type="button" class="chip-btn nearby-cat-chip" data-cat="hospital" onclick="setNearbySupportCategory('hospital')">🏥 Hospitais</button>
+                  <button type="button" class="chip-btn nearby-cat-chip" data-cat="rescue" onclick="setNearbySupportCategory('rescue')">🚒 Bombeiros/SAMU</button>
+                  <button type="button" class="chip-btn nearby-cat-chip" data-cat="police" onclick="setNearbySupportCategory('police')">🚓 Polícia/PRF</button>
+                  <button type="button" class="chip-btn nearby-cat-chip" data-cat="fuel" onclick="setNearbySupportCategory('fuel')">⛽ Combustível</button>
+                  <button type="button" class="chip-btn nearby-cat-chip" data-cat="water" onclick="setNearbySupportCategory('water')">💧 Água</button>
+                </div>
+
+                <button type="button" class="btn-export-gpx" style="width:100%;" onclick="loadNearbySupportResults()">
+                  <span>📡</span> Escanear no Centro Atual do Mapa
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase" id="nearby-support-summary">Aguardando busca...</span>
+              </div>
+
+              <div id="nearby-support-list" class="route-steps-list" style="max-height: 290px;">
+                <div class="text-xs text-gray-500 text-center">Clique em escanear para listar pontos próximos.</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Drawer 3: City Intel Drawer -->
           <div id="city-intel-drawer" class="city-intel-drawer">
             <div class="drawer-header">
@@ -791,7 +841,7 @@
               </div>
 
               <div class="drawer-section">
-                <div class="drawer-section-title">🔍 Navegação Tática</div>
+                <div class="drawer-section-title">🔍 Navegação &amp; Cobertura Offline</div>
                 <div class="drawer-actions-row">
                   <button type="button" class="btn-drawer-action" onclick="zoomCity(14)">
                     <span>🏘️</span> Zoom Ruas (14)
@@ -802,7 +852,11 @@
                   <button type="button" class="btn-drawer-action btn-route-city-action" onclick="planRouteToSelectedCity()">
                     <span>🧭</span> Traçar Rota até esta Cidade
                   </button>
+                  <button type="button" class="btn-drawer-action" id="btn-prefetch-city" onclick="prefetchSelectedCityStreets()">
+                    <span>📥</span> Baixar Todas as Ruas da Cidade (Offline z=14)
+                  </button>
                 </div>
+                <div id="drawer-prefetch-status" class="text-xs text-gray-400 mt-2"></div>
               </div>
 
               <div class="drawer-section">
@@ -814,6 +868,9 @@
                     <div class="text-xs text-emerald-400">História, demografia, relevo e economia</div>
                   </div>
                 </a>
+                <button type="button" class="btn-drawer-action w-full mt-2" onclick="openSelectedCityInWikiTab()">
+                  <span>📖</span> Abrir na Aba Wikipédia do Portal
+                </button>
               </div>
 
               <div class="drawer-section">
@@ -2238,6 +2295,26 @@
             </button>
             <div class="text-xs text-gray-500 mt-3" id="export-status-message">
               Tamanho estimado: ~1.2 MB &bull; Funciona sem internet em qualquer dispositivo
+            </div>
+          </div>
+
+          <div class="tactical-card text-center" style="padding: 2rem 1.5rem; margin-top: 1rem;">
+            <div style="font-size: 2.75rem; margin-bottom: 0.65rem;">💾</div>
+            <h3 class="text-lg font-bold text-white mb-2">Backup &amp; Restauração de Dados Pessoais (.JSON)</h3>
+            <p class="text-xs text-gray-300 max-w-xl mx-auto mb-4">
+              Exporte ou restaure todos os seus marcadores do mapa (Waypoints), Ponto de Encontro Familiar (PEF), checklist da Mochila (BOB) e plano de comunicação PACE em um único arquivo JSON portável.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:0.75rem; justify-content:center; align-items:center;">
+              <button type="button" class="btn-calc-route" style="display:inline-flex; padding: 0.75rem 1.35rem; font-size: 0.88rem;" onclick="exportFullTacticalBackup()">
+                <span>📤</span> Exportar Backup Completo (.json)
+              </button>
+              <label class="btn-drawer-action" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.45rem; padding: 0.75rem 1.35rem; font-size: 0.88rem;">
+                <span>📂</span> Restaurar Backup (.json)
+                <input type="file" id="full-backup-import-input" accept=".json,application/json" style="display:none;" onchange="importFullTacticalBackup(event)">
+              </label>
+            </div>
+            <div class="text-xs text-gray-400 mt-3" id="backup-status-message">
+              Inclui Waypoints (sincronizados no servidor), PEF, BOB e PACE.
             </div>
           </div>
         </div>

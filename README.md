@@ -21,10 +21,11 @@
 O **NOMAD Brasil** é uma plataforma *open source* criada para prover infraestrutura crítica de informação durante apagões prolongados, catástrofes climáticas, colapso de redes ou operações de campo em áreas remotas do território nacional.
 
 O sistema integra em uma interface tática ultra-rápida em *dark mode*:
-- **🗺️ Cartografia Vetorial Offline & Detalhe Urbano (`z=14` / Zoom 18):** Cobertura do Brasil inteiro via PMTiles (1,57 GB) com MapLibre GL JS sem depender de serviços externos, somada a camada híbrida de detalhe urbano (`z=14` até zoom `18`) com edificações, vias residenciais e cache persistente em disco.
-- **📍 Todos os 5.571 Municípios do IBGE + 416 mil+ Logradouros (SQLite FTS5):** Busca híbrida instantânea de cidades, ruas, avenidas, rodovias (`ref`) e POIs com suporte a abreviações brasileiras (`Av`/`Avenida`, `Dr`/`Doutor`, `15`/`XV`), prioridade por proximidade ao centro do mapa, destaque luminoso da via selecionada e auto-aprendizado permanente em SQLite.
-- **🚗 Rotas Táticas Híbridas (Porta a Porta por Rua ou Município):** Deslocamento rodoviário, off-road (4x4) e marcha a pé ponto a ponto entre ruas/endereços ou cidades, com cache permanente em disco e exportador **GPX** para Garmin e OsmAnd.
-- **📚 Acervo Enciclopédico Kiwix (23+ GB):** Wikipédia em português com imagens, guias médicos militares e manuais de emergência.
+- **🗺️ Cartografia Vetorial Offline & Detalhe Urbano (`z=14` / Zoom 18):** Cobertura do Brasil inteiro via PMTiles (1,57 GB) com MapLibre GL JS sem depender de serviços externos, pré-carregamento em 1 clique das vias residenciais de qualquer cidade (`z=14`), cache persistente em disco e geocodificação reversa offline no clique/botão direito (Decimal, DMS e UTM).
+- **📍 Todos os 5.571 Municípios do IBGE + 416 mil+ Logradouros (SQLite FTS5):** Busca híbrida instantânea de cidades, ruas, avenidas, rodovias (`ref`) e POIs com sinônimos brasileiros (`Av`/`Avenida`, `Dr`/`Doutor`, `15`/`XV`), Radar de Socorro próximo (`🚑 Socorro`), prioridade por proximidade e auto-aprendizado em SQLite.
+- **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline):** Roteamento por rua ou município com OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, corredor tático de contingência e exportação **GPX** para Garmin e OsmAnd.
+- **📚 Acervo Enciclopédico Kiwix Integrado (23+ GB):** Wikipédia em português servida na porta 8090 com diagnóstico automático de livros ZIM e abertura direta de municípios do mapa na aba enciclopédia do portal.
+- **💾 Persistência Tática & Backup Portátil:** Sincronização automática dos marcadores pessoais (Waypoints) em disco (`storage/user_waypoints.json`) + exportação/restauração completa em `.JSON` (`Waypoints`, `PEF`, `BOB` e `PACE`).
 - **🛠️ 56 Módulos Especializados:** Guias interativos, calculadoras técnicas e protocolos operacionais para todas as dimensões de sobrevivência e autossuficiência.
 
 ---
@@ -32,10 +33,10 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 ## 🛡️ Arsenal de Módulos (56 Ferramentas)
 
 ### 1. 🗺️ Cartografia, Navegação & Deslocamento
-1. **Mapas Nacionais em Nível de Ruas (Zoom até 18):** Visualizador vetorial acelerado por GPU com camada de relevo, estradas, edificações e vias residenciais (`z=14` com cache persistente local) e destaque visual da rua selecionada.
-2. **Busca Híbrida de 5.571 Municípios & 416 mil+ Ruas (SQLite FTS5):** Motor local `brazil-streets.sqlite` integrado com sinônimos brasileiros (`Av`↔`Avenida`, `Dr`↔`Doutor`, `15`↔`XV`), ranking por proximidade e aprendizado automático contínuo de ruas residenciais.
-3. **Planejador de Rotas & Evacuação (Cidade ou Rua a Rua):** Autocomplete de ruas e cidades na origem e no destino, atalho direto no popup da via (*"Traçar Rota até esta Rua"*), estimativa de combustível, água e calorias e exportação GPX.
-4. **Waypoints & POIs Estratégicos:** Hospitais, UPAs 24h, Batalhões da PM/Bombeiros (193), PRF, Fontes de Água e Postos 24h.
+1. **Mapas Nacionais em Nível de Ruas (`z=14` sob Demanda & Zoom 18):** Visualizador vetorial acelerado por GPU com camada de relevo, estradas, edificações, pré-carregamento urbano em lote (`z=14`) e destaque visual da rua selecionada.
+2. **Busca Híbrida + Geocodificação Reversa Offline:** Motor local `brazil-streets.sqlite` integrado com sinônimos brasileiros e inspeção de qualquer ponto do mapa (clique ou botão direito) exibindo a via mais próxima, coordenadas **Decimal / DMS / UTM** e atalhos rápidos.
+3. **Planejador de Rotas & Evacuação (OSRM + Grafo A\* Offline):** Autocomplete de ruas/cidades, cálculo offline curva a curva sobre tiles MVT locais em deslocamentos curtos, estimativa de combustível/água/calorias e exportação GPX.
+4. **Radar de Socorro Próximo & Waypoints Persistentes:** Escaneamento instantâneo de hospitais, bombeiros/SAMU, PRF, postos e fontes de água em raios de `10`, `25` ou `50 km`, somado a marcadores pessoais salvos tanto no navegador quanto no servidor (`user_waypoints.json`) e backup completo em `.JSON`.
 5. **Bússola Digital & Orientação Natural:** Rumo magnético, orientação solar por sombra de vareta e método analógico do relógio.
 6. **Navegação Celeste (Hemisfério Sul):** Localização do Sul verdadeiro pelo Cruzeiro do Sul e constelação de Órion.
 7. **Topografia de Expedição & Triangulação:** Leitura de cartas topográficas, cálculo de declividade e triangulação com bússola.
@@ -164,16 +165,16 @@ nomad-brasil/
 │   │   ├── survival.json       # Manuais técnicos de resiliência e campo
 │   │   └── routes_cache/       # Cache permanente em disco de todas as rotas traçadas
 │   └── public/
-│       ├── index.html          # Interface tática em dark mode com os 56 módulos
+│       ├── index.html          # Interface tática em dark mode com os 56 módulos + backup JSON + Socorro
 │       ├── styles.css          # Design system com sidebar tática e controles escuros
-│       ├── app.js              # Lógica de mapas, busca híbrida, rotas rua a rua, POIs, áudio Morse e estoque
-│       ├── sw.js               # Service Worker PWA (v9) para operação offline e Network-First em /api/streets
+│       ├── app.js              # Mapas, geocodificação reversa, prefetch z=14, radar de socorro, rotas, backup
+│       ├── sw.js               # Service Worker PWA (v10) para operação offline e Network-First nas APIs
 │       ├── banner.svg          # Banner vetorizado da marca
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
 │   ├── index.html              # Showcase completo das ferramentas táticas
-│   ├── sw.js                   # Service Worker do GitHub Pages (v8)
+│   ├── sw.js                   # Service Worker do GitHub Pages (v9)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -183,6 +184,7 @@ nomad-brasil/
 │   │   ├── brazil-streets.sqlite       # Índice SQLite FTS5 (WAL, ~48 MB, 416k+ vias + auto-aprendizado)
 │   │   ├── detail_tiles_cache/         # Cache persistente em disco de tiles vetoriais z=14 (.pbf)
 │   │   └── basemaps-assets/fonts/      # Glyphs Noto Sans locais
+│   ├── user_waypoints.json             # Marcadores pessoais sincronizados automaticamente no servidor
 │   └── zim/
 │       ├── wikipedia_pt_all_maxi.zim   # Wikipédia Completa em Português
 │       └── kiwix-library.xml           # Catálogo XML gerado
@@ -196,23 +198,24 @@ nomad-brasil/
 
 ---
 
-## 🔍 Busca Nacional de Ruas & Auto-Aprendizado Offline (SQLite FTS5)
+## 🔍 Busca Nacional de Ruas, Pré-carregamento z=14 & Geocodificação Reversa
 
-A pesquisa de logradouros do mapa opera em 4 camadas integradas para combinar resposta instantânea offline com cobertura progressiva até o nível residencial:
+A pesquisa e inspeção de logradouros opera em 5 camadas integradas:
 1. **Índice Local SQLite FTS5 (`brazil-streets.sqlite`):** Mais de **416.426** vias, rodovias (`ref`) e pontos de interesse extraídos de 184.493 tiles `z=13` cobrindo os 5.571 municípios brasileiros, com tokenização tolerante a acentos (`unicode61 remove_diacritics 2`), sinônimos brasileiros (`Av`↔`Avenida`, `Dr`↔`Doutor`, `15`↔`XV`) e ranking por proximidade ao centro atual do mapa.
-2. **Inspeção Instantânea da Viewport:** Busca direta nas feições vetoriais atualmente renderizadas na tela pelo MapLibre GL, destacando a geometria da rua selecionada e permitindo traçar rota até ela em 1 clique.
-3. **Tiles Vetoriais de Detalhe (`z=14`) com Extração em Background:** Ao dar zoom em áreas urbanas, o servidor busca e persiste os tiles `z=14` em `storage/maps/detail_tiles_cache/` e extrai automaticamente em segundo plano as vias residenciais e POIs desses tiles para o `brazil-streets.sqlite`.
-4. **Descoberta Online Sob Demanda (`Photon` / `Nominatim`) com Persistência Offline:** Quando há conexão e uma rua residencial específica ainda não consta localmente, o backend consulta `Photon`/`Nominatim` (filtrado para o Brasil) e grava a rua descoberta permanentemente no `brazil-streets.sqlite` para futuras consultas **100% offline**.
+2. **Inspeção Instantânea & Geocodificação Reversa Offline (`/api/streets/reverse`):** Clique em qualquer rua em zoom urbano (`>= 12.5`) ou clique com o botão direito em qualquer ponto do mapa para identificar a via mais próxima diretamente nos tiles locais (`brazil-streets.pmtiles` / `detail_tiles_cache`), ver coordenadas **Decimal / DMS / UTM** e acessar atalhos de rota, waypoint ou socorro próximo.
+3. **Pré-carregamento Urbano por Cidade (`z=14` em 1 Clique):** No painel lateral da cidade selecionada, o botão **"Baixar Todas as Ruas da Cidade (Offline z=14)"** baixa em lote os tiles `z=14` ao redor do município via `/api/maps/prefetch-city`, salva em `storage/maps/detail_tiles_cache/` e indexa automaticamente todas as ruas residenciais no SQLite FTS5.
+4. **Tiles Vetoriais de Detalhe sob Demanda (`z=14`):** Ao navegar por bairros no mapa, os tiles visitados também são persistidos e indexados em segundo plano.
+5. **Descoberta Online Sob Demanda (`Photon` / `Nominatim`) com Persistência Offline:** Quando há conexão e uma rua residencial ainda não consta localmente, o backend consulta `Photon`/`Nominatim` e grava a via descoberta permanentemente no `brazil-streets.sqlite`.
 
 ---
 
-## 🚗 Sistema de Rotas Táticas (Híbrido)
+## 🚗 Sistema de Rotas Táticas & Radar de Apoio
 
-O sistema possui quádrupla camada de resiliência para cálculo de deslocamentos (tanto entre municípios quanto **porta a porta por rua/logradouro**):
-1. **Camada 1 — Rodovias & Vias Urbanas Reais (Online/OSRM):** Traçado geográfico fiel às ruas locais e rodovias federais/estaduais (Bandeirantes, Anhanguera, Dutra, BR-101, BR-116, etc.) com guia curva a curva a partir de qualquer rua ou município de origem e destino.
-2. **Camada 2 — Cache Permanente em Disco:** Qualquer rota pesquisada uma única vez é gravada localmente em `app/data/routes_cache/`. Se a internet for cortada, a rota continua disponível instantaneamente para sempre.
-3. **Camada 3 — Corredor Tático de Contingência (Zero Conexão):** Em caso de rota inédita em área sem sinal, o motor interno calcula o corredor rodoviário aproximado entre as coordenadas (rua ou cidade) com fator de curvatura real do Brasil (1,28x) e indica cidades de apoio no percurso.
-4. **Exportação GPX:** Qualquer rota calculada pode ser salva em arquivo `.gpx` para uso em aparelhos GPS Garmin ou aplicativos offline em smartphones (OsmAnd, Organic Maps).
+O sistema possui quádrupla camada de resiliência para cálculo de deslocamentos (entre municípios ou **porta a porta por rua/logradouro**) somada ao Radar de Socorro (`🚑 Socorro`):
+1. **Camada 1 — Rodovias & Vias Urbanas Reais (Online/OSRM):** Traçado geográfico fiel às ruas locais e rodovias federais/estaduais com guia curva a curva.
+2. **Camada 2 — Cache Permanente em Disco:** Qualquer rota pesquisada uma única vez é gravada localmente em `app/data/routes_cache/`.
+3. **Camada 3 — Grafo A\* Offline sobre Tiles MVT Locais (até 30 km):** Sem internet e sem rota prévia em cache, o servidor extrai a malha viária dos tiles locais (`z=13` e `detail_tiles_cache` `z=14`) e calcula uma rota curva a curva real pelo algoritmo A\* com hierarquia viária.
+4. **Camada 4 — Corredor Tático de Contingência:** Para trajetos intermunicipais inéditos acima de 30 km sem sinal, calcula o corredor com fator de curvatura nacional (`1,28x`) e municípios de apoio no percurso, mantendo exportação **GPX** universal para Garmin e OsmAnd.
 
 ---
 

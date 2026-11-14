@@ -1,6 +1,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -10,12 +12,15 @@ const __dirname = path.dirname(__filename);
 const PORT = parseInt(process.env.PORT || '8000', 10);
 const STORAGE_PATH = process.env.STORAGE_PATH || path.join(__dirname, '..', 'storage');
 
-// Open FTS5 Street Index (Option 2 - 100% Offline + Incremental Auto-Learning)
+// Open FTS5 Street Index (100% Offline + Incremental Auto-Learning)
 const streetsDbPath = path.join(STORAGE_PATH, 'maps', 'brazil-streets.sqlite');
 let streetsDb = null;
 let streetsSearchStmt = null;
 let streetsExistsStmt = null;
 let streetsInsertStmt = null;
+let streetsReverseBoxStmt = null;
+let cachedStreetsCount = 0;
+
 if (fs.existsSync(streetsDbPath)) {
   try {
     try {
@@ -26,6 +31,19 @@ if (fs.existsSync(streetsDbPath)) {
     streetsSearchStmt = streetsDb.prepare(
       "SELECT rowid AS id, name, city, state, kind, lat, lng, bm25(streets_fts, 10.0, 4.0, 1.0, 2.0) AS score FROM streets_fts WHERE streets_fts MATCH ? ORDER BY score LIMIT ?"
     );
+    try {
+      const cntRow = streetsDb.prepare('SELECT count(*) AS c FROM streets_fts_docsize').get();
+      cachedStreetsCount = Number(cntRow?.c || 0);
+    } catch {
+      cachedStreetsCount = 0;
+    }
+    try {
+      streetsReverseBoxStmt = streetsDb.prepare(
+        'SELECT id, c0 AS name, c1 AS city, c2 AS state, c3 AS kind, c4 AS lat, c5 AS lng FROM streets_fts_content WHERE c4 BETWEEN ? AND ? AND c5 BETWEEN ? AND ? LIMIT 300'
+      );
+    } catch {
+      streetsReverseBoxStmt = null;
+    }
     try {
       streetsExistsStmt = streetsDb.prepare(
         'SELECT rowid AS id, name, city, state FROM streets_fts WHERE streets_fts MATCH ? LIMIT 40'
@@ -42,6 +60,143 @@ if (fs.existsSync(streetsDbPath)) {
     streetsDb = null;
     streetsSearchStmt = null;
   }
+}
+
+// Local single-tile PMTiles reader (for offline reverse geocoding & offline A* routing)
+let pmtilesLib = null;
+let pmtilesFd = null;
+let pmtilesHeader = null;
+let pmtilesRootDir = null;
+const pmtilesLeafCache = new Map();
+
+function deserializePmtilesDirectory(buf) {
+  const cur = { buf: new Uint8Array(buf), pos: 0 };
+  const numEntries = pmtilesLib.readVarint(cur);
+  const entries = new Array(numEntries);
+  let lastId = 0;
+  for (let i = 0; i < numEntries; i++) {
+    lastId += pmtilesLib.readVarint(cur);
+    entries[i] = { tileId: lastId, offset: 0, length: 0, runLength: 1 };
+  }
+  for (let i = 0; i < numEntries; i++) entries[i].runLength = pmtilesLib.readVarint(cur);
+  for (let i = 0; i < numEntries; i++) entries[i].length = pmtilesLib.readVarint(cur);
+  for (let i = 0; i < numEntries; i++) {
+    const v = pmtilesLib.readVarint(cur);
+    entries[i].offset = v === 0 && i > 0 ? entries[i - 1].offset + entries[i - 1].length : v - 1;
+  }
+  return entries;
+}
+
+function maybeGunzipBuffer(buf) {
+  if (!buf || buf.length < 2) return buf;
+  if (buf[0] === 0x1f && buf[1] === 0x8b) {
+    return zlib.gunzipSync(buf);
+  }
+  return buf;
+}
+
+function initLocalPmtilesReader() {
+  const streetsPmtiles = path.join(STORAGE_PATH, 'maps', 'brazil-streets.pmtiles');
+  const pmtilesJsPath = path.join(__dirname, 'public', 'vendor', 'pmtiles.js');
+  if (!fs.existsSync(streetsPmtiles) || !fs.existsSync(pmtilesJsPath)) return;
+  try {
+    vm.runInThisContext(fs.readFileSync(pmtilesJsPath, 'utf8') + '\n;globalThis.__nomadPmtiles = pmtiles;');
+    pmtilesLib = globalThis.__nomadPmtiles;
+    pmtilesFd = fs.openSync(streetsPmtiles, 'r');
+    const hdrBuf = Buffer.alloc(16384);
+    fs.readSync(pmtilesFd, hdrBuf, 0, 16384, 0);
+    pmtilesHeader = pmtilesLib.bytesToHeader(hdrBuf.buffer.slice(hdrBuf.byteOffset, hdrBuf.byteOffset + 127));
+    const rootRaw = hdrBuf.subarray(
+      pmtilesHeader.rootDirectoryOffset,
+      pmtilesHeader.rootDirectoryOffset + pmtilesHeader.rootDirectoryLength
+    );
+    pmtilesRootDir = deserializePmtilesDirectory(maybeGunzipBuffer(rootRaw));
+  } catch (err) {
+    console.warn('[NOMAD Brasil] Aviso ao inicializar leitor PMTiles:', err.message);
+    if (pmtilesFd !== null) {
+      try { fs.closeSync(pmtilesFd); } catch {}
+    }
+    pmtilesFd = null;
+    pmtilesHeader = null;
+    pmtilesRootDir = null;
+  }
+}
+initLocalPmtilesReader();
+
+function readLocalPmtilesTile(z, tx, ty) {
+  if (!pmtilesFd || !pmtilesHeader || !pmtilesRootDir || !pmtilesLib) return null;
+  try {
+    const n = 1 << z;
+    if (tx < 0 || ty < 0 || tx >= n || ty >= n) return null;
+    const tileId = pmtilesLib.zxyToTileId(z, tx, ty);
+    let entry = pmtilesLib.findTile(pmtilesRootDir, tileId);
+    if (!entry) return null;
+    if (entry.runLength === 0) {
+      const leafKey = `${entry.offset}:${entry.length}`;
+      let leafDir = pmtilesLeafCache.get(leafKey);
+      if (!leafDir) {
+        const leafBuf = Buffer.allocUnsafe(entry.length);
+        fs.readSync(pmtilesFd, leafBuf, 0, entry.length, pmtilesHeader.leafDirectoryOffset + entry.offset);
+        leafDir = deserializePmtilesDirectory(maybeGunzipBuffer(leafBuf));
+        if (pmtilesLeafCache.size >= 32) {
+          const oldest = pmtilesLeafCache.keys().next().value;
+          pmtilesLeafCache.delete(oldest);
+        }
+        pmtilesLeafCache.set(leafKey, leafDir);
+      }
+      entry = pmtilesLib.findTile(leafDir, tileId);
+      if (!entry || entry.runLength === 0) return null;
+    }
+    const tileBuf = Buffer.allocUnsafe(entry.length);
+    fs.readSync(pmtilesFd, tileBuf, 0, entry.length, pmtilesHeader.tileDataOffset + entry.offset);
+    return maybeGunzipBuffer(tileBuf);
+  } catch {
+    return null;
+  }
+}
+
+function latLngToTileXY(lat, lng, z) {
+  const n = 1 << z;
+  const x = Math.floor(((lng + 180) / 360) * n);
+  const rad = (lat * Math.PI) / 180;
+  const y = Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n);
+  return [x, y];
+}
+
+function listInstalledZims() {
+  const zimDir = path.join(STORAGE_PATH, 'zim');
+  if (!fs.existsSync(zimDir)) return [];
+  try {
+    return fs.readdirSync(zimDir)
+      .filter(f => f.toLowerCase().endsWith('.zim'))
+      .map(f => ({
+        filename: f,
+        book: f.replace(/\.zim$/i, ''),
+        sizeBytes: fs.statSync(path.join(zimDir, f)).size
+      }))
+      .sort((a, b) => {
+        const score = (x) => (x.book.includes('wikipedia_pt_all') ? 3 : x.book.includes('wikipedia_pt') ? 2 : 1);
+        return score(b) - score(a) || b.sizeBytes - a.sizeBytes;
+      });
+  } catch {
+    return [];
+  }
+}
+
+function countFilesRecursive(dirPath, ext) {
+  if (!fs.existsSync(dirPath)) return 0;
+  let total = 0;
+  const stack = [dirPath];
+  while (stack.length > 0) {
+    const cur = stack.pop();
+    let entries;
+    try { entries = fs.readdirSync(cur, { withFileTypes: true }); } catch { continue; }
+    for (const ent of entries) {
+      if (ent.isDirectory()) stack.push(path.join(cur, ent.name));
+      else if (!ext || ent.name.endsWith(ext)) total++;
+    }
+  }
+  return total;
 }
 
 // Load datasets
@@ -230,7 +385,9 @@ function persistLearnedStreet(name, city, state, kind, lat, lng) {
     const rLat = Math.round(Number(lat) * 100000) / 100000;
     const rLng = Math.round(Number(lng) * 100000) / 100000;
     const info = streetsInsertStmt.run(cleanName, cleanCity, cleanState, kind || 'Via', rLat, rLng);
-    return Number(info.lastInsertRowid || 0);
+    const insertedId = Number(info.lastInsertRowid || 0);
+    if (insertedId > 0) cachedStreetsCount++;
+    return insertedId;
   } catch {
     return false;
   }
@@ -314,105 +471,206 @@ async function fetchOnlineStreetsSupplement(rawQ, mapLat, mapLng) {
 
 const mvtTextDecoder = new TextDecoder('utf-8');
 function readVarintMvt(u, o) {
-  let r = 0, s = 0, b;
-  do { b = u[o.p++]; r |= (b & 127) << s; s += 7; } while (b >= 128);
-  return r >>> 0;
+  let r = 0, mul = 1, b;
+  do {
+    b = u[o.p++];
+    r += (b & 127) * mul;
+    mul *= 128;
+  } while (b >= 128);
+  return r;
 }
 function skipMvt(u, o, w) {
-  if (w === 0) readVarintMvt(u, o);
-  else if (w === 1) o.p += 8;
-  else if (w === 2) o.p += readVarintMvt(u, o);
-  else if (w === 5) o.p += 4;
+  if (w === 0) {
+    while (u[o.p++] >= 128);
+  } else if (w === 1) {
+    o.p += 8;
+  } else if (w === 2) {
+    o.p += readVarintMvt(u, o);
+  } else if (w === 5) {
+    o.p += 4;
+  }
+}
+
+function tilePixToLngLat(z, tx, ty, gx, gy, extent) {
+  const n = 1 << z;
+  const lng = ((tx + gx / extent) / n) * 360 - 180;
+  const lat = Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + gy / extent)) / n))) * (180 / Math.PI);
+  return [lng, lat];
+}
+
+function parseMvtFeatures(pbfBuffer, z, tx, ty, allowedLayers, includeFullGeometry = false) {
+  const u = new Uint8Array(pbfBuffer.buffer, pbfBuffer.byteOffset, pbfBuffer.byteLength);
+  const o = { p: 0 };
+  const results = [];
+
+  while (o.p < u.length) {
+    const tag = readVarintMvt(u, o);
+    if ((tag >> 3) === 3 && (tag & 7) === 2) {
+      const len = readVarintMvt(u, o);
+      const end = o.p + len;
+      let lname = '', keys = [], vals = [], feats = [], extent = 4096;
+      while (o.p < end) {
+        const lt = readVarintMvt(u, o), lf = lt >> 3, lw = lt & 7;
+        if (lf === 1 && lw === 2) {
+          const sl = readVarintMvt(u, o);
+          lname = mvtTextDecoder.decode(u.subarray(o.p, o.p + sl));
+          o.p += sl;
+        } else if (lf === 2 && lw === 2) {
+          const fl = readVarintMvt(u, o);
+          feats.push([o.p, o.p + fl]);
+          o.p += fl;
+        } else if (lf === 3 && lw === 2) {
+          const kl = readVarintMvt(u, o);
+          keys.push(mvtTextDecoder.decode(u.subarray(o.p, o.p + kl)));
+          o.p += kl;
+        } else if (lf === 4 && lw === 2) {
+          const vl = readVarintMvt(u, o), ve = o.p + vl;
+          let v = null;
+          while (o.p < ve) {
+            const vt = readVarintMvt(u, o), vf = vt >> 3, vw = vt & 7;
+            if (vf === 1 && vw === 2) {
+              const sl = readVarintMvt(u, o);
+              v = mvtTextDecoder.decode(u.subarray(o.p, o.p + sl));
+              o.p += sl;
+            } else {
+              skipMvt(u, o, vw);
+            }
+          }
+          vals.push(v);
+        } else if (lf === 5 && lw === 0) {
+          extent = readVarintMvt(u, o) || 4096;
+        } else {
+          skipMvt(u, o, lw);
+        }
+      }
+
+      if (!allowedLayers.has(lname)) continue;
+
+      for (const [fsPos, fePos] of feats) {
+        const fo = { p: fsPos };
+        const tags = [];
+        let geomType = 0;
+        let geomStart = -1;
+        let geomEnd = -1;
+        while (fo.p < fePos) {
+          const ft = readVarintMvt(u, fo), ff = ft >> 3, fw = ft & 7;
+          if (ff === 2 && fw === 2) {
+            const tl = readVarintMvt(u, fo), te = fo.p + tl;
+            while (fo.p < te) tags.push(readVarintMvt(u, fo));
+          } else if (ff === 3 && fw === 0) {
+            geomType = readVarintMvt(u, fo);
+          } else if (ff === 4 && fw === 2) {
+            const gl = readVarintMvt(u, fo);
+            geomStart = fo.p;
+            geomEnd = fo.p + gl;
+            fo.p = geomEnd;
+          } else {
+            skipMvt(u, fo, fw);
+          }
+        }
+        if (geomStart < 0 || tags.length < 2) continue;
+
+        let nm = '', ref = '', roadClass = '', kindDetail = '';
+        for (let i = 0; i + 1 < tags.length; i += 2) {
+          const k = keys[tags[i]];
+          const v = vals[tags[i + 1]];
+          if (!v || !k) continue;
+          if (k === 'name:pt') nm = v;
+          else if (k === 'name' && !nm) nm = v;
+          else if (k === 'name:latin' && !nm) nm = v;
+          else if (k === 'ref') ref = v;
+          else if (k === 'kind' || k === 'class') roadClass = v;
+          else if (k === 'kind_detail' || k === 'subclass') kindDetail = v;
+        }
+
+        const go = { p: geomStart };
+        if (!includeFullGeometry) {
+          let gx = extent / 2, gy = extent / 2, hasPt = false;
+          if (go.p < geomEnd) {
+            const cmd = readVarintMvt(u, go);
+            if ((cmd & 0x7) === 1 && go.p < geomEnd) {
+              const dx = readVarintMvt(u, go), dy = readVarintMvt(u, go);
+              gx = (dx >>> 1) ^ -(dx & 1);
+              gy = (dy >>> 1) ^ -(dy & 1);
+              hasPt = true;
+            }
+          }
+          if (!hasPt) continue;
+          const [lng, lat] = tilePixToLngLat(z, tx, ty, gx, gy, extent);
+          results.push({ layer: lname, name: (nm || ref || '').trim(), roadClass, kindDetail, geomType, lng, lat });
+        } else {
+          const polylines = [];
+          let curLine = null;
+          let cx = 0, cy = 0;
+          while (go.p < geomEnd) {
+            const cmdInt = readVarintMvt(u, go);
+            const cmdId = cmdInt & 0x7;
+            const count = cmdInt >>> 3;
+            if (cmdId === 1) {
+              for (let i = 0; i < count && go.p < geomEnd; i++) {
+                const dx = readVarintMvt(u, go), dy = readVarintMvt(u, go);
+                cx += (dx >>> 1) ^ -(dx & 1);
+                cy += (dy >>> 1) ^ -(dy & 1);
+                curLine = [tilePixToLngLat(z, tx, ty, cx, cy, extent)];
+                polylines.push(curLine);
+              }
+            } else if (cmdId === 2) {
+              for (let i = 0; i < count && go.p < geomEnd; i++) {
+                const dx = readVarintMvt(u, go), dy = readVarintMvt(u, go);
+                cx += (dx >>> 1) ^ -(dx & 1);
+                cy += (dy >>> 1) ^ -(dy & 1);
+                if (curLine) curLine.push(tilePixToLngLat(z, tx, ty, cx, cy, extent));
+              }
+            }
+          }
+          if (polylines.length > 0) {
+            results.push({ layer: lname, name: (nm || ref || '').trim(), roadClass, kindDetail, geomType, polylines });
+          }
+        }
+      }
+    } else {
+      skipMvt(u, o, tag & 7);
+    }
+  }
+  return results;
 }
 
 function extractAndLearnDetailTileStreets(pbfBuffer, z, tx, ty) {
-  if (!streetsInsertStmt || z !== 14) return;
+  if (!streetsInsertStmt || !streetsDb || z !== 14) return 0;
+  let insertedCount = 0;
   try {
-    const tileCenterLng = ((tx + 0.5) / (1 << z)) * 360 - 180;
-    const tileCenterLat = Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + 0.5)) / (1 << z)))) * (180 / Math.PI);
+    const [tileCenterLng, tileCenterLat] = tilePixToLngLat(z, tx, ty, 2048, 2048, 4096);
     const nearest = findNearestCityForPoint(tileCenterLat, tileCenterLng, 0.15);
-    if (!nearest) return;
+    if (!nearest) return 0;
 
-    const u = new Uint8Array(pbfBuffer.buffer, pbfBuffer.byteOffset, pbfBuffer.byteLength);
-    const o = { p: 0 };
+    const features = parseMvtFeatures(pbfBuffer, z, tx, ty, new Set(['transportation_name', 'poi']), false);
     const learned = [];
-    const targetLayers = new Set(['transportation_name', 'poi']);
-
-    while (o.p < u.length) {
-      const tag = readVarintMvt(u, o);
-      if ((tag >> 3) === 3 && (tag & 7) === 2) {
-        const len = readVarintMvt(u, o);
-        const end = o.p + len;
-        let lname = '', keys = [], vals = [], feats = [], extent = 4096;
-        while (o.p < end) {
-          const lt = readVarintMvt(u, o), lf = lt >> 3, lw = lt & 7;
-          if (lf === 1 && lw === 2) { const sl = readVarintMvt(u, o); lname = mvtTextDecoder.decode(u.subarray(o.p, o.p + sl)); o.p += sl; }
-          else if (lf === 2 && lw === 2) { const fl = readVarintMvt(u, o); feats.push([o.p, o.p + fl]); o.p += fl; }
-          else if (lf === 3 && lw === 2) { const kl = readVarintMvt(u, o); keys.push(mvtTextDecoder.decode(u.subarray(o.p, o.p + kl))); o.p += kl; }
-          else if (lf === 4 && lw === 2) {
-            const vl = readVarintMvt(u, o), ve = o.p + vl; let v = null;
-            while (o.p < ve) {
-              const vt = readVarintMvt(u, o), vf = vt >> 3, vw = vt & 7;
-              if (vf === 1 && vw === 2) { const sl = readVarintMvt(u, o); v = mvtTextDecoder.decode(u.subarray(o.p, o.p + sl)); o.p += sl; }
-              else skipMvt(u, o, vw);
-            }
-            vals.push(v);
-          }
-          else if (lf === 5 && lw === 0) extent = readVarintMvt(u, o) || 4096;
-          else skipMvt(u, o, lw);
-        }
-        if (!targetLayers.has(lname)) continue;
-        for (const [fsPos, fePos] of feats) {
-          const fo = { p: fsPos };
-          const tags = [];
-          let gx = extent / 2, gy = extent / 2, hasGeom = false;
-          while (fo.p < fePos) {
-            const ft = readVarintMvt(u, fo), ff = ft >> 3, fw = ft & 7;
-            if (ff === 2 && fw === 2) { const tl = readVarintMvt(u, fo), te = fo.p + tl; while (fo.p < te) tags.push(readVarintMvt(u, fo)); }
-            else if (ff === 4 && fw === 2) {
-              const gl = readVarintMvt(u, fo), ge = fo.p + gl;
-              if (fo.p < ge) {
-                const cmd = readVarintMvt(u, fo);
-                if ((cmd & 0x7) === 1 && fo.p < ge) {
-                  const dx = readVarintMvt(u, fo), dy = readVarintMvt(u, fo);
-                  gx = (dx >>> 1) ^ -(dx & 1); gy = (dy >>> 1) ^ -(dy & 1);
-                  hasGeom = true;
-                }
-              }
-              fo.p = ge;
-            } else skipMvt(u, fo, fw);
-          }
-          if (!hasGeom || tags.length < 2) continue;
-          let nm = '', ref = '';
-          for (let i = 0; i + 1 < tags.length; i += 2) {
-            const k = keys[tags[i]], v = vals[tags[i + 1]];
-            if (!v) continue;
-            if (k === 'name:pt') nm = v;
-            else if (k === 'name' && !nm) nm = v;
-            else if (k === 'name:latin' && !nm) nm = v;
-            else if (k === 'ref') ref = v;
-          }
-          const finalName = (nm || ref || '').trim();
-          if (finalName.length >= 2 && /[a-zA-ZÀ-ÿ]/.test(finalName)) {
-            const n = 1 << z;
-            const lng = ((tx + gx / extent) / n) * 360 - 180;
-            const lat = Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + gy / extent)) / n))) * (180 / Math.PI);
-            learned.push({ name: finalName, kind: lname === 'transportation_name' ? 'Via' : 'POI', lat, lng });
-          }
-        }
-      } else {
-        skipMvt(u, o, tag & 7);
+    for (const f of features) {
+      if (f.name.length >= 2 && /[a-zA-ZÀ-ÿ]/.test(f.name)) {
+        learned.push({ name: f.name, kind: f.layer === 'transportation_name' ? 'Via' : 'POI', lat: f.lat, lng: f.lng });
       }
     }
 
-    if (learned.length > 0 && streetsDb) {
-      for (const item of learned) {
-        persistLearnedStreet(item.name, nearest.name, nearest.state, item.kind, item.lat, item.lng);
+    if (learned.length > 0) {
+      let inTx = false;
+      try {
+        streetsDb.exec('BEGIN IMMEDIATE');
+        inTx = true;
+      } catch {}
+      try {
+        for (const item of learned) {
+          const id = persistLearnedStreet(item.name, nearest.name, nearest.state, item.kind, item.lat, item.lng);
+          if (id) insertedCount++;
+        }
+        if (inTx) streetsDb.exec('COMMIT');
+      } catch {
+        if (inTx) { try { streetsDb.exec('ROLLBACK'); } catch {} }
       }
     }
   } catch {
     // ignore background parsing issues
   }
+  return insertedCount;
 }
 
 let openFreeMapTileTemplate = 'https://tiles.openfreemap.org/planet/20261101_080013_pt/{z}/{x}/{y}.pbf';
@@ -541,6 +799,552 @@ function distToSegment(px, py, vx, vy, wx, wy) {
   return haversine(py, px, vy + t * (wy - vy), vx + t * (wx - vx));
 }
 
+function readDetailTileFromDisk(z, tx, ty) {
+  const cacheFile = path.join(STORAGE_PATH, 'maps', 'detail_tiles_cache', String(z), String(tx), `${ty}.pbf`);
+  if (!fs.existsSync(cacheFile)) return null;
+  try {
+    return maybeGunzipBuffer(fs.readFileSync(cacheFile));
+  } catch {
+    return null;
+  }
+}
+
+const SUPPORT_CATEGORY_RULES = [
+  { key: 'hospital', pattern: /\b(hospital|upa|pronto\s*socorro|pronto\s*atendimento|santa\s*casa|samu|ubs|ama|posto\s*de\s*saude|policlinica|maternidade|clinica)\b/i },
+  { key: 'rescue', pattern: /\b(bombeiro|bombeiros|defesa\s*civil|resgate|cipa|brigada)\b/i },
+  { key: 'police', pattern: /\b(policia|delegacia|batalhao|prf|rodoviaria\s*federal|guarda\s*municipal|dp\b|pm\b|batalhao)\b/i },
+  { key: 'fuel', pattern: /\b(posto|combustivel|gasolina|etanol|diesel|ipiranga|petrobras|shell|ale\b|br\s*mania)\b/i },
+  { key: 'water', pattern: /\b(agua|fonte|nascente|sabesp|copasa|sanepar|embasa|cedae|reservatorio|bica|poco\s*artesiano)\b/i }
+];
+
+function classifySupportCategory(name, kind) {
+  const txt = normalizeStr(`${name || ''} ${kind || ''}`);
+  for (const rule of SUPPORT_CATEGORY_RULES) {
+    if (rule.pattern.test(txt)) return rule.key;
+  }
+  return null;
+}
+
+function findNearbySupport(lat, lng, radiusKm = 25, category = 'all', limit = 40) {
+  const candidates = [];
+  const normCat = category && category !== 'all' ? category.toLowerCase() : 'all';
+
+  for (const poi of strategicPois) {
+    if (normCat !== 'all' && poi.category !== normCat) continue;
+    const distKm = haversine(lat, lng, poi.lat, poi.lng);
+    if (distKm <= radiusKm) {
+      candidates.push({
+        id: poi.id,
+        name: poi.name,
+        category: poi.category,
+        city: poi.city,
+        state: poi.uf,
+        lat: poi.lat,
+        lng: poi.lng,
+        phone: poi.phone || '',
+        details: poi.details || '',
+        distanceKm: Math.round(distKm * 100) / 100,
+        source: 'estrategico'
+      });
+    }
+  }
+
+  if (streetsReverseBoxStmt) {
+    const cosLat = Math.max(0.25, Math.cos((lat * Math.PI) / 180));
+    const dLat = radiusKm / 111.0;
+    const dLng = radiusKm / (111.0 * cosLat);
+    try {
+      const boxSql = `SELECT rowid AS id, c0 AS name, c1 AS city, c2 AS state, c3 AS kind, c4 AS lat, c5 AS lng FROM streets_fts_content WHERE c4 BETWEEN ? AND ? AND c5 BETWEEN ? AND ? AND c3 = 'POI' LIMIT 1500`;
+      const rows = streetsDb.prepare(boxSql).all(lat - dLat, lat + dLat, lng - dLng, lng + dLng);
+      for (const r of rows) {
+        const matchedCat = classifySupportCategory(r.name, r.kind);
+        if (!matchedCat) continue;
+        if (normCat !== 'all' && matchedCat !== normCat) continue;
+        const distKm = haversine(lat, lng, r.lat, r.lng);
+        if (distKm > radiusKm) continue;
+        candidates.push({
+          id: `db_${r.id}`,
+          name: r.name,
+          category: matchedCat,
+          city: r.city,
+          state: r.state,
+          lat: r.lat,
+          lng: r.lng,
+          phone: '',
+          details: 'Ponto identificado no mapa vetorial offline',
+          distanceKm: Math.round(distKm * 100) / 100,
+          source: 'mapa_offline'
+        });
+      }
+    } catch {}
+  }
+
+  candidates.sort((a, b) => a.distanceKm - b.distanceKm || (a.source === 'estrategico' ? -1 : 1));
+  const deduped = [];
+  const seen = new Set();
+  for (const item of candidates) {
+    const key = `${item.category}|${normalizeStr(item.name).slice(0, 26)}|${Math.round(item.lat * 200)},${Math.round(item.lng * 200)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+    if (deduped.length >= limit) break;
+  }
+  return deduped;
+}
+
+function reverseGeocodeOffline(lat, lng) {
+  const nearestCity = findNearestCityForPoint(lat, lng, 0.25);
+  let bestRoad = null;
+  let bestRoadScoreKm = Infinity;
+  let bestRoadRawKm = Infinity;
+
+  // 1. Inspect cached z=14 detail tile polyline geometry first, plus z=13 PMTiles roads
+  const [tx14, ty14] = latLngToTileXY(lat, lng, 14);
+  const buf14 = readDetailTileFromDisk(14, tx14, ty14);
+  const [tx13, ty13] = latLngToTileXY(lat, lng, 13);
+  const buf13 = readLocalPmtilesTile(13, tx13, ty13);
+
+  const checkTileRoads = (buf, z, tx, ty, layers, bonusKm) => {
+    if (!buf) return;
+    const feats = parseMvtFeatures(buf, z, tx, ty, new Set(layers), true);
+    for (const f of feats) {
+      if (!f.name || f.geomType !== 2) continue;
+      if (f.roadClass === 'rail' || f.roadClass === 'ferry' || f.roadClass === 'transit') continue;
+      for (const line of f.polylines) {
+        for (let i = 0; i + 1 < line.length; i++) {
+          const p0 = line[i];
+          const p1 = line[i + 1];
+          const dKm = distToSegment(lng, lat, p0[0], p0[1], p1[0], p1[1]);
+          const scoreKm = dKm - bonusKm;
+          if (scoreKm < bestRoadScoreKm) {
+            bestRoadScoreKm = scoreKm;
+            bestRoadRawKm = dKm;
+            const kindLabel = f.roadClass === 'highway' || f.roadClass === 'motorway' ? 'Rodovia' : 'Via';
+            bestRoad = {
+              name: f.name,
+              city: nearestCity ? nearestCity.name : '',
+              state: nearestCity ? nearestCity.state : 'BR',
+              kind: kindLabel,
+              lat: Math.round(lat * 100000) / 100000,
+              lng: Math.round(lng * 100000) / 100000
+            };
+          }
+        }
+      }
+    }
+  };
+
+  checkTileRoads(buf14, 14, tx14, ty14, ['transportation_name'], 0.04);
+  checkTileRoads(buf13, 13, tx13, ty13, ['roads'], 0.02);
+
+  // 2. Fallback / refinement via SQLite spatial box
+  const nearbyPois = [];
+  if (streetsReverseBoxStmt) {
+    try {
+      const rows = streetsReverseBoxStmt.all(lat - 0.015, lat + 0.015, lng - 0.015, lng + 0.015);
+      for (const r of rows) {
+        const dKm = haversine(lat, lng, r.lat, r.lng);
+        if (r.kind === 'Via') {
+          if (dKm < bestRoadScoreKm) {
+            bestRoadScoreKm = dKm;
+            bestRoadRawKm = dKm;
+            bestRoad = {
+              id: r.id,
+              name: r.name,
+              city: r.city,
+              state: r.state,
+              kind: r.kind,
+              lat: r.lat,
+              lng: r.lng
+            };
+          }
+        } else if (r.kind === 'POI' || r.kind === 'Bairro') {
+          nearbyPois.push({
+            id: r.id,
+            name: r.name,
+            city: r.city,
+            state: r.state,
+            kind: r.kind,
+            lat: r.lat,
+            lng: r.lng,
+            distanceMeters: Math.round(dKm * 1000)
+          });
+        }
+      }
+    } catch {}
+  }
+
+  for (const poi of strategicPois) {
+    const dKm = haversine(lat, lng, poi.lat, poi.lng);
+    if (dKm <= 3.0) {
+      nearbyPois.push({
+        id: poi.id,
+        name: poi.name,
+        city: poi.city,
+        state: poi.uf,
+        kind: poi.category,
+        lat: poi.lat,
+        lng: poi.lng,
+        distanceMeters: Math.round(dKm * 1000)
+      });
+    }
+  }
+
+  nearbyPois.sort((a, b) => a.distanceMeters - b.distanceMeters);
+  if (bestRoad && bestRoadRawKm > 2.5) {
+    bestRoad = null;
+  }
+
+  return {
+    street: bestRoad,
+    distanceMeters: bestRoad ? Math.max(0, Math.round(bestRoadRawKm * 1000)) : null,
+    nearbyPois: nearbyPois.slice(0, 3),
+    city: nearestCity ? {
+      id: nearestCity.id,
+      name: nearestCity.name,
+      state: nearestCity.state,
+      ddd: nearestCity.ddd || '',
+      codigo_ibge: nearestCity.codigo_ibge || '',
+      lat: nearestCity.lat,
+      lng: nearestCity.lng
+    } : null
+  };
+}
+
+class RouteMinHeap {
+  constructor() { this.items = []; }
+  get size() { return this.items.length; }
+  push(node) {
+    this.items.push(node);
+    let i = this.items.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (this.items[p].f <= this.items[i].f) break;
+      const tmp = this.items[p];
+      this.items[p] = this.items[i];
+      this.items[i] = tmp;
+      i = p;
+    }
+  }
+  pop() {
+    const top = this.items[0];
+    const last = this.items.pop();
+    if (this.items.length > 0) {
+      this.items[0] = last;
+      let i = 0;
+      const n = this.items.length;
+      while (true) {
+        let best = i;
+        const l = (i << 1) + 1;
+        const r = l + 1;
+        if (l < n && this.items[l].f < this.items[best].f) best = l;
+        if (r < n && this.items[r].f < this.items[best].f) best = r;
+        if (best === i) break;
+        const tmp = this.items[i];
+        this.items[i] = this.items[best];
+        this.items[best] = tmp;
+        i = best;
+      }
+    }
+    return top;
+  }
+}
+
+function getRoadWeightFactor(roadClass, kindDetail, profile) {
+  const c = String(roadClass || '').toLowerCase();
+  const kd = String(kindDetail || '').toLowerCase();
+  if (c === 'rail' || c === 'ferry' || c === 'transit' || c === 'raceway') return 0;
+  if (profile === 'walking') {
+    if (c === 'motorway' || kd === 'motorway') return 3.0;
+    if (c === 'path' || kd === 'footway' || kd === 'pedestrian' || kd === 'steps') return 0.9;
+    return 1.0;
+  }
+  if (c === 'path' || kd === 'footway' || kd === 'steps' || kd === 'cycleway') {
+    return profile === 'tactical' ? 2.4 : 4.5;
+  }
+  if (c === 'highway' || c === 'motorway' || c === 'trunk' || kd === 'motorway' || kd === 'trunk') return 0.85;
+  if (c === 'major_road' || c === 'primary' || c === 'secondary') return 0.92;
+  if (c === 'medium_road' || c === 'tertiary') return 1.0;
+  return 1.12;
+}
+
+function computeBearingDeg(lat1, lng1, lat2, lng2) {
+  const p1 = (lat1 * Math.PI) / 180;
+  const p2 = (lat2 * Math.PI) / 180;
+  const dl = ((lng2 - lng1) * Math.PI) / 180;
+  const y = Math.sin(dl) * Math.cos(p2);
+  const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+function computeOfflineGraphRoute(fromLat, fromLng, toLat, toLng, profile = 'driving', fromLabel = '', toLabel = '') {
+  const directDist = haversine(fromLat, fromLng, toLat, toLng);
+  if (directDist > 30 || !pmtilesFd) return null;
+
+  const minLat = Math.min(fromLat, toLat) - 0.015;
+  const maxLat = Math.max(fromLat, toLat) + 0.015;
+  const minLng = Math.min(fromLng, toLng) - 0.015;
+  const maxLng = Math.max(fromLng, toLng) + 0.015;
+
+  const nodes = new Map();
+  const qKey = (lat, lng) => `${Math.round(lat * 8500)},${Math.round(lng * 8500)}`;
+
+  function ensureNode(lat, lng) {
+    const k = qKey(lat, lng);
+    let node = nodes.get(k);
+    if (!node) {
+      node = { key: k, lat, lng, edges: [] };
+      nodes.set(k, node);
+    }
+    return node;
+  }
+
+  function addSegmentEdge(lat1, lng1, lat2, lng2, roadName, weightFactor) {
+    const distKm = haversine(lat1, lng1, lat2, lng2);
+    if (distKm < 0.001) return;
+    const stepsCount = distKm > 0.14 ? Math.min(12, Math.ceil(distKm / 0.11)) : 1;
+    let prev = ensureNode(lat1, lng1);
+    for (let s = 1; s <= stepsCount; s++) {
+      const frac = s / stepsCount;
+      const curLat = s === stepsCount ? lat2 : lat1 + (lat2 - lat1) * frac;
+      const curLng = s === stepsCount ? lng2 : lng1 + (lng2 - lng1) * frac;
+      const cur = ensureNode(curLat, curLng);
+      if (prev.key !== cur.key) {
+        const segLen = haversine(prev.lat, prev.lng, cur.lat, cur.lng);
+        const cost = segLen * weightFactor;
+        prev.edges.push({ to: cur.key, cost, distKm: segLen, name: roadName });
+        cur.edges.push({ to: prev.key, cost, distKm: segLen, name: roadName });
+      }
+      prev = cur;
+    }
+  }
+
+  // Load z=13 tiles (and optional cached z=14 tiles for finer urban mesh & street names)
+  const [x13a, y13a] = latLngToTileXY(maxLat, minLng, 13);
+  const [x13b, y13b] = latLngToTileXY(minLat, maxLng, 13);
+  let loaded13 = 0;
+  for (let x = Math.min(x13a, x13b); x <= Math.max(x13a, x13b) && loaded13 < 20; x++) {
+    for (let y = Math.min(y13a, y13b); y <= Math.max(y13a, y13b) && loaded13 < 20; y++) {
+      const buf = readLocalPmtilesTile(13, x, y);
+      if (!buf) continue;
+      loaded13++;
+      const feats = parseMvtFeatures(buf, 13, x, y, new Set(['roads']), true);
+      for (const f of feats) {
+        if (f.geomType !== 2) continue;
+        const wf = getRoadWeightFactor(f.roadClass, f.kindDetail, profile);
+        if (wf <= 0) continue;
+        for (const line of f.polylines) {
+          for (let i = 0; i + 1 < line.length; i++) {
+            addSegmentEdge(line[i][1], line[i][0], line[i + 1][1], line[i + 1][0], f.name, wf);
+          }
+        }
+      }
+    }
+  }
+
+  const [x14a, y14a] = latLngToTileXY(maxLat, minLng, 14);
+  const [x14b, y14b] = latLngToTileXY(minLat, maxLng, 14);
+  let loaded14 = 0;
+  for (let x = Math.min(x14a, x14b); x <= Math.max(x14a, x14b) && loaded14 < 36; x++) {
+    for (let y = Math.min(y14a, y14b); y <= Math.max(y14a, y14b) && loaded14 < 36; y++) {
+      const buf14 = readDetailTileFromDisk(14, x, y);
+      if (!buf14) continue;
+      loaded14++;
+      const feats = parseMvtFeatures(buf14, 14, x, y, new Set(['transportation', 'transportation_name']), true);
+      const nameHints = new Map();
+      for (const f of feats) {
+        if (f.layer !== 'transportation_name' || !f.name) continue;
+        for (const line of f.polylines) {
+          for (const pt of line) {
+            const hk = `${Math.round(pt[1] * 3500)},${Math.round(pt[0] * 3500)}`;
+            if (!nameHints.has(hk)) nameHints.set(hk, f.name);
+          }
+        }
+      }
+      for (const f of feats) {
+        if (f.geomType !== 2) continue;
+        const wf = getRoadWeightFactor(f.roadClass, f.kindDetail, profile);
+        if (wf <= 0) continue;
+        for (const line of f.polylines) {
+          for (let i = 0; i + 1 < line.length; i++) {
+            const lat1 = line[i][1], lng1 = line[i][0];
+            const lat2 = line[i + 1][1], lng2 = line[i + 1][0];
+            let rName = f.name;
+            if (!rName) {
+              const midK = `${Math.round(((lat1 + lat2) / 2) * 3500)},${Math.round(((lng1 + lng2) / 2) * 3500)}`;
+              rName = nameHints.get(midK) || '';
+            }
+            addSegmentEdge(lat1, lng1, lat2, lng2, rName, wf * 0.95);
+          }
+        }
+      }
+    }
+  }
+
+  if (nodes.size < 5) return null;
+
+  // Snap start & end to nearest connected graph nodes (within 2.0 km)
+  let startNode = null, endNode = null;
+  let bestStartDist = 2.0, bestEndDist = 2.0;
+  for (const node of nodes.values()) {
+    if (node.edges.length === 0) continue;
+    const dStart = haversine(fromLat, fromLng, node.lat, node.lng);
+    if (dStart < bestStartDist) { bestStartDist = dStart; startNode = node; }
+    const dEnd = haversine(toLat, toLng, node.lat, node.lng);
+    if (dEnd < bestEndDist) { bestEndDist = dEnd; endNode = node; }
+  }
+  if (!startNode || !endNode) return null;
+
+  // A* Search
+  const gScore = new Map([[startNode.key, 0]]);
+  const cameFrom = new Map();
+  const closed = new Set();
+  const open = new RouteMinHeap();
+  open.push({ key: startNode.key, f: haversine(startNode.lat, startNode.lng, endNode.lat, endNode.lng) * 0.85 });
+
+  let found = false;
+  let iterations = 0;
+  const maxIterations = 120000;
+  while (open.size > 0 && iterations < maxIterations) {
+    iterations++;
+    const current = open.pop();
+    if (current.key === endNode.key) {
+      found = true;
+      break;
+    }
+    if (closed.has(current.key)) continue;
+    closed.add(current.key);
+
+    const curNode = nodes.get(current.key);
+    const curG = gScore.get(current.key);
+    for (const edge of curNode.edges) {
+      if (closed.has(edge.to)) continue;
+      const tentativeG = curG + edge.cost;
+      const prevG = gScore.get(edge.to);
+      if (prevG === undefined || tentativeG < prevG) {
+        gScore.set(edge.to, tentativeG);
+        cameFrom.set(edge.to, { prev: current.key, edge });
+        const nextNode = nodes.get(edge.to);
+        const h = haversine(nextNode.lat, nextNode.lng, endNode.lat, endNode.lng) * 0.85;
+        open.push({ key: edge.to, f: tentativeG + h });
+      }
+    }
+  }
+
+  if (!found) return null;
+
+  // Reconstruct path
+  const pathEdges = [];
+  let cursor = endNode.key;
+  while (cursor !== startNode.key) {
+    const step = cameFrom.get(cursor);
+    if (!step) break;
+    pathEdges.push({ fromKey: step.prev, toKey: cursor, edge: step.edge });
+    cursor = step.prev;
+  }
+  pathEdges.reverse();
+
+  const coords = [[fromLng, fromLat]];
+  if (haversine(fromLat, fromLng, startNode.lat, startNode.lng) > 0.015) {
+    coords.push([startNode.lng, startNode.lat]);
+  }
+  let totalDistKm = bestStartDist + bestEndDist;
+  for (const pe of pathEdges) {
+    const toN = nodes.get(pe.toKey);
+    coords.push([toN.lng, toN.lat]);
+    totalDistKm += pe.edge.distKm;
+  }
+  if (haversine(toLat, toLng, endNode.lat, endNode.lng) > 0.015) {
+    coords.push([toLng, toLat]);
+  }
+
+  const distanceKm = Math.round(totalDistKm * 10) / 10;
+  let speedKmh = totalDistKm < 35 ? 32 : 68;
+  if (profile === 'tactical') speedKmh = totalDistKm < 35 ? 24 : 46;
+  if (profile === 'walking') speedKmh = 4.5;
+
+  const durationMin = Math.max(1, Math.round((distanceKm / speedKmh) * 60));
+  const fuelLiters = profile === 'walking' ? 0 : Math.round((distanceKm / (profile === 'tactical' ? 8 : 12)) * 10) / 10;
+  const waterLiters = profile === 'walking' ? Math.max(0.5, Math.round(((durationMin / 60) / 8) * 3.5 * 10) / 10) : 0;
+  const caloriesKcal = profile === 'walking' ? Math.round((durationMin / 60) * 380) : 0;
+
+  // Group turn-by-turn steps by road name
+  const steps = [{
+    instruction: `Partida de ${fromLabel || 'Origem'} em direção à via conectada`,
+    distanceKm: Math.round(bestStartDist * 10) / 10,
+    type: 'depart'
+  }];
+
+  let curName = null;
+  let curSegDist = 0;
+  let curStartBearing = null;
+  let prevGroupBearing = null;
+
+  for (const pe of pathEdges) {
+    const fn = nodes.get(pe.fromKey);
+    const tn = nodes.get(pe.toKey);
+    const segBearing = computeBearingDeg(fn.lat, fn.lng, tn.lat, tn.lng);
+    const roadLabel = pe.edge.name || 'Via sem denominação no tile';
+
+    if (curName === null) {
+      curName = roadLabel;
+      curSegDist = pe.edge.distKm;
+      curStartBearing = segBearing;
+    } else if (roadLabel === curName || (!pe.edge.name && curSegDist < 0.15)) {
+      curSegDist += pe.edge.distKm;
+    } else {
+      let action = profile === 'walking' ? 'Caminhe' : 'Siga';
+      if (prevGroupBearing !== null) {
+        const diff = ((curStartBearing - prevGroupBearing + 540) % 360) - 180;
+        if (diff >= 28 && diff <= 145) action = 'Vire à direita';
+        else if (diff <= -28 && diff >= -145) action = 'Vire à esquerda';
+      }
+      steps.push({
+        instruction: `${action} na ${curName}`,
+        distanceKm: Math.round(curSegDist * 10) / 10,
+        type: action.includes('direita') || action.includes('esquerda') ? 'turn' : 'step'
+      });
+      prevGroupBearing = curStartBearing;
+      curName = roadLabel;
+      curSegDist = pe.edge.distKm;
+      curStartBearing = segBearing;
+    }
+  }
+  if (curName !== null) {
+    let action = profile === 'walking' ? 'Caminhe' : 'Siga';
+    if (prevGroupBearing !== null && curStartBearing !== null) {
+      const diff = ((curStartBearing - prevGroupBearing + 540) % 360) - 180;
+      if (diff >= 28 && diff <= 145) action = 'Vire à direita';
+      else if (diff <= -28 && diff >= -145) action = 'Vire à esquerda';
+    }
+    steps.push({
+      instruction: `${action} na ${curName}`,
+      distanceKm: Math.round(curSegDist * 10) / 10,
+      type: action.includes('direita') || action.includes('esquerda') ? 'turn' : 'step'
+    });
+  }
+  steps.push({
+    instruction: `Chegada em ${toLabel || 'Destino'}`,
+    distanceKm: Math.round(bestEndDist * 10) / 10,
+    type: 'arrive'
+  });
+
+  return {
+    source: 'offline_graph',
+    profile,
+    distanceKm,
+    durationMin,
+    fuelLiters,
+    waterLiters,
+    caloriesKcal,
+    geometry: {
+      type: 'LineString',
+      coordinates: coords
+    },
+    steps
+  };
+}
+
 // Generate realistic offline tactical corridor
 function generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile = 'driving', fromLabel = '', toLabel = '') {
   const directDist = haversine(fromLat, fromLng, toLat, toLng);
@@ -646,13 +1450,38 @@ function generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile = 'drivin
   };
 }
 
+function readJsonRequestBody(req, maxBytes = 2 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let total = 0;
+    req.on('data', (chunk) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        reject(new Error('Payload excede o limite'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      try {
+        const raw = Buffer.concat(chunks).toString('utf8').trim();
+        resolve(raw ? JSON.parse(raw) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 const server = http.createServer((req, res) => {
   const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = decodeURIComponent(urlObj.pathname);
 
   // CORS headers for offline flexibility
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, HEAD, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Accept');
 
   if (req.method === 'OPTIONS') {
@@ -661,7 +1490,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 1. API: Status
+  // 1. API: Status (live diagnostics)
   if (pathname === '/api/status') {
     const memory = process.memoryUsage();
     let pmtilesExists = false;
@@ -673,6 +1502,13 @@ const server = http.createServer((req, res) => {
       pmtilesExists = true;
       pmtilesSize = fs.statSync(pmtilesPath).size;
     }
+
+    const routesCacheDir = path.join(__dirname, 'data', 'routes_cache');
+    const routesCachedCount = fs.existsSync(routesCacheDir)
+      ? fs.readdirSync(routesCacheDir).filter(f => f.endsWith('.json')).length
+      : 0;
+    const detailTilesCachedCount = countFilesRecursive(path.join(STORAGE_PATH, 'maps', 'detail_tiles_cache'), '.pbf');
+    const zims = listInstalledZims();
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -687,9 +1523,74 @@ const server = http.createServer((req, res) => {
         survivalCount: survivalManuals.length,
         pmtilesAvailable: pmtilesExists,
         pmtilesSizeBytes: pmtilesSize,
-        streetsIndexAvailable: Boolean(streetsDb && streetsSearchStmt)
+        streetsIndexAvailable: Boolean(streetsDb && streetsSearchStmt),
+        streetsCount: cachedStreetsCount,
+        routesCachedCount,
+        detailTilesCachedCount,
+        zimFilesCount: zims.length,
+        primaryZimBook: zims[0]?.book || 'wikipedia_pt_all_maxi_2026-05'
       }
     }));
+    return;
+  }
+
+  // 1.1 API: Persistent server-side tactical waypoints
+  if (pathname === '/api/waypoints') {
+    const wptFile = path.join(STORAGE_PATH, 'user_waypoints.json');
+    if (req.method === 'GET') {
+      let arr = [];
+      if (fs.existsSync(wptFile)) {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(wptFile, 'utf8'));
+          if (Array.isArray(parsed)) arr = parsed;
+        } catch {}
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(arr));
+      return;
+    }
+    if (req.method === 'POST') {
+      readJsonRequestBody(req).then((body) => {
+        if (!Array.isArray(body)) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Esperado array JSON de marcadores' }));
+          return;
+        }
+        const cleaned = body
+          .filter(w => w && typeof w.name === 'string' && !isNaN(Number(w.lat)) && !isNaN(Number(w.lng)))
+          .map(w => ({
+            id: String(w.id || `wpt_${Date.now()}`),
+            name: w.name.trim().slice(0, 140),
+            category: String(w.category || 'base'),
+            lat: Number(w.lat),
+            lng: Number(w.lng),
+            createdAt: String(w.createdAt || new Date().toISOString())
+          }));
+        fs.mkdirSync(path.dirname(wptFile), { recursive: true });
+        fs.writeFileSync(wptFile, JSON.stringify(cleaned, null, 2), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, count: cleaned.length }));
+      }).catch(() => {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'JSON inválido' }));
+      });
+      return;
+    }
+  }
+
+  // 1.2 API: Offline Kiwix URL Resolver
+  if (pathname === '/api/kiwix/resolve') {
+    const q = (urlObj.searchParams.get('q') || '').trim();
+    const zims = listInstalledZims();
+    const book = zims[0]?.book || 'wikipedia_pt_all_maxi_2026-05';
+    const hostHeader = (req.headers.host || 'localhost').split(':')[0];
+    const cleanTarget = q.replace(/ /g, '_');
+    const searchUrl = `http://${hostHeader}:8090/search?content=${encodeURIComponent(book)}&pattern=${encodeURIComponent(q)}`;
+    const articleUrl = q
+      ? `http://${hostHeader}:8090/content/${encodeURIComponent(book)}/${encodeURIComponent(cleanTarget)}`
+      : `http://${hostHeader}:8090/content/${encodeURIComponent(book)}`;
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: true, book, installedCount: zims.length, searchUrl, articleUrl }));
     return;
   }
 
@@ -731,6 +1632,129 @@ const server = http.createServer((req, res) => {
     handleStreetsSearch(req, res, urlObj).catch(() => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end('[]');
+    });
+    return;
+  }
+
+  // 2.2 API: Offline Reverse Geocoding (MVT tile geometry + SQLite FTS5)
+  if (pathname === '/api/streets/reverse') {
+    const lat = parseFloat(urlObj.searchParams.get('lat'));
+    const lng = parseFloat(urlObj.searchParams.get('lng'));
+    if (isNaN(lat) || isNaN(lng)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Coordenadas inválidas' }));
+      return;
+    }
+    const result = reverseGeocodeOffline(lat, lng);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(result));
+    return;
+  }
+
+  // 2.3 API: Nearby Emergency & Support Radar
+  if (pathname === '/api/nearby-support') {
+    const lat = parseFloat(urlObj.searchParams.get('lat'));
+    const lng = parseFloat(urlObj.searchParams.get('lng'));
+    const radiusKm = Math.min(80, Math.max(1, parseFloat(urlObj.searchParams.get('radiusKm') || '25') || 25));
+    const category = urlObj.searchParams.get('category') || 'all';
+    if (isNaN(lat) || isNaN(lng)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Coordenadas inválidas' }));
+      return;
+    }
+    const items = findNearbySupport(lat, lng, radiusKm, category, 40);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(items));
+    return;
+  }
+
+  // 2.4 API: Batch Prefetch z=14 Residential Tiles & Index All Streets for a City
+  if (pathname === '/api/maps/prefetch-city') {
+    (async () => {
+      let lat = parseFloat(urlObj.searchParams.get('lat'));
+      let lng = parseFloat(urlObj.searchParams.get('lng'));
+      let radiusKm = parseFloat(urlObj.searchParams.get('radiusKm') || '3.0');
+      if (req.method === 'POST') {
+        try {
+          const body = await readJsonRequestBody(req, 64 * 1024);
+          if (body.lat !== undefined) lat = parseFloat(body.lat);
+          if (body.lng !== undefined) lng = parseFloat(body.lng);
+          if (body.radiusKm !== undefined) radiusKm = parseFloat(body.radiusKm);
+        } catch {}
+      }
+      if (isNaN(lat) || isNaN(lng)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Parâmetros lat/lng inválidos' }));
+        return;
+      }
+      radiusKm = Math.min(5.5, Math.max(1.0, isNaN(radiusKm) ? 3.0 : radiusKm));
+
+      const cosLat = Math.max(0.25, Math.cos((lat * Math.PI) / 180));
+      const dLat = radiusKm / 111.0;
+      const dLng = radiusKm / (111.0 * cosLat);
+      const [cx, cy] = latLngToTileXY(lat, lng, 14);
+      const [x1, y1] = latLngToTileXY(lat + dLat, lng - dLng, 14);
+      const [x2, y2] = latLngToTileXY(lat - dLat, lng + dLng, 14);
+
+      const tileCoords = [];
+      for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+        for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+          tileCoords.push({ x, y, dist: Math.hypot(x - cx, y - cy) });
+        }
+      }
+      tileCoords.sort((a, b) => a.dist - b.dist);
+      const selectedTiles = tileCoords.slice(0, 25);
+
+      let tilesDownloaded = 0;
+      let tilesCached = 0;
+      let streetsLearnedNow = 0;
+      let tmpl = await getOpenFreeMapTemplate(false);
+
+      let idx = 0;
+      const workers = Array.from({ length: 4 }, async () => {
+        while (idx < selectedTiles.length) {
+          const t = selectedTiles[idx++];
+          const cacheFile = path.join(STORAGE_PATH, 'maps', 'detail_tiles_cache', '14', String(t.x), `${t.y}.pbf`);
+          let buf = null;
+          if (fs.existsSync(cacheFile)) {
+            tilesCached++;
+            try { buf = maybeGunzipBuffer(fs.readFileSync(cacheFile)); } catch {}
+          } else {
+            try {
+              let tileUrl = tmpl.replace('{z}', '14').replace('{x}', String(t.x)).replace('{y}', String(t.y));
+              let r = await fetch(tileUrl, { signal: AbortSignal.timeout(4500) });
+              if (r.status === 404 || r.status === 410) {
+                tmpl = await getOpenFreeMapTemplate(true);
+                tileUrl = tmpl.replace('{z}', '14').replace('{x}', String(t.x)).replace('{y}', String(t.y));
+                r = await fetch(tileUrl, { signal: AbortSignal.timeout(4500) });
+              }
+              if (r.ok) {
+                buf = maybeGunzipBuffer(Buffer.from(await r.arrayBuffer()));
+                fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+                fs.writeFileSync(cacheFile, buf);
+                tilesDownloaded++;
+              }
+            } catch {}
+          }
+          if (buf && buf.length > 0) {
+            streetsLearnedNow += extractAndLearnDetailTileStreets(buf, 14, t.x, t.y);
+          }
+        }
+      });
+
+      await Promise.all(workers);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        tilesTotal: selectedTiles.length,
+        tilesDownloaded,
+        tilesCached,
+        streetsLearnedNow,
+        totalStreetsInDb: cachedStreetsCount
+      }));
+    })().catch(() => {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'Falha ao baixar ruas da cidade' }));
     });
     return;
   }
@@ -792,7 +1816,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 4.1 API: Route calculation (Online OSRM + Permanent Disk Cache + Offline Tactical Corridor)
+  // 4.1 API: Route calculation (Online OSRM + Disk Cache + Offline Graph A* + Offline Tactical Corridor)
   if (pathname === '/api/route') {
     const fromLat = parseFloat(urlObj.searchParams.get('fromLat'));
     const fromLng = parseFloat(urlObj.searchParams.get('fromLng'));
@@ -801,10 +1825,19 @@ const server = http.createServer((req, res) => {
     const profile = urlObj.searchParams.get('profile') || 'driving';
     const fromLabel = (urlObj.searchParams.get('fromLabel') || '').trim();
     const toLabel = (urlObj.searchParams.get('toLabel') || '').trim();
+    const forceOfflineGraph = urlObj.searchParams.get('forceOfflineGraph') === '1';
 
     if (isNaN(fromLat) || isNaN(fromLng) || isNaN(toLat) || isNaN(toLng)) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Coordenadas de origem ou destino inválidas' }));
+      return;
+    }
+
+    if (forceOfflineGraph) {
+      const graphRoute = computeOfflineGraphRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel)
+        || generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(graphRoute));
       return;
     }
 
@@ -895,8 +1928,9 @@ const server = http.createServer((req, res) => {
         }
       })
       .catch(() => {
-        // Fallback to offline tactical corridor
-        const fallbackResult = generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel);
+        // Fallback: first try local turn-by-turn A* graph over vector tiles, then tactical corridor
+        const fallbackResult = computeOfflineGraphRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel)
+          || generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel);
         try { fs.writeFileSync(cachePath, JSON.stringify(fallbackResult, null, 2), 'utf8'); } catch(e){}
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(fallbackResult));
