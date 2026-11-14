@@ -336,8 +336,8 @@
           <span class="sidebar-clock" id="sidebar-clock-time">--:--:--</span>
         </div>
         <div class="sidebar-meta">
-          <span>HD Externo 1 TB</span>
-          <a href="http://localhost:8090" target="_blank" class="text-emerald-400 font-bold">Kiwix :8090 ↗</a>
+          <button type="button" onclick="openLanConnectModal()" class="text-cyan-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">📡 Rede Local / LAN</button>
+          <a href="http://localhost:8090" id="kiwix-sidebar-link" target="_blank" class="text-emerald-400 font-bold">Kiwix :8090 ↗</a>
         </div>
       </div>
     </aside>
@@ -487,8 +487,11 @@
             <div>
               <strong>Status do Acervo Local:</strong> <span id="status-summary">Carregando dados...</span>
             </div>
-            <div>
-              Armazenamento: <strong class="text-white">HD Externo 1 TB (E:\)</strong> &bull; Servidor: <strong class="text-emerald-400">Docker Offline</strong>
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+              <span>Servidor: <strong class="text-emerald-400">Docker Offline</strong></span>
+              <button type="button" onclick="openLanConnectModal()" class="chip-btn" style="padding:0.25rem 0.65rem;font-size:0.72rem;border-color:rgba(6,182,212,0.45);color:#38bdf8;">
+                📡 Rede Local / Celular
+              </button>
             </div>
           </div>
 
@@ -503,7 +506,7 @@
 
           <!-- Clean Floating Map HUD -->
           <div class="map-hud">
-            <!-- Row 1: Search Input + Route & Waypoint Drawer Toggles -->
+            <!-- Row 1: Search Input + Route, Measure & Waypoint Drawer Toggles -->
             <div class="map-search-row">
               <div class="map-search-box">
                 <span class="text-emerald-400">🔍</span>
@@ -517,6 +520,9 @@
               </div>
               <button type="button" class="btn-toggle-routes" id="btn-toggle-route-panel" onclick="toggleRoutePlanner()">
                 <span>🧭</span> <span class="btn-text-hide-sm">Rotas</span>
+              </button>
+              <button type="button" class="btn-toggle-wpts" id="btn-toggle-measure" onclick="toggleTacticalMeasure()" title="Medir distância, azimute magnético e visada VHF/UHF">
+                <span>📐</span> <span class="btn-text-hide-sm">Medir</span>
               </button>
               <button type="button" class="btn-toggle-wpts" id="btn-toggle-nearby-support" onclick="toggleNearbySupportDrawer()">
                 <span>🚑</span> <span class="btn-text-hide-sm">Socorro</span>
@@ -594,11 +600,27 @@
                   <div id="route-from-dropdown" class="search-results-dropdown route-dropdown"></div>
                 </div>
 
-                <!-- Swap -->
-                <div class="route-swap-row">
+                <!-- Swap & Via Stop Toggle -->
+                <div class="route-swap-row" style="gap: 0.4rem;">
                   <button type="button" class="btn-swap-points" onclick="swapRoutePoints()">
-                    ⇅ Inverter Origem e Destino
+                    ⇅ Inverter
                   </button>
+                  <button type="button" class="btn-swap-points" id="btn-toggle-via-stop" onclick="toggleRouteViaInput()">
+                    ➕ Parada (Via)
+                  </button>
+                </div>
+
+                <!-- Optional Intermediate Stop (Via) -->
+                <div class="route-input-group" id="route-via-group" style="display: none;">
+                  <div class="route-input-label" style="justify-content: space-between;">
+                    <span><span class="dot-origin" style="background: #f59e0b; color: #090d10;">V</span> Parada Intermediária (Via)</span>
+                    <button type="button" onclick="clearRouteVia()" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;">✕ Remover</button>
+                  </div>
+                  <div class="route-field-wrap">
+                    <input type="text" id="route-via-input" class="route-input" placeholder="Rua, ponto ou cidade de escala..." autocomplete="off">
+                    <button type="button" class="btn-input-action" onclick="enableMapPick('via')" title="Clicar no mapa">📍 Mapa</button>
+                  </div>
+                  <div id="route-via-dropdown" class="search-results-dropdown route-dropdown"></div>
                 </div>
 
                 <!-- Destination -->
@@ -674,6 +696,15 @@
                   </div>
                 </div>
 
+                <!-- Support POIs along route corridor (within 5 km) -->
+                <div class="route-steps-section" id="route-corridor-support-section" style="display: none;">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-red-400 uppercase">🚑 Apoio no Corredor (até 5 km)</span>
+                    <span class="text-xs text-gray-500 font-mono" id="route-corridor-count">0 pontos</span>
+                  </div>
+                  <div class="route-steps-list" id="route-corridor-list" style="max-height: 175px;"></div>
+                </div>
+
                 <div class="route-steps-section">
                   <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold text-gray-300 uppercase">Passo a Passo</span>
@@ -682,9 +713,14 @@
                   <div class="route-steps-list" id="route-steps-list"></div>
                 </div>
 
-                <button type="button" class="btn-export-gpx" onclick="downloadCurrentRouteGpx()">
-                  <span>📥</span> Baixar GPX (Garmin / OsmAnd)
-                </button>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+                  <button type="button" class="btn-export-gpx" onclick="downloadCurrentRouteGpx()">
+                    <span>📥</span> Baixar GPX (Garmin / OsmAnd)
+                  </button>
+                  <button type="button" class="btn-drawer-action" style="justify-content: center;" onclick="printCurrentRouteDossier()">
+                    <span>🖨️</span> Imprimir Dossiê Tático da Rota (A4)
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -838,6 +874,10 @@
                     📋 Copiar
                   </button>
                 </div>
+                <div class="coords-box" style="margin-top: 0.5rem; flex-direction: column; align-items: stretch; gap: 0.35rem;">
+                  <div class="text-xs font-bold text-amber-300">☀️ Efemérides Solares &amp; Lua Hoje</div>
+                  <div id="drawer-ephemeris-box" class="text-xs text-gray-300">Calculando...</div>
+                </div>
               </div>
 
               <div class="drawer-section">
@@ -868,9 +908,14 @@
                     <div class="text-xs text-emerald-400">História, demografia, relevo e economia</div>
                   </div>
                 </a>
-                <button type="button" class="btn-drawer-action w-full mt-2" onclick="openSelectedCityInWikiTab()">
-                  <span>📖</span> Abrir na Aba Wikipédia do Portal
-                </button>
+                <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.5rem;">
+                  <button type="button" class="btn-drawer-action w-full" onclick="openSelectedCityInWikiTab()">
+                    <span>📖</span> Abrir na Aba Wikipédia do Portal
+                  </button>
+                  <button type="button" class="btn-drawer-action w-full" onclick="openSelectedCityInWikivoyage()">
+                    <span>🧭</span> Abrir Guia de Viagem (Wikivoyage PT)
+                  </button>
+                </div>
               </div>
 
               <div class="drawer-section">
@@ -885,6 +930,21 @@
             </div>
           </div>
 
+          <!-- Floating Tactical Measure HUD (Etapa 3) -->
+          <div id="tactical-measure-hud" style="display:none;position:absolute;bottom:1.25rem;right:1rem;z-index:25;width:min(340px,calc(100% - 2rem));background:rgba(15,20,26,0.94);border:1px solid rgba(16,185,129,0.45);border-radius:12px;padding:0.85rem 1rem;box-shadow:0 12px 32px rgba(0,0,0,0.65);backdrop-filter:blur(8px);">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-emerald-400 uppercase">📐 Medição Tática &amp; Rádio</span>
+              <button type="button" onclick="toggleTacticalMeasure(false)" class="drawer-close-btn" style="width:24px;height:24px;font-size:16px;" title="Fechar">&times;</button>
+            </div>
+            <div id="measure-hud-stats" class="text-xs text-gray-200 space-y-1">
+              <div>Clique em 2 ou mais pontos no mapa para medir distância, azimute magnético e visada VHF/UHF.</div>
+            </div>
+            <div class="flex gap-2 mt-2">
+              <button type="button" class="chip-btn" style="flex:1;justify-content:center;font-size:0.7rem;" onclick="undoMeasurePoint()">↩️ Desfazer</button>
+              <button type="button" class="chip-btn" style="flex:1;justify-content:center;font-size:0.7rem;" onclick="clearMeasurePoints()">🗑️ Limpar</button>
+            </div>
+          </div>
+
           <!-- Map Canvas -->
           <div id="map-container"></div>
         </div>
@@ -895,18 +955,27 @@
            ================================================================= -->
       <section class="tab-view" id="tab-wiki">
         <div class="kiwix-frame-container">
-          <div class="kiwix-toolbar">
-            <div class="flex items-center gap-2">
-              <span class="text-lg">📚</span>
-              <span class="text-sm font-bold text-white">Wikipédia em Português &amp; Biblioteca Kiwix (Offline)</span>
+          <div class="kiwix-toolbar" style="flex-direction: column; align-items: stretch; gap: 0.55rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">📚</span>
+                <span class="text-sm font-bold text-white">Acervo Kiwix Multi-ZIM (Offline)</span>
+              </div>
+              <div class="flex items-center gap-2" style="flex:1;max-width:480px;min-width:220px;">
+                <input type="text" id="kiwix-search-input" class="route-input" style="flex:1;padding:0.35rem 0.65rem;font-size:0.78rem;" placeholder="Buscar artigo no livro ZIM ativo..." onkeydown="if(event.key==='Enter')searchInCurrentKiwixBook()">
+                <button type="button" class="chip-btn chip-highlight" onclick="searchInCurrentKiwixBook()">🔍 Buscar</button>
+              </div>
+              <div class="flex items-center gap-2">
+                <a href="http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05" id="kiwix-tab-external-link" target="_blank" class="chip-btn chip-highlight">
+                  ↗️ Abrir Livro em Nova Aba
+                </a>
+                <a href="http://localhost:8090" id="kiwix-shelf-link" target="_blank" class="chip-btn">
+                  📖 Estante (:8090)
+                </a>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <a href="http://localhost:8090/content/wikipedia_pt_all_maxi_2026-05" target="_blank" class="chip-btn chip-highlight">
-                ↗️ Abrir Wikipédia em Nova Aba
-              </a>
-              <a href="http://localhost:8090" target="_blank" class="chip-btn">
-                📖 Estante de Livros (:8090)
-              </a>
+            <div id="kiwix-bookshelf-chips" class="flex flex-wrap gap-1.5" style="align-items:center;">
+              <span class="text-xs text-gray-400">Carregando livros ZIM instalados...</span>
             </div>
           </div>
           <iframe id="kiwix-iframe" class="kiwix-iframe" src=""></iframe>
@@ -925,6 +994,15 @@
               <p class="page-subtitle">
                 Guias passo a passo de intervenção imediata para salvar vidas em acidentes, desastres naturais ou ausência de resgate médico próximo.
               </p>
+            </div>
+          </div>
+
+          <div class="tactical-card mb-4" style="margin-bottom: 1.25rem;">
+            <div class="text-xs font-bold text-emerald-400 uppercase mb-2">🩺 Consulta Rápida na Enciclopédia Médica &amp; Fármacos (ZIM Offline)</div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+              <input type="text" id="med-zim-search-input" class="route-input" style="flex:1;min-width:210px;" placeholder="Ex: hipotermia, amoxicilina, torniquete, anafilaxia, paracetamol..." onkeydown="if(event.key==='Enter')searchMedicalZim('medicine')">
+              <button type="button" class="chip-btn chip-highlight" onclick="searchMedicalZim('medicine')">🩺 Buscar Wikipédia Médica PT</button>
+              <button type="button" class="chip-btn" onclick="searchMedicalZim('nhs')">💊 Buscar Medicamentos (NHS)</button>
             </div>
           </div>
 
@@ -5044,8 +5122,25 @@
       </button>
     </nav>
 
+    <!-- LAN / Offline Mobile Connect Modal (Etapa 4) -->
+    <div id="lan-connect-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(4,7,10,0.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeLanConnectModal()">
+      <div class="tactical-card" style="width:min(480px,100%);max-height:90vh;overflow-y:auto;border-color:rgba(6,182,212,0.5);">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📡</span>
+            <h3 class="text-base font-bold text-white">Modo Acampamento / Rede Local (LAN)</h3>
+          </div>
+          <button type="button" onclick="closeLanConnectModal()" class="drawer-close-btn">&times;</button>
+        </div>
+        <p class="text-xs text-gray-300 mb-3">
+          Conecte celulares, tablets ou outro notebook na mesma rede Wi-Fi / Hotspot sem internet. Os links da Wikipédia Kiwix ajustam automaticamente para o endereço acessado no navegador.
+        </p>
+        <div id="lan-modal-body" class="space-y-3 text-xs"></div>
+      </div>
+    </div>
+
   </div>
 
-  <script src="/app.js?v=3.0"></script>
+  <script src="/app.js?v=4.0"></script>
 </body>
 </html>

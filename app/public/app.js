@@ -99,12 +99,15 @@ function switchTab(tabId) {
     }, 100);
   }
 
-  // Load Kiwix iframe if switching to wiki
+  // Load Kiwix iframe & dynamic bookshelf if switching to wiki
   if (tabId === 'wiki') {
+    if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
+    if (typeof window.loadKiwixBookshelf === 'function') window.loadKiwixBookshelf();
     const iframe = document.getElementById('kiwix-iframe');
     const primaryBook = window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
     if (iframe && !iframe.getAttribute('src')) {
-      iframe.setAttribute('src', `http://localhost:8090/content/${encodeURIComponent(primaryBook)}`);
+      const base = typeof window.getKiwixBaseUrl === 'function' ? window.getKiwixBaseUrl() : `http://${window.location.hostname || 'localhost'}:8090`;
+      iframe.setAttribute('src', `${base}/content/${encodeURIComponent(primaryBook)}`);
     }
   }
 
@@ -165,7 +168,9 @@ async function loadData() {
     const statusData = await statusRes.json();
     window.nomadStatusData = statusData;
     window.nomadPrimaryZimBook = (statusData.datasets && statusData.datasets.primaryZimBook) || 'wikipedia_pt_all_maxi_2026-05';
+    window.nomadLanIps = Array.isArray(statusData.lanIps) ? statusData.lanIps : [];
     renderStatusSummaryFromData(statusData);
+    if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
 
     // 2. Cities (todos os 5.571 municípios do IBGE)
     const citiesRes = await fetch('/api/cities?limit=6000');
@@ -525,6 +530,12 @@ function initMap() {
     // Interactive Map Click & Right-Click Offline Reverse Geocoding
     mapInstance.on('click', (e) => {
       const { lng, lat } = e.lngLat;
+
+      // If Tactical Measure tool is active
+      if (typeof tacticalMeasureActive !== 'undefined' && tacticalMeasureActive) {
+        addTacticalMeasurePoint(lat, lng);
+        return;
+      }
 
       // If user is picking route origin, destination or waypoint on map
       if (mapPickMode) {
@@ -955,9 +966,27 @@ window.showCityIntel = function(city) {
   if (prefetchBtn) prefetchBtn.disabled = false;
   if (prefetchStatus) prefetchStatus.textContent = '';
 
-  // Exact Wikipedia offline article link (Kiwix port 8090)
+  // Render offline Solar & Lunar Ephemeris in city drawer
+  const ephemBox = document.getElementById('drawer-ephemeris-box');
+  if (ephemBox && typeof computeOfflineSunMoon === 'function') {
+    const ep = computeOfflineSunMoon(city.lat, city.lng);
+    ephemBox.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;">
+        <div>🌅 Nascer: <strong class="text-amber-300 font-mono">${ep.sunrise}</strong></div>
+        <div>🌇 Pôr: <strong class="text-orange-400 font-mono">${ep.sunset}</strong></div>
+        <div>🌄 Alvorada: <strong class="text-slate-300 font-mono">${ep.dawn}</strong></div>
+        <div>🌆 Crepúsculo: <strong class="text-slate-300 font-mono">${ep.dusk}</strong></div>
+        <div>⏱️ Luz Útil: <strong class="text-emerald-400 font-mono">${ep.daylightStr}</strong></div>
+        <div>${ep.moonIcon} Lua: <strong class="text-cyan-300">${ep.moonPhaseName} (${ep.moonIllum}%)</strong></div>
+      </div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:4px;">${escapeHtmlSafe(ep.remainingLabel)}</div>
+    `;
+  }
+
+  // Exact Wikipedia offline article link (Dynamic Host + Kiwix port 8090)
   if (wikiLinkEl) {
     const primaryBook = window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
+    const kiwixBase = typeof window.getKiwixBaseUrl === 'function' ? window.getKiwixBaseUrl() : `http://${window.location.hostname || 'localhost'}:8090`;
     let wikiTarget = city.name;
     if (city.wiki_query) {
       wikiTarget = city.wiki_query;
@@ -965,7 +994,7 @@ window.showCityIntel = function(city) {
       wikiTarget = `${city.name}_(${city.state_name || city.state})`;
     }
     const cleanTarget = wikiTarget.replace(/ /g, '_');
-    wikiLinkEl.href = `http://localhost:8090/content/${encodeURIComponent(primaryBook)}/${encodeURIComponent(cleanTarget)}`;
+    wikiLinkEl.href = `${kiwixBase}/content/${encodeURIComponent(primaryBook)}/${encodeURIComponent(cleanTarget)}`;
     fetch(`/api/kiwix/resolve?q=${encodeURIComponent(city.wiki_query || city.name)}`)
       .then(r => (r.ok ? r.json() : null))
       .then(resolved => {
@@ -1168,11 +1197,31 @@ window.flyToCoords = function(lat, lng, label = 'Ponto Selecionado', zoom = 12, 
 // TACTICAL ROUTE PLANNER IMPLEMENTATION
 // ==========================================
 let routeOrigin = null;
+let routeVia = null;
 let routeDest = null;
 let routeProfile = 'driving';
 let mapPickMode = null;
 let routeMarkers = [];
 let currentRouteData = null;
+
+window.toggleRouteViaInput = function(force) {
+  const group = document.getElementById('route-via-group');
+  if (!group) return;
+  const show = typeof force === 'boolean' ? force : group.style.display === 'none';
+  group.style.display = show ? 'flex' : 'none';
+  if (show) {
+    document.getElementById('route-via-input')?.focus();
+  }
+};
+
+window.clearRouteVia = function() {
+  routeVia = null;
+  const input = document.getElementById('route-via-input');
+  if (input) input.value = '';
+  const group = document.getElementById('route-via-group');
+  if (group) group.style.display = 'none';
+  if (routeOrigin && routeDest) calculateRoute();
+};
 
 // Toggle Route Planner
 window.toggleRoutePlanner = function(forceState) {
@@ -1250,6 +1299,17 @@ function setupRouteSearch() {
     };
     const input = document.getElementById('route-from-input');
     if (input) input.value = routeOrigin.label;
+    if (routeOrigin && routeDest) calculateRoute();
+  });
+
+  setupCityAutocomplete('route-via-input', 'route-via-dropdown', (item) => {
+    routeVia = {
+      lat: item.lat,
+      lng: item.lng,
+      label: item.isStreet ? `${item.streetName} (${item.cityName}-${item.state})` : `${item.name} (${item.state})`
+    };
+    const input = document.getElementById('route-via-input');
+    if (input) input.value = routeVia.label;
     if (routeOrigin && routeDest) calculateRoute();
   });
 
@@ -1434,6 +1494,7 @@ window.enableMapPick = function(target) {
   if (targetLabel) {
     if (target === 'origin') targetLabel.textContent = 'Ponto A (Origem)';
     else if (target === 'dest') targetLabel.textContent = 'Ponto B (Destino)';
+    else if (target === 'via') targetLabel.textContent = 'Parada Intermediária (Via)';
     else if (target === 'waypoint') targetLabel.textContent = 'Novo Marcador Tático';
   }
 };
@@ -1497,6 +1558,11 @@ async function handleMapPickedPoint(lat, lng, mode) {
     routeOrigin = { lat, lng, label };
     const input = document.getElementById('route-from-input');
     if (input) input.value = label;
+  } else if (mode === 'via') {
+    routeVia = { lat, lng, label };
+    toggleRouteViaInput(true);
+    const input = document.getElementById('route-via-input');
+    if (input) input.value = label;
   } else {
     routeDest = { lat, lng, label };
     const input = document.getElementById('route-to-input');
@@ -1526,7 +1592,10 @@ window.calculateRoute = async function() {
   }
 
   try {
-    const url = `/api/route?fromLat=${routeOrigin.lat}&fromLng=${routeOrigin.lng}&toLat=${routeDest.lat}&toLng=${routeDest.lng}&profile=${routeProfile}&fromLabel=${encodeURIComponent(routeOrigin.label || '')}&toLabel=${encodeURIComponent(routeDest.label || '')}`;
+    const viaParams = routeVia
+      ? `&viaLat=${routeVia.lat}&viaLng=${routeVia.lng}&viaLabel=${encodeURIComponent(routeVia.label || '')}`
+      : '';
+    const url = `/api/route?fromLat=${routeOrigin.lat}&fromLng=${routeOrigin.lng}&toLat=${routeDest.lat}&toLng=${routeDest.lng}&profile=${routeProfile}&fromLabel=${encodeURIComponent(routeOrigin.label || '')}&toLabel=${encodeURIComponent(routeDest.label || '')}${viaParams}`;
     const res = await fetch(url);
     const data = await res.json();
     currentRouteData = data;
@@ -1614,9 +1683,26 @@ function renderRouteOnMap(data) {
 
   const markerA = new maplibregl.Marker({ element: elA })
     .setLngLat([routeOrigin.lng, routeOrigin.lat])
-    .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(`<strong>Origem:</strong> ${routeOrigin.label}`))
+    .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(`<strong>Origem:</strong> ${escapeHtmlSafe(routeOrigin.label)}`))
     .addTo(mapInstance);
   routeMarkers.push(markerA);
+
+  if (routeVia) {
+    const elV = document.createElement('div');
+    elV.className = 'dot-origin';
+    elV.style.width = '24px';
+    elV.style.height = '24px';
+    elV.style.fontSize = '12px';
+    elV.style.background = '#f59e0b';
+    elV.style.color = '#090d10';
+    elV.style.boxShadow = '0 0 12px rgba(245, 158, 11, 0.9)';
+    elV.textContent = 'V';
+    const markerV = new maplibregl.Marker({ element: elV })
+      .setLngLat([routeVia.lng, routeVia.lat])
+      .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(`<strong>Parada (Via):</strong> ${escapeHtmlSafe(routeVia.label)}`))
+      .addTo(mapInstance);
+    routeMarkers.push(markerV);
+  }
 
   // End Marker (B)
   const elB = document.createElement('div');
@@ -1629,7 +1715,7 @@ function renderRouteOnMap(data) {
 
   const markerB = new maplibregl.Marker({ element: elB })
     .setLngLat([routeDest.lng, routeDest.lat])
-    .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(`<strong>Destino:</strong> ${routeDest.label}`))
+    .setPopup(new maplibregl.Popup({ offset: 15 }).setHTML(`<strong>Destino:</strong> ${escapeHtmlSafe(routeDest.label)}`))
     .addTo(mapInstance);
   routeMarkers.push(markerB);
 
@@ -1703,6 +1789,40 @@ function renderRouteMetricsAndSteps(data) {
     }
   }
 
+  // Support along route corridor (within 5 km)
+  const corridorSection = document.getElementById('route-corridor-support-section');
+  const corridorCount = document.getElementById('route-corridor-count');
+  const corridorList = document.getElementById('route-corridor-list');
+  const corridorItems = Array.isArray(data.corridorSupport) ? data.corridorSupport : [];
+  if (corridorSection && corridorList && corridorCount) {
+    if (corridorItems.length > 0) {
+      corridorSection.style.display = 'block';
+      corridorCount.textContent = `${corridorItems.length} pontos`;
+      corridorList.innerHTML = '';
+      corridorItems.forEach(item => {
+        const icon = (typeof POI_ICONS !== 'undefined' && POI_ICONS[item.category]) || '🚑';
+        const row = document.createElement('div');
+        row.className = 'step-row';
+        row.style.cursor = 'pointer';
+        const place = [item.city, item.state].filter(Boolean).join('/');
+        row.innerHTML = `
+          <span class="step-icon">${icon}</span>
+          <div class="step-info">
+            <div style="font-weight:700;color:#f1f5f9;">${escapeHtmlSafe(item.name)}</div>
+            <div style="font-size:10px;color:#94a3b8;">Km ${item.kmAlongRoute} da rota • ${item.distFromRouteKm} km da via${place ? ' • ' + escapeHtmlSafe(place) : ''}${item.phone ? ' • ☎️ ' + escapeHtmlSafe(item.phone) : ''}</div>
+          </div>
+        `;
+        row.addEventListener('click', () => {
+          flyToCoords(item.lat, item.lng, item.name, 15);
+        });
+        corridorList.appendChild(row);
+      });
+    } else {
+      corridorSection.style.display = 'none';
+      corridorList.innerHTML = '';
+    }
+  }
+
   // Steps
   const countEl = document.getElementById('route-steps-count');
   if (countEl) countEl.textContent = `${data.steps.length} etapas`;
@@ -1716,7 +1836,7 @@ function renderRouteMetricsAndSteps(data) {
       else if (s.instruction.includes('direita')) icon = '↗️';
       else if (s.instruction.includes('esquerda')) icon = '↖️';
       else if (s.instruction.includes('rotatória')) icon = '🔄';
-      else if (s.instruction.includes('Passagem')) icon = '📍';
+      else if (s.instruction.includes('Passagem') || s.instruction.includes('Parada')) icon = '📍';
 
       return `
         <div class="step-row">
@@ -1734,16 +1854,23 @@ function renderRouteMetricsAndSteps(data) {
 // Clear current route
 window.clearCurrentRoute = function() {
   routeOrigin = null;
+  routeVia = null;
   routeDest = null;
   currentRouteData = null;
 
   const fromInput = document.getElementById('route-from-input');
+  const viaInput = document.getElementById('route-via-input');
+  const viaGroup = document.getElementById('route-via-group');
   const toInput = document.getElementById('route-to-input');
   if (fromInput) fromInput.value = '';
+  if (viaInput) viaInput.value = '';
+  if (viaGroup) viaGroup.style.display = 'none';
   if (toInput) toInput.value = '';
 
   const resContainer = document.getElementById('route-result-container');
   if (resContainer) resContainer.style.display = 'none';
+  const corridorSec = document.getElementById('route-corridor-support-section');
+  if (corridorSec) corridorSec.style.display = 'none';
 
   const loader = document.getElementById('route-loading-indicator');
   if (loader) loader.style.display = 'none';
@@ -1763,7 +1890,8 @@ window.clearCurrentRoute = function() {
 // Download GPX
 window.downloadCurrentRouteGpx = function() {
   if (!routeOrigin || !routeDest) return;
-  const url = `/api/route/gpx?fromLat=${routeOrigin.lat}&fromLng=${routeOrigin.lng}&toLat=${routeDest.lat}&toLng=${routeDest.lng}&profile=${routeProfile}`;
+  const viaParams = routeVia ? `&viaLat=${routeVia.lat}&viaLng=${routeVia.lng}` : '';
+  const url = `/api/route/gpx?fromLat=${routeOrigin.lat}&fromLng=${routeOrigin.lng}&toLat=${routeDest.lat}&toLng=${routeDest.lng}&profile=${routeProfile}${viaParams}`;
   const a = document.createElement('a');
   a.href = url;
   a.download = `rota_tatica_${routeProfile}_nomad.gpx`;
@@ -4340,6 +4468,11 @@ async function openReverseGeocodePopup(lat, lng) {
     </div>`;
   }
 
+  const sunMoon = typeof computeOfflineSunMoon === 'function' ? computeOfflineSunMoon(lat, lng) : null;
+  const sunLineHtml = sunMoon
+    ? `<div style="margin-top:4px;font-size:10px;color:#fcd34d;">☀️ ${sunMoon.sunrise}–${sunMoon.sunset} (${sunMoon.daylightStr}) &bull; ${sunMoon.moonIcon} ${sunMoon.moonPhaseName}</div>`
+    : '';
+
   container.innerHTML = `
     <div style="font-weight:800;font-size:13px;color:#34d399;margin-bottom:2px;">📍 ${escapeHtmlSafe(titleText)}</div>
     ${subText ? `<div style="font-size:11px;color:#cbd5e1;margin-bottom:6px;">${escapeHtmlSafe(subText)}</div>` : ''}
@@ -4347,6 +4480,7 @@ async function openReverseGeocodePopup(lat, lng) {
       <div><strong>DEC:</strong> ${escapeHtmlSafe(decStr)}</div>
       <div><strong>DMS:</strong> ${escapeHtmlSafe(dmsStr)}</div>
       <div><strong>UTM:</strong> ${escapeHtmlSafe(utmStr)}</div>
+      ${sunLineHtml}
     </div>
     ${poisHtml}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:7px;">
@@ -4429,8 +4563,9 @@ window.openSelectedCityInWikiTab = async function() {
   if (!currentSelectedCity) return;
   const city = currentSelectedCity;
   const primaryBook = window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
+  const kiwixBase = typeof window.getKiwixBaseUrl === 'function' ? window.getKiwixBaseUrl() : `http://${window.location.hostname || 'localhost'}:8090`;
   const targetSlug = (city.wiki_query || `${city.name}_(${city.state_name || city.state})`).replace(/ /g, '_');
-  let finalUrl = `http://localhost:8090/content/${encodeURIComponent(primaryBook)}/${encodeURIComponent(targetSlug)}`;
+  let finalUrl = `${kiwixBase}/content/${encodeURIComponent(primaryBook)}/${encodeURIComponent(targetSlug)}`;
 
   try {
     const res = await fetch(`/api/kiwix/resolve?q=${encodeURIComponent(city.wiki_query || city.name)}`);
@@ -4438,6 +4573,35 @@ window.openSelectedCityInWikiTab = async function() {
       const resolved = await res.json();
       if (resolved && resolved.ok) {
         finalUrl = resolved.articleUrl || resolved.searchUrl || finalUrl;
+        if (resolved.book && typeof window.setActiveKiwixBookState === 'function') {
+          window.setActiveKiwixBookState(resolved.book);
+        }
+      }
+    }
+  } catch (e) {}
+
+  switchTab('wiki');
+  const iframe = document.getElementById('kiwix-iframe');
+  if (iframe) {
+    iframe.setAttribute('src', finalUrl);
+  }
+};
+
+window.openSelectedCityInWikivoyage = async function() {
+  if (!currentSelectedCity) return;
+  const city = currentSelectedCity;
+  const kiwixBase = typeof window.getKiwixBaseUrl === 'function' ? window.getKiwixBaseUrl() : `http://${window.location.hostname || 'localhost'}:8090`;
+  let finalUrl = `${kiwixBase}/search?content=wikivoyage_pt_all_maxi_2026-09&pattern=${encodeURIComponent(city.name)}`;
+
+  try {
+    const res = await fetch(`/api/kiwix/resolve?category=travel&q=${encodeURIComponent(city.name)}`);
+    if (res.ok) {
+      const resolved = await res.json();
+      if (resolved && resolved.ok) {
+        finalUrl = resolved.articleUrl || resolved.searchUrl || finalUrl;
+        if (resolved.book && typeof window.setActiveKiwixBookState === 'function') {
+          window.setActiveKiwixBookState(resolved.book);
+        }
       }
     }
   } catch (e) {}
@@ -4730,3 +4894,800 @@ window.importFullTacticalBackup = function(event) {
   };
   reader.readAsText(file);
 };
+
+// =====================================================================
+// 33. KIWIX DINÂMICO LAN (:8090), ESTANTE MULTI-ZIM & ATALHOS MÉDICOS
+// =====================================================================
+
+let kiwixBookshelfList = [];
+let activeKiwixBook = null;
+
+window.getKiwixBaseUrl = function() {
+  const host = (typeof window !== 'undefined' && window.location && window.location.hostname)
+    ? window.location.hostname
+    : 'localhost';
+  return `http://${host}:8090`;
+};
+
+window.setActiveKiwixBookState = function(bookName) {
+  if (!bookName) return;
+  activeKiwixBook = bookName;
+  const base = window.getKiwixBaseUrl();
+  const extLink = document.getElementById('kiwix-tab-external-link');
+  if (extLink) {
+    extLink.href = `${base}/content/${encodeURIComponent(bookName)}`;
+  }
+  document.querySelectorAll('.kiwix-book-chip').forEach(btn => {
+    const b = btn.getAttribute('data-book');
+    btn.classList.toggle('chip-highlight', b === bookName);
+  });
+};
+
+window.initDynamicKiwixLinks = function() {
+  const base = window.getKiwixBaseUrl();
+  const primary = activeKiwixBook || window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
+  const sideLink = document.getElementById('kiwix-sidebar-link');
+  const shelfLink = document.getElementById('kiwix-shelf-link');
+  const extLink = document.getElementById('kiwix-tab-external-link');
+  if (sideLink) sideLink.href = base;
+  if (shelfLink) shelfLink.href = base;
+  if (extLink) extLink.href = `${base}/content/${encodeURIComponent(primary)}`;
+};
+
+window.loadKiwixBookshelf = async function() {
+  const wrap = document.getElementById('kiwix-bookshelf-chips');
+  if (!wrap) return;
+  try {
+    const res = await fetch('/api/kiwix/books');
+    if (!res.ok) throw new Error('Falha ao listar livros');
+    const data = await res.json();
+    const books = Array.isArray(data.books) ? data.books : [];
+    kiwixBookshelfList = books;
+    if (books.length === 0) {
+      wrap.innerHTML = '<span class="text-xs text-amber-400">Nenhum arquivo .zim encontrado em storage/zim/</span>';
+      return;
+    }
+    if (!activeKiwixBook) {
+      activeKiwixBook = window.nomadPrimaryZimBook || books[0].book;
+    }
+    wrap.innerHTML = '';
+    books.forEach(b => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `chip-btn kiwix-book-chip${b.book === activeKiwixBook ? ' chip-highlight' : ''}`;
+      btn.setAttribute('data-book', b.book);
+      btn.style.fontSize = '0.72rem';
+      btn.style.padding = '0.25rem 0.6rem';
+      btn.textContent = `${b.icon || '📕'} ${b.title} (${b.sizeFormatted})`;
+      btn.addEventListener('click', () => {
+        window.setActiveKiwixBookState(b.book);
+        const iframe = document.getElementById('kiwix-iframe');
+        if (iframe) {
+          iframe.setAttribute('src', `${window.getKiwixBaseUrl()}/content/${encodeURIComponent(b.book)}`);
+        }
+      });
+      wrap.appendChild(btn);
+    });
+  } catch (e) {
+    wrap.innerHTML = '<span class="text-xs text-gray-400">Estante Kiwix disponível via botão Estante (:8090).</span>';
+  }
+};
+
+window.searchInCurrentKiwixBook = function() {
+  const input = document.getElementById('kiwix-search-input');
+  const q = input ? input.value.trim() : '';
+  const book = activeKiwixBook || window.nomadPrimaryZimBook || 'wikipedia_pt_all_maxi_2026-05';
+  const base = window.getKiwixBaseUrl();
+  const targetUrl = q
+    ? `${base}/search?content=${encodeURIComponent(book)}&pattern=${encodeURIComponent(q)}`
+    : `${base}/content/${encodeURIComponent(book)}`;
+  window.setActiveKiwixBookState(book);
+  const iframe = document.getElementById('kiwix-iframe');
+  if (iframe) iframe.setAttribute('src', targetUrl);
+};
+
+window.searchMedicalZim = async function(targetType) {
+  const input = document.getElementById('med-zim-search-input');
+  const q = input ? input.value.trim() : '';
+  const base = window.getKiwixBaseUrl();
+  const queryParam = targetType === 'nhs' ? 'book=nhs' : 'category=medicine';
+  let finalUrl = `${base}/search?content=${encodeURIComponent(targetType === 'nhs' ? 'nhs.uk_en_medicines_2025-12' : 'wikipedia_pt_medicine_maxi_2026-10')}&pattern=${encodeURIComponent(q)}`;
+
+  try {
+    const res = await fetch(`/api/kiwix/resolve?${queryParam}&q=${encodeURIComponent(q)}`);
+    if (res.ok) {
+      const resolved = await res.json();
+      if (resolved && resolved.ok) {
+        finalUrl = q ? (resolved.searchUrl || resolved.articleUrl) : resolved.articleUrl;
+        if (resolved.book) window.setActiveKiwixBookState(resolved.book);
+      }
+    }
+  } catch (e) {}
+
+  switchTab('wiki');
+  const searchBox = document.getElementById('kiwix-search-input');
+  if (searchBox && q) searchBox.value = q;
+  const iframe = document.getElementById('kiwix-iframe');
+  if (iframe) iframe.setAttribute('src', finalUrl);
+};
+
+// =====================================================================
+// 34. FERRAMENTA DE MEDIÇÃO TÁTICA NO MAPA (AZIMUTE & VISADA RÁDIO)
+// =====================================================================
+
+let tacticalMeasureActive = false;
+let measurePoints = [];
+let measureMarkers = [];
+
+const BRAZIL_DECLINATION_DEG = -21;
+
+function getCardinalDir(deg) {
+  const dirs = ['N', 'NE', 'L', 'SE', 'S', 'SO', 'O', 'NO'];
+  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+}
+
+function computeTrueAzimuthDeg(lat1, lng1, lat2, lng2) {
+  const rad = Math.PI / 180;
+  const p1 = lat1 * rad;
+  const p2 = lat2 * rad;
+  const dl = (lng2 - lng1) * rad;
+  const y = Math.sin(dl) * Math.cos(p2);
+  const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+function ensureTacticalMeasureLayer() {
+  if (!mapInstance) return;
+  if (!mapInstance.getSource('tactical-measure-source')) {
+    mapInstance.addSource('tactical-measure-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    });
+    mapInstance.addLayer({
+      id: 'tactical-measure-layer',
+      type: 'line',
+      source: 'tactical-measure-source',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': '#38bdf8',
+        'line-width': 3.5,
+        'line-dasharray': [2.2, 1.5]
+      }
+    });
+  }
+}
+
+function renderTacticalMeasureState() {
+  ensureTacticalMeasureLayer();
+  if (mapInstance && mapInstance.getSource('tactical-measure-source')) {
+    const features = [];
+    if (measurePoints.length >= 2) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: measurePoints }
+      });
+    }
+    mapInstance.getSource('tactical-measure-source').setData({
+      type: 'FeatureCollection',
+      features
+    });
+  }
+
+  measureMarkers.forEach(m => m.remove());
+  measureMarkers = [];
+  if (mapInstance && typeof maplibregl !== 'undefined') {
+    measurePoints.forEach((pt, idx) => {
+      const el = document.createElement('div');
+      el.style.cssText = 'background:#0284c7;color:#fff;border:2px solid #fff;border-radius:50%;width:20px;height:20px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(56,189,248,0.8);';
+      el.textContent = String(idx + 1);
+      const mk = new maplibregl.Marker({ element: el }).setLngLat(pt).addTo(mapInstance);
+      measureMarkers.push(mk);
+    });
+  }
+
+  const statsEl = document.getElementById('measure-hud-stats');
+  if (!statsEl) return;
+
+  if (measurePoints.length === 0) {
+    statsEl.innerHTML = '<div>Clique no mapa para definir o ponto 1 e iniciar a medição.</div>';
+    return;
+  }
+  if (measurePoints.length === 1) {
+    statsEl.innerHTML = `<div>Ponto 1 marcado (${measurePoints[0][1].toFixed(4)}, ${measurePoints[0][0].toFixed(4)}). Clique no próximo ponto.</div>`;
+    return;
+  }
+
+  let totalKm = 0;
+  let lastSegKm = 0;
+  for (let i = 1; i < measurePoints.length; i++) {
+    const seg = getDistanceFromLatLonInKm(measurePoints[i - 1][1], measurePoints[i - 1][0], measurePoints[i][1], measurePoints[i][0]);
+    totalKm += seg;
+    lastSegKm = seg;
+  }
+
+  const a = measurePoints[measurePoints.length - 2];
+  const b = measurePoints[measurePoints.length - 1];
+  const trueAz = computeTrueAzimuthDeg(a[1], a[0], b[1], b[0]);
+  const magAz = (trueAz - BRAZIL_DECLINATION_DEG + 360) % 360;
+  const distStr = totalKm < 1 ? `${Math.round(totalKm * 1000)} m` : `${totalKm.toFixed(2)} km`;
+  const walkMin = Math.round((totalKm / 4.5) * 60);
+  const vhfNote = lastSegKm <= 6
+    ? '🟢 VHF/UHF Portátil↔Portátil excelente (≤ 6 km)'
+    : lastSegKm <= 18
+      ? '🟡 VHF/UHF provável (requer ponto alto / repetidora)'
+      : '🟠 Acima do horizonte portátil: use repetidora VHF ou HF NVIS';
+
+  statsEl.innerHTML = `
+    <div><strong>Distância Total (${measurePoints.length} pts):</strong> <span class="text-emerald-400 font-mono">${distStr}</span></div>
+    <div><strong>Azimute Verdadeiro:</strong> <span class="font-mono text-cyan-300">${Math.round(trueAz)}° (${getCardinalDir(trueAz)})</span></div>
+    <div><strong>Azimute Magnético (Decl. -21°):</strong> <span class="font-mono text-amber-300">${Math.round(magAz)}° (${getCardinalDir(magAz)})</span></div>
+    <div><strong>Marcha a Pé (~4,5 km/h):</strong> <span class="font-mono">${walkMin >= 60 ? Math.floor(walkMin / 60) + 'h ' + (walkMin % 60) + 'm' : walkMin + ' min'}</span></div>
+    <div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(148,163,184,0.2);font-size:11px;">${vhfNote}</div>
+  `;
+}
+
+window.toggleTacticalMeasure = function(force) {
+  tacticalMeasureActive = typeof force === 'boolean' ? force : !tacticalMeasureActive;
+  const btn = document.getElementById('btn-toggle-measure');
+  const hud = document.getElementById('tactical-measure-hud');
+  if (btn) btn.classList.toggle('active', tacticalMeasureActive);
+  if (hud) hud.style.display = tacticalMeasureActive ? 'block' : 'none';
+  if (tacticalMeasureActive && typeof cancelMapPick === 'function') cancelMapPick();
+  if (mapInstance && mapInstance.getCanvas()) {
+    mapInstance.getCanvas().style.cursor = tacticalMeasureActive ? 'crosshair' : '';
+  }
+  if (!tacticalMeasureActive) {
+    window.clearMeasurePoints();
+  } else {
+    renderTacticalMeasureState();
+  }
+};
+
+window.addTacticalMeasurePoint = function(lat, lng) {
+  measurePoints.push([lng, lat]);
+  renderTacticalMeasureState();
+};
+
+window.undoMeasurePoint = function() {
+  if (measurePoints.length > 0) {
+    measurePoints.pop();
+    renderTacticalMeasureState();
+  }
+};
+
+window.clearMeasurePoints = function() {
+  measurePoints = [];
+  renderTacticalMeasureState();
+};
+
+// =====================================================================
+// 35. MODO ACAMPAMENTO / REDE LOCAL (LAN) & QR CODE OFFLINE PURO EM JS
+// =====================================================================
+
+function generateOfflineQrSvg(text, pixelSize = 180) {
+  const utf8 = Array.from(new TextEncoder().encode(String(text || 'http://localhost:8000')));
+  const caps = [
+    { ver: 1, cap: 17, totalData: 19, ec: 7, align: [] },
+    { ver: 2, cap: 32, totalData: 34, ec: 10, align: [6, 18] },
+    { ver: 3, cap: 53, totalData: 55, ec: 15, align: [6, 22] },
+    { ver: 4, cap: 78, totalData: 80, ec: 20, align: [6, 26] }
+  ];
+  const cfg = caps.find(c => utf8.length <= c.cap);
+  if (!cfg) return '';
+
+  // Encode byte stream
+  const bits = [];
+  const pushBits = (val, len) => {
+    for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1);
+  };
+  pushBits(0b0100, 4);
+  pushBits(utf8.length, 8);
+  utf8.forEach(b => pushBits(b, 8));
+  const maxBits = cfg.totalData * 8;
+  for (let i = 0; i < 4 && bits.length < maxBits; i++) bits.push(0);
+  while (bits.length % 8 !== 0) bits.push(0);
+  const padBytes = [0xec, 0x11];
+  let padIdx = 0;
+  while (bits.length < maxBits) {
+    pushBits(padBytes[padIdx % 2], 8);
+    padIdx++;
+  }
+  const dataCw = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let v = 0;
+    for (let j = 0; j < 8; j++) v = (v << 1) | bits[i + j];
+    dataCw.push(v);
+  }
+
+  // GF(256) Reed-Solomon (poly 0x11d)
+  const exp = new Uint8Array(512);
+  const log = new Uint8Array(256);
+  let x = 1;
+  for (let i = 0; i < 255; i++) {
+    exp[i] = x;
+    log[x] = i;
+    x <<= 1;
+    if (x & 0x100) x ^= 0x11d;
+  }
+  for (let i = 255; i < 512; i++) exp[i] = exp[i - 255];
+  const gfMul = (a, b) => (a === 0 || b === 0 ? 0 : exp[log[a] + log[b]]);
+
+  let gen = [1];
+  for (let i = 0; i < cfg.ec; i++) {
+    const next = new Array(gen.length + 1).fill(0);
+    const root = exp[i];
+    for (let j = 0; j < gen.length; j++) {
+      next[j] ^= gen[j];
+      next[j + 1] ^= gfMul(gen[j], root);
+    }
+    gen = next;
+  }
+
+  const msg = dataCw.concat(new Array(cfg.ec).fill(0));
+  for (let i = 0; i < dataCw.length; i++) {
+    const coef = msg[i];
+    if (coef !== 0) {
+      for (let j = 0; j < gen.length; j++) {
+        msg[i + j] ^= gfMul(gen[j], coef);
+      }
+    }
+  }
+  const allCw = dataCw.concat(msg.slice(dataCw.length));
+  const allBits = [];
+  allCw.forEach(cw => {
+    for (let i = 7; i >= 0; i--) allBits.push((cw >> i) & 1);
+  });
+
+  const size = 17 + 4 * cfg.ver;
+  const grid = Array.from({ length: size }, () => new Int8Array(size));
+  const isFunc = Array.from({ length: size }, () => new Uint8Array(size));
+  const setFunc = (r, c, val) => {
+    if (r >= 0 && r < size && c >= 0 && c < size) {
+      grid[r][c] = val ? 1 : 0;
+      isFunc[r][c] = 1;
+    }
+  };
+
+  // Finder + separator
+  const drawFinder = (tr, tc) => {
+    for (let dr = -1; dr <= 7; dr++) {
+      for (let dc = -1; dc <= 7; dc++) {
+        const r = tr + dr, c = tc + dc;
+        if (r < 0 || r >= size || c < 0 || c >= size) continue;
+        const inOuter = dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6;
+        const on = inOuter && (dr === 0 || dr === 6 || dc === 0 || dc === 6 || (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4));
+        setFunc(r, c, on ? 1 : 0);
+      }
+    }
+  };
+  drawFinder(0, 0);
+  drawFinder(0, size - 7);
+  drawFinder(size - 7, 0);
+
+  // Alignment patterns
+  for (const ar of cfg.align) {
+    for (const ac of cfg.align) {
+      if (isFunc[ar][ac]) continue;
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          const on = Math.abs(dr) === 2 || Math.abs(dc) === 2 || (dr === 0 && dc === 0);
+          setFunc(ar + dr, ac + dc, on ? 1 : 0);
+        }
+      }
+    }
+  }
+
+  // Timing patterns
+  for (let i = 8; i <= size - 9; i++) {
+    setFunc(6, i, i % 2 === 0 ? 1 : 0);
+    setFunc(i, 6, i % 2 === 0 ? 1 : 0);
+  }
+
+  // Dark module & reserve format info
+  setFunc(4 * cfg.ver + 9, 8, 1);
+  for (let i = 0; i < 9; i++) {
+    if (i !== 6) {
+      setFunc(8, i, 0);
+      setFunc(i, 8, 0);
+    }
+  }
+  for (let i = 0; i < 8; i++) {
+    setFunc(8, size - 1 - i, 0);
+    if (i < 7) setFunc(size - 1 - i, 8, 0);
+  }
+
+  // Place data bits in zigzag
+  let bitIdx = 0;
+  let dir = -1;
+  for (let col = size - 1; col > 0; col -= 2) {
+    if (col === 6) col--;
+    for (let step = 0; step < size; step++) {
+      const r = dir === -1 ? size - 1 - step : step;
+      for (let dc = 0; dc < 2; dc++) {
+        const c = col - dc;
+        if (!isFunc[r][c]) {
+          grid[r][c] = bitIdx < allBits.length ? allBits[bitIdx++] : 0;
+        }
+      }
+    }
+    dir = -dir;
+  }
+
+  const maskFns = [
+    (r, c) => (r + c) % 2 === 0,
+    (r) => r % 2 === 0,
+    (_, c) => c % 3 === 0,
+    (r, c) => (r + c) % 3 === 0,
+    (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+    (r, c) => ((r * c) % 2 + (r * c) % 3) === 0,
+    (r, c) => (((r * c) % 2 + (r * c) % 3) % 2) === 0,
+    (r, c) => (((r + c) % 2 + (r * c) % 3) % 2) === 0
+  ];
+
+  // Evaluate best mask using run-length + balance penalty
+  let bestMask = 0;
+  let bestScore = Infinity;
+  let bestGrid = null;
+
+  for (let m = 0; m < 8; m++) {
+    const fn = maskFns[m];
+    const testGrid = grid.map((row, r) => row.map((v, c) => (isFunc[r][c] ? v : (fn(r, c) ? v ^ 1 : v))));
+
+    // Inject BCH(15,5) format bits for EC-L (01) + mask m
+    const rem = (0b01 << 3) | m;
+    let d = rem << 10;
+    for (let i = 4; i >= 0; i--) {
+      if ((d >> (i + 10)) & 1) d ^= 0x537 << i;
+    }
+    const fmt = ((rem << 10) | d) ^ 0x5412;
+
+    for (let i = 0; i <= 5; i++) testGrid[8][i] = (fmt >> (14 - i)) & 1;
+    testGrid[8][7] = (fmt >> 8) & 1;
+    testGrid[8][8] = (fmt >> 7) & 1;
+    testGrid[7][8] = (fmt >> 6) & 1;
+    for (let i = 0; i <= 5; i++) testGrid[5 - i][8] = (fmt >> (5 - i)) & 1;
+
+    for (let i = 0; i < 7; i++) testGrid[size - 1 - i][8] = (fmt >> (14 - i)) & 1;
+    for (let i = 0; i < 8; i++) testGrid[8][size - 8 + i] = (fmt >> (7 - i)) & 1;
+
+    let penalty = 0;
+    let dark = 0;
+    for (let r = 0; r < size; r++) {
+      let runLen = 1;
+      for (let c = 0; c < size; c++) {
+        dark += testGrid[r][c];
+        if (c > 0 && testGrid[r][c] === testGrid[r][c - 1]) {
+          runLen++;
+          if (runLen === 5) penalty += 3;
+          else if (runLen > 5) penalty++;
+        } else {
+          runLen = 1;
+        }
+      }
+    }
+    for (let c = 0; c < size; c++) {
+      let runLen = 1;
+      for (let r = 1; r < size; r++) {
+        if (testGrid[r][c] === testGrid[r - 1][c]) {
+          runLen++;
+          if (runLen === 5) penalty += 3;
+          else if (runLen > 5) penalty++;
+        } else {
+          runLen = 1;
+        }
+      }
+    }
+    const ratioPenalty = Math.abs(Math.round((dark * 100) / (size * size) - 50) / 5) * 10;
+    const score = penalty + ratioPenalty;
+    if (score < bestScore) {
+      bestScore = score;
+      bestMask = m;
+      bestGrid = testGrid;
+    }
+  }
+
+  const margin = 2;
+  const full = size + margin * 2;
+  let rects = '';
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (bestGrid[r][c]) {
+        rects += `<rect x="${c + margin}" y="${r + margin}" width="1" height="1"/>`;
+      }
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${pixelSize}" height="${pixelSize}" viewBox="0 0 ${full} ${full}" shape-rendering="crispEdges"><rect width="${full}" height="${full}" fill="#ffffff"/><g fill="#090d10">${rects}</g></svg>`;
+}
+
+window.refreshLanModalQr = function() {
+  const input = document.getElementById('lan-custom-host-input');
+  const host = (input && input.value.trim()) ? input.value.trim() : (window.location.hostname || 'localhost');
+  const portalUrl = `http://${host}:8000`;
+  const kiwixUrl = `http://${host}:8090`;
+
+  const portalText = document.getElementById('lan-portal-url-text');
+  const kiwixText = document.getElementById('lan-kiwix-url-text');
+  const qrWrap = document.getElementById('lan-qr-preview');
+  if (portalText) portalText.textContent = portalUrl;
+  if (kiwixText) kiwixText.textContent = kiwixUrl;
+  if (qrWrap) {
+    const svg = generateOfflineQrSvg(portalUrl, 176);
+    qrWrap.innerHTML = svg || '<div class="text-xs text-amber-400">Endereço muito longo para QR compacto.</div>';
+  }
+};
+
+window.openLanConnectModal = function() {
+  const modal = document.getElementById('lan-connect-modal');
+  const body = document.getElementById('lan-modal-body');
+  if (!modal || !body) return;
+
+  const browserHost = window.location.hostname || 'localhost';
+  const serverIps = Array.isArray(window.nomadLanIps) ? window.nomadLanIps : [];
+  const preferredHost = (browserHost !== 'localhost' && browserHost !== '127.0.0.1')
+    ? browserHost
+    : (serverIps.find(ip => ip.startsWith('192.168.') || ip.startsWith('10.')) || serverIps[0] || browserHost);
+
+  const ipPills = serverIps.length > 0
+    ? serverIps.map(ip => `<button type="button" class="chip-btn" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="document.getElementById('lan-custom-host-input').value='${escapeHtmlSafe(ip)}';refreshLanModalQr();">${escapeHtmlSafe(ip)}</button>`).join(' ')
+    : '<span class="text-gray-400">Nenhum IP LAN detectado pelo contêiner (verifique <code>ipconfig</code> no Windows).</span>';
+
+  body.innerHTML = `
+    <div>
+      <label class="text-xs font-bold text-gray-300 block mb-1">Endereço IP da máquina na rede Wi-Fi / Hotspot:</label>
+      <div style="display:flex;gap:0.4rem;">
+        <input type="text" id="lan-custom-host-input" class="route-input font-mono" value="${escapeHtmlSafe(preferredHost)}" oninput="refreshLanModalQr()">
+        <button type="button" class="btn-input-action" onclick="refreshLanModalQr()">Atualizar QR</button>
+      </div>
+      <div class="text-xs text-gray-400 mt-1">IPs detectados no host: ${ipPills}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;padding:0.75rem;background:rgba(15,23,42,0.75);border-radius:10px;border:1px solid rgba(51,65,85,0.6);">
+      <div id="lan-qr-preview" style="border-radius:8px;overflow:hidden;"></div>
+      <div class="text-xs text-gray-400 text-center">Aponte a câmera do celular (no mesmo Wi-Fi) para abrir o portal:</div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+        <code id="lan-portal-url-text" class="text-emerald-400 font-bold"></code>
+        <button type="button" class="chip-btn" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="copyCustomCoordsText(document.getElementById('lan-portal-url-text').textContent)">📋 Copiar</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+        <span class="text-gray-400">Kiwix:</span>
+        <code id="lan-kiwix-url-text" class="text-cyan-400 font-bold"></code>
+        <button type="button" class="chip-btn" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="copyCustomCoordsText(document.getElementById('lan-kiwix-url-text').textContent)">📋 Copiar</button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+  window.refreshLanModalQr();
+};
+
+window.closeLanConnectModal = function() {
+  const modal = document.getElementById('lan-connect-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+// =====================================================================
+// 36. EFEMÉRIDES SOLARES & LUNARES 100% OFFLINE POR COORDENADA
+// =====================================================================
+
+function computeOfflineSunMoon(lat, lng, date = new Date()) {
+  const rad = Math.PI / 180;
+  const startOfYear = new Date(date.getFullYear(), 0, 0);
+  const doy = Math.floor((date - startOfYear) / 86400000);
+  const tzOffsetHours = -date.getTimezoneOffset() / 60;
+
+  // NOAA simplified solar equations
+  const gamma = ((2 * Math.PI) / 365) * (doy - 1);
+  const eqTime = 229.18 * (
+    0.000075 +
+    0.001868 * Math.cos(gamma) -
+    0.032077 * Math.sin(gamma) -
+    0.014615 * Math.cos(2 * gamma) -
+    0.040849 * Math.sin(2 * gamma)
+  );
+  const decl =
+    0.006918 -
+    0.399912 * Math.cos(gamma) +
+    0.070257 * Math.sin(gamma) -
+    0.006758 * Math.cos(2 * gamma) +
+    0.000907 * Math.sin(2 * gamma) -
+    0.002697 * Math.cos(3 * gamma) +
+    0.00148 * Math.sin(3 * gamma);
+
+  const calcSunTime = (zenithDeg, isSunrise) => {
+    const cosHA = Math.cos(zenithDeg * rad) / (Math.cos(lat * rad) * Math.cos(decl)) - Math.tan(lat * rad) * Math.tan(decl);
+    const clamped = Math.max(-0.999, Math.min(0.999, cosHA));
+    const haDeg = Math.acos(clamped) / rad;
+    const solarNoonUtcMin = 720 - 4 * lng - eqTime;
+    const utcMin = isSunrise ? solarNoonUtcMin - 4 * haDeg : solarNoonUtcMin + 4 * haDeg;
+    return utcMin + tzOffsetHours * 60;
+  };
+
+  const fmtMin = (m) => {
+    const wrapped = ((Math.round(m) % 1440) + 1440) % 1440;
+    const hh = Math.floor(wrapped / 60);
+    const mm = wrapped % 60;
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  };
+
+  const dawnMin = calcSunTime(96, true);
+  const sunriseMin = calcSunTime(90.833, true);
+  const sunsetMin = calcSunTime(90.833, false);
+  const duskMin = calcSunTime(96, false);
+
+  const daylightMin = Math.max(0, Math.round(sunsetMin - sunriseMin));
+  const daylightStr = `${Math.floor(daylightMin / 60)}h${String(daylightMin % 60).padStart(2, '0')}m`;
+
+  const nowMin = date.getHours() * 60 + date.getMinutes();
+  let remainingLabel = '';
+  if (nowMin < sunriseMin) {
+    const waitMin = Math.round(sunriseMin - nowMin);
+    remainingLabel = `Falta ${Math.floor(waitMin / 60)}h${String(waitMin % 60).padStart(2, '0')}m para o nascer do sol`;
+  } else if (nowMin < sunsetMin) {
+    const remMin = Math.round(sunsetMin - nowMin);
+    remainingLabel = `Luz solar útil restante hoje: ${Math.floor(remMin / 60)}h${String(remMin % 60).padStart(2, '0')}m`;
+  } else {
+    remainingLabel = 'Período noturno — considere iluminação/marcha noturna';
+  }
+
+  // Synodic lunar phase relative to J2000 reference New Moon (2000-01-06 18:14 UTC)
+  const synodicDays = 29.530588853;
+  const refNewMoon = Date.UTC(2000, 0, 6, 18, 14, 0);
+  const ageDays = ((date.getTime() - refNewMoon) / 86400000) % synodicDays;
+  const normAge = ageDays < 0 ? ageDays + synodicDays : ageDays;
+  const frac = normAge / synodicDays;
+  const moonIllum = Math.round((1 - Math.cos(frac * 2 * Math.PI)) * 50);
+
+  let moonPhaseName = 'Lua Nova';
+  let moonIcon = '🌑';
+  if (frac >= 0.0625 && frac < 0.1875) { moonPhaseName = 'Crescente'; moonIcon = '🌒'; }
+  else if (frac >= 0.1875 && frac < 0.3125) { moonPhaseName = 'Quarto Crescente'; moonIcon = '🌓'; }
+  else if (frac >= 0.3125 && frac < 0.4375) { moonPhaseName = 'Crescente Gibosa'; moonIcon = '🌔'; }
+  else if (frac >= 0.4375 && frac < 0.5625) { moonPhaseName = 'Lua Cheia'; moonIcon = '🌕'; }
+  else if (frac >= 0.5625 && frac < 0.6875) { moonPhaseName = 'Minguante Gibosa'; moonIcon = '🌖'; }
+  else if (frac >= 0.6875 && frac < 0.8125) { moonPhaseName = 'Quarto Minguante'; moonIcon = '🌗'; }
+  else if (frac >= 0.8125 && frac < 0.9375) { moonPhaseName = 'Minguante'; moonIcon = '🌘'; }
+
+  return {
+    dawn: fmtMin(dawnMin),
+    sunrise: fmtMin(sunriseMin),
+    sunset: fmtMin(sunsetMin),
+    dusk: fmtMin(duskMin),
+    daylightStr,
+    remainingLabel,
+    moonPhaseName,
+    moonIcon,
+    moonIllum
+  };
+}
+
+// =====================================================================
+// 37. GERADOR DE DOSSIÊ TÁTICO DA ROTA IMPRIMÍVEL (ORDEM DE MOVIMENTO A4)
+// =====================================================================
+
+window.printCurrentRouteDossier = function() {
+  if (!currentRouteData || !routeOrigin || !routeDest) {
+    alert('Trace uma rota antes de gerar o Dossiê Tático.');
+    return;
+  }
+
+  const safeJson = (k) => {
+    try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; }
+  };
+  const pef = safeJson('nomad_pef_data_v1') || {};
+  const pace = safeJson('nomad_pace_plan_v1') || {};
+  const ephemDest = computeOfflineSunMoon(routeDest.lat, routeDest.lng);
+
+  const fmtPoint = (title, pt) => {
+    if (!pt) return '';
+    return `<tr>
+      <td><strong>${escapeHtmlSafe(title)}</strong></td>
+      <td>${escapeHtmlSafe(pt.label || '')}</td>
+      <td><code>${pt.lat.toFixed(5)}, ${pt.lng.toFixed(5)}</code></td>
+      <td><code>${escapeHtmlSafe(formatCoordsDMS(pt.lat, pt.lng))}</code></td>
+      <td><code>${escapeHtmlSafe(formatCoordsUTM(pt.lat, pt.lng))}</code></td>
+    </tr>`;
+  };
+
+  const corridorRows = (Array.isArray(currentRouteData.corridorSupport) ? currentRouteData.corridorSupport : [])
+    .map(p => `<tr>
+      <td>${p.kmAlongRoute} km</td>
+      <td>${escapeHtmlSafe(p.name)}</td>
+      <td>${escapeHtmlSafe((p.category || '').toUpperCase())}</td>
+      <td>${p.distFromRouteKm} km</td>
+      <td>${escapeHtmlSafe(p.phone || '-')}</td>
+    </tr>`).join('');
+
+  const stepItems = (Array.isArray(currentRouteData.steps) ? currentRouteData.steps : [])
+    .map((s, i) => `<li><strong>${i + 1}.</strong> ${s.instruction}${s.distanceKm > 0 ? ` <em>(${s.distanceKm} km)</em>` : ''}</li>`)
+    .join('');
+
+  const profileLabels = { driving: 'Veículo Rodoviário', tactical: '4x4 Tático / Off-Road', walking: 'Marcha a Pé' };
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Ordem de Movimento — NOMAD Brasil</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #0f172a; line-height: 1.4; font-size: 11px; margin: 0; padding: 16px; }
+    h1 { font-size: 18px; margin: 0 0 4px; border-bottom: 2px solid #047857; padding-bottom: 4px; }
+    h2 { font-size: 13px; margin: 14px 0 6px; color: #047857; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px; }
+    .meta { font-size: 10px; color: #475569; margin-bottom: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0 12px; }
+    .box { border: 1px solid #cbd5e1; padding: 6px 8px; border-radius: 4px; background: #f8fafc; }
+    .box .lbl { font-size: 9px; color: #64748b; text-transform: uppercase; }
+    .box .val { font-size: 13px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10px; }
+    th, td { border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
+    th { background: #e2e8f0; }
+    ol { padding-left: 16px; margin: 4px 0; }
+    li { margin-bottom: 3px; }
+    .no-print { margin-bottom: 12px; }
+    @media print { .no-print { display: none; } body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()" style="padding:8px 14px;background:#047857;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">🖨️ Imprimir / Salvar PDF</button>
+  </div>
+  <h1>ORDEM DE MOVIMENTO TÁTICA — NOMAD BRASIL</h1>
+  <div class="meta">Gerado em ${new Date().toLocaleString('pt-BR')} &bull; Perfil: <strong>${escapeHtmlSafe(profileLabels[currentRouteData.profile] || currentRouteData.profile)}</strong> &bull; Fonte: <strong>${escapeHtmlSafe(currentRouteData.source)}</strong></div>
+
+  <div class="grid">
+    <div class="box"><div class="lbl">Distância</div><div class="val">${currentRouteData.distanceKm} km</div></div>
+    <div class="box"><div class="lbl">Tempo Estimado</div><div class="val">${currentRouteData.durationMin} min</div></div>
+    <div class="box"><div class="lbl">${currentRouteData.profile === 'walking' ? 'Água / Calorias' : 'Combustível Est.'}</div><div class="val">${currentRouteData.profile === 'walking' ? `${currentRouteData.waterLiters} L / ${currentRouteData.caloriesKcal || 0} kcal` : `${currentRouteData.fuelLiters} L`}</div></div>
+    <div class="box"><div class="lbl">Luz Solar Destino</div><div class="val">${ephemDest.sunrise}–${ephemDest.sunset} (${ephemDest.moonPhaseName})</div></div>
+  </div>
+
+  <h2>1. Pontos de Controle &amp; Coordenadas</h2>
+  <table>
+    <thead><tr><th>Ponto</th><th>Localidade / Via</th><th>Decimal</th><th>DMS</th><th>UTM (SIRGAS2000/WGS84)</th></tr></thead>
+    <tbody>
+      ${fmtPoint('Origem (A)', routeOrigin)}
+      ${routeVia ? fmtPoint('Parada (Via)', routeVia) : ''}
+      ${fmtPoint('Destino (B)', routeDest)}
+    </tbody>
+  </table>
+
+  ${corridorRows ? `<h2>2. Pontos de Apoio no Corredor (até 5 km)</h2>
+  <table>
+    <thead><tr><th>Km Rota</th><th>Nome do Apoio</th><th>Categoria</th><th>Dist. Eixo</th><th>Telefone</th></tr></thead>
+    <tbody>${corridorRows}</tbody>
+  </table>` : ''}
+
+  <h2>${corridorRows ? '3' : '2'}. Roteiro Passo a Passo</h2>
+  <ol>${stepItems}</ol>
+
+  <h2>${corridorRows ? '4' : '3'}. Plano Familiar (PEF) &amp; Comunicações (PACE)</h2>
+  <table>
+    <tbody>
+      <tr><th>PEF Ponto Primário / Secundário</th><td>${escapeHtmlSafe(pef.p1 || pef.primaryPoint || 'Não definido')} / ${escapeHtmlSafe(pef.p2 || pef.secondaryPoint || 'Não definido')}</td></tr>
+      <tr><th>Contato de Apoio / Senha</th><td>${escapeHtmlSafe(pef.contactName || pef.name || 'Não definido')} (${escapeHtmlSafe(pef.contactPhone || pef.phone || '-')})</td></tr>
+      <tr><th>Plano Rádio PACE</th><td><strong>P:</strong> ${escapeHtmlSafe(pace.primary || pace.p || '-')} | <strong>A:</strong> ${escapeHtmlSafe(pace.alternate || pace.a || '-')} | <strong>C:</strong> ${escapeHtmlSafe(pace.contingency || pace.c || '-')} | <strong>E:</strong> ${escapeHtmlSafe(pace.emergency || pace.e || '-')}</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=900,height=800');
+  if (win) {
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  } else {
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dossie-rota-nomad-${new Date().toISOString().slice(0, 10)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
+});

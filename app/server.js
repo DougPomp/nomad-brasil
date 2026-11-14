@@ -1,5 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import vm from 'node:vm';
@@ -163,24 +164,81 @@ function latLngToTileXY(lat, lng, z) {
   return [x, y];
 }
 
+const ZIM_CATALOG_RULES = [
+  { match: 'wikipedia_pt_all', title: 'Wikipédia PT Completa', category: 'wikipedia', lang: 'pt', icon: '🌐', priority: 100 },
+  { match: 'wikipedia_pt_medicine', title: 'Wikipédia Médica PT', category: 'medicine', lang: 'pt', icon: '🩺', priority: 95 },
+  { match: 'wikivoyage_pt', title: 'Wikivoyage PT (Guias)', category: 'travel', lang: 'pt', icon: '🧭', priority: 90 },
+  { match: 'wikibooks_pt', title: 'Wikilivros / Manuais PT', category: 'books', lang: 'pt', icon: '📖', priority: 88 },
+  { match: 'wikipedia_pt_top', title: 'Wikipédia PT Top', category: 'wikipedia', lang: 'pt', icon: '📚', priority: 85 },
+  { match: 'fas-military-medicine', title: 'FAS Military Medicine', category: 'medicine', lang: 'en', icon: '🩹', priority: 75 },
+  { match: 'nhs.uk_en_medicines', title: 'NHS Medicamentos', category: 'medicine', lang: 'en', icon: '💊', priority: 72 },
+  { match: 'cdc.gov', title: 'CDC Doenças & Saúde', category: 'medicine', lang: 'en', icon: '☣️', priority: 70 },
+  { match: 'zimgit-medicine', title: 'Guia Médico Compacto', category: 'medicine', lang: 'en', icon: '🏥', priority: 68 },
+  { match: 'wikipedia_en_top', title: 'Wikipedia EN Top', category: 'wikipedia', lang: 'en', icon: '🌍', priority: 60 },
+  { match: 'wikipedia_en_100', title: 'Wikipedia EN 100', category: 'wikipedia', lang: 'en', icon: '📘', priority: 50 }
+];
+
+function classifyZimBook(book) {
+  const lower = String(book || '').toLowerCase();
+  for (const rule of ZIM_CATALOG_RULES) {
+    if (lower.includes(rule.match)) {
+      return rule;
+    }
+  }
+  return {
+    title: book,
+    category: lower.includes('med') || lower.includes('nhs') || lower.includes('cdc') ? 'medicine' : (lower.includes('voyage') ? 'travel' : 'wikipedia'),
+    lang: lower.includes('_pt') ? 'pt' : 'en',
+    icon: '📕',
+    priority: 40
+  };
+}
+
 function listInstalledZims() {
   const zimDir = path.join(STORAGE_PATH, 'zim');
   if (!fs.existsSync(zimDir)) return [];
   try {
     return fs.readdirSync(zimDir)
       .filter(f => f.toLowerCase().endsWith('.zim'))
-      .map(f => ({
-        filename: f,
-        book: f.replace(/\.zim$/i, ''),
-        sizeBytes: fs.statSync(path.join(zimDir, f)).size
-      }))
-      .sort((a, b) => {
-        const score = (x) => (x.book.includes('wikipedia_pt_all') ? 3 : x.book.includes('wikipedia_pt') ? 2 : 1);
-        return score(b) - score(a) || b.sizeBytes - a.sizeBytes;
-      });
+      .map(f => {
+        const book = f.replace(/\.zim$/i, '');
+        const sizeBytes = fs.statSync(path.join(zimDir, f)).size;
+        const sizeFormatted = sizeBytes >= 1024 ** 3
+          ? `${(sizeBytes / 1024 ** 3).toFixed(1)} GB`
+          : `${Math.max(1, Math.round(sizeBytes / 1024 ** 2))} MB`;
+        const meta = classifyZimBook(book);
+        return {
+          filename: f,
+          book,
+          sizeBytes,
+          sizeFormatted,
+          lang: meta.lang,
+          category: meta.category,
+          icon: meta.icon,
+          title: meta.title,
+          _priority: meta.priority
+        };
+      })
+      .sort((a, b) => b._priority - a._priority || b.sizeBytes - a.sizeBytes)
+      .map(({ _priority, ...rest }) => rest);
   } catch {
     return [];
   }
+}
+
+function getLocalLanIps() {
+  const ifaces = os.networkInterfaces();
+  const ips = new Set();
+  for (const entries of Object.values(ifaces)) {
+    if (!Array.isArray(entries)) continue;
+    for (const addr of entries) {
+      if (!addr || addr.internal) continue;
+      if (addr.family === 'IPv4' || addr.family === 4) {
+        ips.add(addr.address);
+      }
+    }
+  }
+  return Array.from(ips).sort();
 }
 
 function countFilesRecursive(dirPath, ext) {
@@ -892,6 +950,117 @@ function findNearbySupport(lat, lng, radiusKm = 25, category = 'all', limit = 40
   return deduped;
 }
 
+function findRouteCorridorSupport(coords, maxDistKm = 5.0, limit = 18) {
+  if (!Array.isArray(coords) || coords.length < 2) return [];
+
+  // Subsample long geometry for fast bounded distance evaluation while keeping endpoints
+  const stride = Math.max(1, Math.floor(coords.length / 180));
+  const sampled = [];
+  for (let i = 0; i < coords.length; i += stride) {
+    sampled.push(coords[i]);
+  }
+  const lastCoord = coords[coords.length - 1];
+  const prevSample = sampled[sampled.length - 1];
+  if (!prevSample || prevSample[0] !== lastCoord[0] || prevSample[1] !== lastCoord[1]) {
+    sampled.push(lastCoord);
+  }
+
+  const cumKm = [0];
+  let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+  for (let i = 0; i < sampled.length; i++) {
+    const [lng, lat] = sampled[i];
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (i > 0) {
+      cumKm.push(cumKm[i - 1] + haversine(sampled[i - 1][1], sampled[i - 1][0], lat, lng));
+    }
+  }
+
+  const degPad = (maxDistKm + 3) / 111.0;
+  const boxMinLat = minLat - degPad;
+  const boxMaxLat = maxLat + degPad;
+  const boxMinLng = minLng - degPad;
+  const boxMaxLng = maxLng + degPad;
+
+  const rawCandidates = [];
+  for (const poi of strategicPois) {
+    if (poi.lat < boxMinLat || poi.lat > boxMaxLat || poi.lng < boxMinLng || poi.lng > boxMaxLng) continue;
+    rawCandidates.push({
+      id: poi.id,
+      name: poi.name,
+      category: poi.category,
+      city: poi.city,
+      state: poi.uf,
+      lat: poi.lat,
+      lng: poi.lng,
+      phone: poi.phone || '',
+      details: poi.details || '',
+      source: 'estrategico'
+    });
+  }
+
+  if (streetsReverseBoxStmt && streetsDb) {
+    try {
+      const boxSql = `SELECT rowid AS id, c0 AS name, c1 AS city, c2 AS state, c3 AS kind, c4 AS lat, c5 AS lng FROM streets_fts_content WHERE c4 BETWEEN ? AND ? AND c5 BETWEEN ? AND ? AND c3 = 'POI' LIMIT 2500`;
+      const rows = streetsDb.prepare(boxSql).all(boxMinLat, boxMaxLat, boxMinLng, boxMaxLng);
+      for (const r of rows) {
+        const cat = classifySupportCategory(r.name, r.kind);
+        if (!cat) continue;
+        rawCandidates.push({
+          id: `db_${r.id}`,
+          name: r.name,
+          category: cat,
+          city: r.city,
+          state: r.state,
+          lat: r.lat,
+          lng: r.lng,
+          phone: '',
+          details: 'Apoio no mapa vetorial offline',
+          source: 'mapa_offline'
+        });
+      }
+    } catch {}
+  }
+
+  const hits = [];
+  for (const item of rawCandidates) {
+    let bestDist = Infinity;
+    let bestAlongKm = 0;
+    for (let i = 0; i < sampled.length - 1; i++) {
+      const a = sampled[i];
+      const b = sampled[i + 1];
+      const d = distToSegment(item.lng, item.lat, a[0], a[1], b[0], b[1]);
+      if (d < bestDist) {
+        bestDist = d;
+        const midLat = (a[1] + b[1]) / 2;
+        const midLng = (a[0] + b[0]) / 2;
+        bestAlongKm = cumKm[i] + haversine(a[1], a[0], midLat, midLng);
+      }
+    }
+    if (bestDist <= maxDistKm) {
+      hits.push({
+        ...item,
+        distFromRouteKm: Math.round(bestDist * 10) / 10,
+        kmAlongRoute: Math.round(bestAlongKm * 10) / 10
+      });
+    }
+  }
+
+  hits.sort((a, b) => a.kmAlongRoute - b.kmAlongRoute || a.distFromRouteKm - b.distFromRouteKm);
+  const deduped = [];
+  const seen = new Set();
+  for (const h of hits) {
+    const key = `${h.category}|${normalizeStr(h.name).slice(0, 26)}|${Math.round(h.lat * 200)},${Math.round(h.lng * 200)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(h);
+    if (deduped.length >= limit) break;
+  }
+  return deduped;
+}
+
 function reverseGeocodeOffline(lat, lng) {
   const nearestCity = findNearestCityForPoint(lat, lng, 0.25);
   let bestRoad = null;
@@ -1529,7 +1698,9 @@ const server = http.createServer((req, res) => {
         detailTilesCachedCount,
         zimFilesCount: zims.length,
         primaryZimBook: zims[0]?.book || 'wikipedia_pt_all_maxi_2026-05'
-      }
+      },
+      port: PORT,
+      lanIps: getLocalLanIps()
     }));
     return;
   }
@@ -1578,19 +1749,53 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  // 1.2 API: Offline Kiwix URL Resolver
+  // 1.2 API: Offline Kiwix URL Resolver & Bookshelf
   if (pathname === '/api/kiwix/resolve') {
     const q = (urlObj.searchParams.get('q') || '').trim();
+    const reqBook = (urlObj.searchParams.get('book') || '').trim();
+    const reqCat = (urlObj.searchParams.get('category') || '').trim().toLowerCase();
     const zims = listInstalledZims();
-    const book = zims[0]?.book || 'wikipedia_pt_all_maxi_2026-05';
+
+    let matched = null;
+    if (reqBook) {
+      matched = zims.find(z => z.book === reqBook || z.book.toLowerCase().includes(reqBook.toLowerCase())) || null;
+    }
+    if (!matched && reqCat) {
+      matched = zims.find(z => z.category === reqCat) || null;
+    }
+    if (!matched) {
+      matched = zims[0] || { book: reqBook || 'wikipedia_pt_all_maxi_2026-05', title: 'Wikipédia PT Completa', category: 'wikipedia' };
+    }
+
     const hostHeader = (req.headers.host || 'localhost').split(':')[0];
     const cleanTarget = q.replace(/ /g, '_');
-    const searchUrl = `http://${hostHeader}:8090/search?content=${encodeURIComponent(book)}&pattern=${encodeURIComponent(q)}`;
+    const searchUrl = `http://${hostHeader}:8090/search?content=${encodeURIComponent(matched.book)}&pattern=${encodeURIComponent(q)}`;
     const articleUrl = q
-      ? `http://${hostHeader}:8090/content/${encodeURIComponent(book)}/${encodeURIComponent(cleanTarget)}`
-      : `http://${hostHeader}:8090/content/${encodeURIComponent(book)}`;
+      ? `http://${hostHeader}:8090/content/${encodeURIComponent(matched.book)}/${encodeURIComponent(cleanTarget)}`
+      : `http://${hostHeader}:8090/content/${encodeURIComponent(matched.book)}`;
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: true, book, installedCount: zims.length, searchUrl, articleUrl }));
+    res.end(JSON.stringify({
+      ok: true,
+      book: matched.book,
+      title: matched.title,
+      category: matched.category,
+      installedCount: zims.length,
+      searchUrl,
+      articleUrl
+    }));
+    return;
+  }
+
+  if (pathname === '/api/kiwix/books') {
+    const zims = listInstalledZims();
+    const hostHeader = (req.headers.host || 'localhost').split(':')[0];
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      ok: true,
+      host: hostHeader,
+      port: 8090,
+      books: zims
+    }));
     return;
   }
 
@@ -1816,15 +2021,62 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+function mergeOfflineLegs(leg1, leg2, viaLabel) {
+  const coords1 = leg1.geometry?.coordinates || [];
+  const coords2 = leg2.geometry?.coordinates || [];
+  const mergedCoords = coords1.concat(coords2.length > 0 ? coords2.slice(1) : []);
+  const steps1 = Array.isArray(leg1.steps) ? leg1.steps : [];
+  const steps2 = Array.isArray(leg2.steps) ? leg2.steps : [];
+  const mergedSteps = [
+    ...steps1,
+    { instruction: `📍 Parada intermediária em ${viaLabel || 'Ponto Via'}`, distanceKm: 0, type: 'waypoint' },
+    ...steps2.slice(steps2[0]?.type === 'depart' ? 1 : 0)
+  ];
+  return {
+    source: (leg1.source === 'offline_graph' && leg2.source === 'offline_graph') ? 'offline_graph' : 'offline_corridor',
+    profile: leg1.profile,
+    distanceKm: Math.round(((leg1.distanceKm || 0) + (leg2.distanceKm || 0)) * 10) / 10,
+    durationMin: Math.round((leg1.durationMin || 0) + (leg2.durationMin || 0)),
+    fuelLiters: Math.round(((leg1.fuelLiters || 0) + (leg2.fuelLiters || 0)) * 10) / 10,
+    waterLiters: Math.round(((leg1.waterLiters || 0) + (leg2.waterLiters || 0)) * 10) / 10,
+    caloriesKcal: Math.round((leg1.caloriesKcal || 0) + (leg2.caloriesKcal || 0)),
+    geometry: {
+      type: 'LineString',
+      coordinates: mergedCoords
+    },
+    steps: mergedSteps
+  };
+}
+
+function computeOfflineRouteWithOptionalVia(fromLat, fromLng, toLat, toLng, viaLat, viaLng, profile, fromLabel, toLabel, viaLabel) {
+  const hasVia = !isNaN(viaLat) && !isNaN(viaLng);
+  let routeObj;
+  if (!hasVia) {
+    routeObj = computeOfflineGraphRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel)
+      || generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel);
+  } else {
+    const leg1 = computeOfflineGraphRoute(fromLat, fromLng, viaLat, viaLng, profile, fromLabel, viaLabel || 'Parada Via')
+      || generateCorridorRoute(fromLat, fromLng, viaLat, viaLng, profile, fromLabel, viaLabel || 'Parada Via');
+    const leg2 = computeOfflineGraphRoute(viaLat, viaLng, toLat, toLng, profile, viaLabel || 'Parada Via', toLabel)
+      || generateCorridorRoute(viaLat, viaLng, toLat, toLng, profile, viaLabel || 'Parada Via', toLabel);
+    routeObj = mergeOfflineLegs(leg1, leg2, viaLabel);
+  }
+  routeObj.corridorSupport = findRouteCorridorSupport(routeObj.geometry?.coordinates || [], 5.0, 18);
+  return routeObj;
+}
+
   // 4.1 API: Route calculation (Online OSRM + Disk Cache + Offline Graph A* + Offline Tactical Corridor)
   if (pathname === '/api/route') {
     const fromLat = parseFloat(urlObj.searchParams.get('fromLat'));
     const fromLng = parseFloat(urlObj.searchParams.get('fromLng'));
     const toLat = parseFloat(urlObj.searchParams.get('toLat'));
     const toLng = parseFloat(urlObj.searchParams.get('toLng'));
+    const viaLat = parseFloat(urlObj.searchParams.get('viaLat'));
+    const viaLng = parseFloat(urlObj.searchParams.get('viaLng'));
     const profile = urlObj.searchParams.get('profile') || 'driving';
     const fromLabel = (urlObj.searchParams.get('fromLabel') || '').trim();
     const toLabel = (urlObj.searchParams.get('toLabel') || '').trim();
+    const viaLabel = (urlObj.searchParams.get('viaLabel') || '').trim();
     const forceOfflineGraph = urlObj.searchParams.get('forceOfflineGraph') === '1';
 
     if (isNaN(fromLat) || isNaN(fromLng) || isNaN(toLat) || isNaN(toLng)) {
@@ -1833,9 +2085,10 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    const hasVia = !isNaN(viaLat) && !isNaN(viaLng);
+
     if (forceOfflineGraph) {
-      const graphRoute = computeOfflineGraphRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel)
-        || generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel);
+      const graphRoute = computeOfflineRouteWithOptionalVia(fromLat, fromLng, toLat, toLng, viaLat, viaLng, profile, fromLabel, toLabel, viaLabel);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(graphRoute));
       return;
@@ -1846,7 +2099,9 @@ const server = http.createServer((req, res) => {
       try { fs.mkdirSync(routesCacheDir, { recursive: true }); } catch (e) {}
     }
 
-    const cacheKey = `${profile}_${fromLat.toFixed(4)}_${fromLng.toFixed(4)}_${toLat.toFixed(4)}_${toLng.toFixed(4)}.json`;
+    const cacheKey = hasVia
+      ? `${profile}_${fromLat.toFixed(4)}_${fromLng.toFixed(4)}_via_${viaLat.toFixed(4)}_${viaLng.toFixed(4)}_${toLat.toFixed(4)}_${toLng.toFixed(4)}.json`
+      : `${profile}_${fromLat.toFixed(4)}_${fromLng.toFixed(4)}_${toLat.toFixed(4)}_${toLng.toFixed(4)}.json`;
     const cachePath = path.join(routesCacheDir, cacheKey);
 
     // 1. Check disk cache first (offline instant)
@@ -1854,6 +2109,9 @@ const server = http.createServer((req, res) => {
       try {
         const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
         cached.cached = true;
+        if (!Array.isArray(cached.corridorSupport) && cached.geometry?.coordinates) {
+          cached.corridorSupport = findRouteCorridorSupport(cached.geometry.coordinates, 5.0, 18);
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(cached));
         return;
@@ -1864,7 +2122,10 @@ const server = http.createServer((req, res) => {
 
     // 2. Try OSRM (online)
     const osrmMode = profile === 'walking' ? 'foot' : 'driving';
-    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmMode}/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson&steps=true`;
+    const waypointCoords = hasVia
+      ? `${fromLng},${fromLat};${viaLng},${viaLat};${toLng},${toLat}`
+      : `${fromLng},${fromLat};${toLng},${toLat}`;
+    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmMode}/${waypointCoords}?overview=full&geometries=geojson&steps=true`;
 
     fetch(osrmUrl, { signal: AbortSignal.timeout(3500) })
       .then(r => r.json())
@@ -1880,32 +2141,43 @@ const server = http.createServer((req, res) => {
           const waterL = profile === 'walking' ? Math.max(0.5, Math.round(((durMin / 60) / 8) * 3.5 * 10) / 10) : 0;
           const caloriesKcal = profile === 'walking' ? Math.round((durMin / 60) * 380) : 0;
 
-          const steps = (r.legs && r.legs[0] && r.legs[0].steps ? r.legs[0].steps : []).map(s => {
-            const maneuver = s.maneuver ? s.maneuver.type : '';
-            const modifier = s.maneuver ? s.maneuver.modifier : '';
-            let prefix = profile === 'walking' ? 'Caminhe' : 'Siga';
-            if (maneuver === 'turn') {
-              if (modifier && modifier.includes('right')) prefix = 'Vire à direita';
-              else if (modifier && modifier.includes('left')) prefix = 'Vire à esquerda';
-              else prefix = 'Faça a curva';
-            } else if (maneuver === 'roundabout') {
-              prefix = 'Na rotatória';
-            } else if (maneuver === 'fork') {
-              prefix = 'Na bifurcação';
+          const legs = Array.isArray(r.legs) ? r.legs : [];
+          const steps = [];
+          legs.forEach((leg, legIdx) => {
+            if (legIdx > 0) {
+              steps.push({
+                instruction: `📍 Parada intermediária em ${viaLabel || 'Ponto Via'}`,
+                distanceKm: 0,
+                type: 'waypoint'
+              });
             }
+            for (const s of (leg.steps || [])) {
+              const maneuver = s.maneuver ? s.maneuver.type : '';
+              const modifier = s.maneuver ? s.maneuver.modifier : '';
+              let prefix = profile === 'walking' ? 'Caminhe' : 'Siga';
+              if (maneuver === 'turn') {
+                if (modifier && modifier.includes('right')) prefix = 'Vire à direita';
+                else if (modifier && modifier.includes('left')) prefix = 'Vire à esquerda';
+                else prefix = 'Faça a curva';
+              } else if (maneuver === 'roundabout') {
+                prefix = 'Na rotatória';
+              } else if (maneuver === 'fork') {
+                prefix = 'Na bifurcação';
+              }
 
-            const stepDistKm = Math.round((s.distance / 1000) * 10) / 10;
-            const roadName = s.name ? ` na ${s.name}` : (profile === 'walking' ? ' pelo acostamento/calçada' : '');
-            let extraNote = '';
-            if (profile === 'walking' && stepDistKm >= 3) {
-              extraNote = ' &bull; Hidratação a cada 50 min';
+              const stepDistKm = Math.round((s.distance / 1000) * 10) / 10;
+              const roadName = s.name ? ` na ${s.name}` : (profile === 'walking' ? ' pelo acostamento/calçada' : '');
+              let extraNote = '';
+              if (profile === 'walking' && stepDistKm >= 3) {
+                extraNote = ' &bull; Hidratação a cada 50 min';
+              }
+
+              steps.push({
+                instruction: `${prefix}${roadName}${extraNote}`,
+                distanceKm: stepDistKm,
+                type: maneuver || 'step'
+              });
             }
-
-            return {
-              instruction: `${prefix}${roadName}${extraNote}`,
-              distanceKm: stepDistKm,
-              type: maneuver || 'step'
-            };
           });
 
           const result = {
@@ -1917,6 +2189,7 @@ const server = http.createServer((req, res) => {
             waterLiters: waterL,
             caloriesKcal,
             geometry: r.geometry,
+            corridorSupport: findRouteCorridorSupport(r.geometry?.coordinates || [], 5.0, 18),
             steps: steps.length > 0 ? steps : [{ instruction: profile === 'walking' ? 'Marcha a pé pela rota principal' : 'Siga pela rota principal', distanceKm: distKm, type: 'step' }]
           };
 
@@ -1929,8 +2202,7 @@ const server = http.createServer((req, res) => {
       })
       .catch(() => {
         // Fallback: first try local turn-by-turn A* graph over vector tiles, then tactical corridor
-        const fallbackResult = computeOfflineGraphRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel)
-          || generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile, fromLabel, toLabel);
+        const fallbackResult = computeOfflineRouteWithOptionalVia(fromLat, fromLng, toLat, toLng, viaLat, viaLng, profile, fromLabel, toLabel, viaLabel);
         try { fs.writeFileSync(cachePath, JSON.stringify(fallbackResult, null, 2), 'utf8'); } catch(e){}
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(fallbackResult));
@@ -1944,10 +2216,15 @@ const server = http.createServer((req, res) => {
     const fromLng = parseFloat(urlObj.searchParams.get('fromLng'));
     const toLat = parseFloat(urlObj.searchParams.get('toLat'));
     const toLng = parseFloat(urlObj.searchParams.get('toLng'));
+    const viaLat = parseFloat(urlObj.searchParams.get('viaLat'));
+    const viaLng = parseFloat(urlObj.searchParams.get('viaLng'));
     const profile = urlObj.searchParams.get('profile') || 'driving';
+    const hasVia = !isNaN(viaLat) && !isNaN(viaLng);
 
     const routesCacheDir = path.join(__dirname, 'data', 'routes_cache');
-    const cacheKey = `${profile}_${fromLat.toFixed(4)}_${fromLng.toFixed(4)}_${toLat.toFixed(4)}_${toLng.toFixed(4)}.json`;
+    const cacheKey = hasVia
+      ? `${profile}_${fromLat.toFixed(4)}_${fromLng.toFixed(4)}_via_${viaLat.toFixed(4)}_${viaLng.toFixed(4)}_${toLat.toFixed(4)}_${toLng.toFixed(4)}.json`
+      : `${profile}_${fromLat.toFixed(4)}_${fromLng.toFixed(4)}_${toLat.toFixed(4)}_${toLng.toFixed(4)}.json`;
     const cachePath = path.join(routesCacheDir, cacheKey);
 
     let routeData = null;
@@ -1955,7 +2232,7 @@ const server = http.createServer((req, res) => {
       try { routeData = JSON.parse(fs.readFileSync(cachePath, 'utf8')); } catch(e){}
     }
     if (!routeData) {
-      routeData = generateCorridorRoute(fromLat, fromLng, toLat, toLng, profile);
+      routeData = computeOfflineRouteWithOptionalVia(fromLat, fromLng, toLat, toLng, viaLat, viaLng, profile, '', '', '');
     }
 
     const coords = routeData.geometry && routeData.geometry.coordinates ? routeData.geometry.coordinates : [[fromLng, fromLat], [toLng, toLat]];
@@ -1968,7 +2245,7 @@ const server = http.createServer((req, res) => {
     <desc>Distancia: ${routeData.distanceKm} km | Tempo: ${routeData.durationMin} min | Perfil: ${profile}</desc>
   </metadata>
   <wpt lat="${fromLat}" lon="${fromLng}"><name>Origem</name></wpt>
-  <wpt lat="${toLat}" lon="${toLng}"><name>Destino</name></wpt>
+${hasVia ? `  <wpt lat="${viaLat}" lon="${viaLng}"><name>Parada Intermediaria</name></wpt>\n` : ''}  <wpt lat="${toLat}" lon="${toLng}"><name>Destino</name></wpt>
   <trk>
     <name>Trilha Tatica</name>
     <trkseg>

@@ -21,11 +21,11 @@
 O **NOMAD Brasil** é uma plataforma *open source* criada para prover infraestrutura crítica de informação durante apagões prolongados, catástrofes climáticas, colapso de redes ou operações de campo em áreas remotas do território nacional.
 
 O sistema integra em uma interface tática ultra-rápida em *dark mode*:
-- **🗺️ Cartografia Vetorial Offline & Detalhe Urbano (`z=14` / Zoom 18):** Cobertura do Brasil inteiro via PMTiles (1,57 GB) com MapLibre GL JS sem depender de serviços externos, pré-carregamento em 1 clique das vias residenciais de qualquer cidade (`z=14`), cache persistente em disco e geocodificação reversa offline no clique/botão direito (Decimal, DMS e UTM).
+- **🗺️ Cartografia Vetorial Offline & Detalhe Urbano (`z=14` / Zoom 18):** Cobertura do Brasil inteiro via PMTiles (1,57 GB) com MapLibre GL JS sem depender de serviços externos, pré-carregamento em 1 clique das vias residenciais de qualquer cidade (`z=14`), cache persistente em disco, **régua tática** (distância, azimute real/magnético `-21°`, marcha e horizonte VHF/UHF) e geocodificação reversa offline (Decimal, DMS, UTM e efemérides solar/lunar).
 - **📍 Todos os 5.571 Municípios do IBGE + 416 mil+ Logradouros (SQLite FTS5):** Busca híbrida instantânea de cidades, ruas, avenidas, rodovias (`ref`) e POIs com sinônimos brasileiros (`Av`/`Avenida`, `Dr`/`Doutor`, `15`/`XV`), Radar de Socorro próximo (`🚑 Socorro`), prioridade por proximidade e auto-aprendizado em SQLite.
-- **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline):** Roteamento por rua ou município com OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, corredor tático de contingência e exportação **GPX** para Garmin e OsmAnd.
-- **📚 Acervo Enciclopédico Kiwix Integrado (23+ GB):** Wikipédia em português servida na porta 8090 com diagnóstico automático de livros ZIM e abertura direta de municípios do mapa na aba enciclopédia do portal.
-- **💾 Persistência Tática & Backup Portátil:** Sincronização automática dos marcadores pessoais (Waypoints) em disco (`storage/user_waypoints.json`) + exportação/restauração completa em `.JSON` (`Waypoints`, `PEF`, `BOB` e `PACE`).
+- **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline):** Roteamento por rua ou município com **parada intermediária (`Via`)**, OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, **POIs de apoio no corredor (5 km)**, exportação **GPX** e **Dossiê Tático A4 imprimível**.
+- **📚 Estante Multi-ZIM Kiwix Integrada (11+ Acervos / 23+ GB):** Wikipédia PT, Wikivoyage PT, Wikibooks PT, Wikipédia Médica PT, NHS Medicines, CDC, FAS Military Medicine e Zimgit servidos na porta 8090 com catálogo `/api/kiwix/books`, atalho Wikivoyage por município e busca médica rápida na aba de Emergências.
+- **📡 Modo Acampamento / Rede Local (LAN QR Code) & Backup Portátil:** Modal de conexão em rede local com detecção de IPs + gerador de QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `BOB` e `PACE`).
 - **🛠️ 56 Módulos Especializados:** Guias interativos, calculadoras técnicas e protocolos operacionais para todas as dimensões de sobrevivência e autossuficiência.
 
 ---
@@ -34,9 +34,9 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 
 ### 1. 🗺️ Cartografia, Navegação & Deslocamento
 1. **Mapas Nacionais em Nível de Ruas (`z=14` sob Demanda & Zoom 18):** Visualizador vetorial acelerado por GPU com camada de relevo, estradas, edificações, pré-carregamento urbano em lote (`z=14`) e destaque visual da rua selecionada.
-2. **Busca Híbrida + Geocodificação Reversa Offline:** Motor local `brazil-streets.sqlite` integrado com sinônimos brasileiros e inspeção de qualquer ponto do mapa (clique ou botão direito) exibindo a via mais próxima, coordenadas **Decimal / DMS / UTM** e atalhos rápidos.
-3. **Planejador de Rotas & Evacuação (OSRM + Grafo A\* Offline):** Autocomplete de ruas/cidades, cálculo offline curva a curva sobre tiles MVT locais em deslocamentos curtos, estimativa de combustível/água/calorias e exportação GPX.
-4. **Radar de Socorro Próximo & Waypoints Persistentes:** Escaneamento instantâneo de hospitais, bombeiros/SAMU, PRF, postos e fontes de água em raios de `10`, `25` ou `50 km`, somado a marcadores pessoais salvos tanto no navegador quanto no servidor (`user_waypoints.json`) e backup completo em `.JSON`.
+2. **Busca Híbrida + Geocodificação Reversa Offline + Efemérides:** Motor local `brazil-streets.sqlite` com sinônimos brasileiros, inspeção de qualquer ponto do mapa com coordenadas **Decimal / DMS / UTM**, cálculo astronômico offline de **nascer/pôr do sol, crepúsculo civil e fase lunar**, além da **Régua Tática (`📐 Medir`)** com azimute real/magnético e horizonte de linha de visada para rádio.
+3. **Planejador de Rotas & Evacuação (OSRM + Grafo A\* Offline + Via + Dossiê A4):** Autocomplete de ruas/cidades com parada intermediária (`Via`), cálculo offline curva a curva sobre tiles MVT locais em deslocamentos curtos, **POIs de segurança ao longo de 5 km do corredor**, estimativa de combustível/água/calorias, exportação GPX e **impressão de Dossiê Tático A4**.
+4. **Radar de Socorro Próximo, Waypoints Persistentes & LAN QR:** Escaneamento instantâneo de hospitais, bombeiros/SAMU, PRF, postos e fontes de água em raios de `10`, `25` ou `50 km`, marcadores salvos no servidor (`user_waypoints.json`), backup completo em `.JSON` e compartilhamento rápido via QR Code na rede local.
 5. **Bússola Digital & Orientação Natural:** Rumo magnético, orientação solar por sombra de vareta e método analógico do relógio.
 6. **Navegação Celeste (Hemisfério Sul):** Localização do Sul verdadeiro pelo Cruzeiro do Sul e constelação de Órion.
 7. **Topografia de Expedição & Triangulação:** Leitura de cartas topográficas, cálculo de declividade e triangulação com bússola.
@@ -166,16 +166,16 @@ nomad-brasil/
 │   │   ├── survival.json       # Manuais técnicos de resiliência e campo
 │   │   └── routes_cache/       # Cache permanente em disco de todas as rotas traçadas
 │   └── public/
-│       ├── index.html          # Interface tática em dark mode com os 56 módulos + backup JSON + Socorro
+│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, régua tática e modal LAN QR
 │       ├── styles.css          # Design system com sidebar tática e controles escuros
-│       ├── app.js              # Mapas, geocodificação reversa, prefetch z=14, radar de socorro, rotas, backup
-│       ├── sw.js               # Service Worker PWA (v10) para operação offline e Network-First nas APIs
+│       ├── app.js              # Mapas, reversa, prefetch z=14, socorro, rotas + Via, régua azimute/rádio, efemérides, QR SVG e dossiê A4
+│       ├── sw.js               # Service Worker PWA (v11) para operação offline e Network-First nas APIs
 │       ├── banner.svg          # Banner vetorizado da marca
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
-│   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Backup JSON
-│   ├── sw.js                   # Service Worker do GitHub Pages (v10)
+│   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Dossiê A4
+│   ├── sw.js                   # Service Worker do GitHub Pages (v11)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -186,8 +186,8 @@ nomad-brasil/
 │   │   ├── detail_tiles_cache/         # Cache persistente em disco de tiles vetoriais z=14 (.pbf)
 │   │   └── basemaps-assets/fonts/      # Glyphs Noto Sans locais
 │   ├── user_waypoints.json             # Marcadores pessoais sincronizados automaticamente no servidor
-│   └── zim/
-│       ├── wikipedia_pt_all_maxi.zim   # Wikipédia Completa em Português
+│   └── zim/                            # Biblioteca Multi-ZIM (Wikipédia, Wikivoyage, Wikibooks, Medicina, NHS, CDC, FAS)
+│       ├── *.zim                       # 11+ acervos enciclopédicos e médicos offline
 │       └── kiwix-library.xml           # Catálogo XML gerado
 ├── tools/                      # Utilitário go-pmtiles
 ├── docker-compose.yml          # Orquestração dos serviços (Web com storage rw e Kiwix ro)
@@ -224,16 +224,17 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 
 | Método & Rota | Descrição Operacional |
 | :--- | :--- |
-| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`) e livro primário (`primaryZimBook`). |
+| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`), `primaryZimBook`, porta ativa (`port`) e interfaces locais (`lanIps`). |
 | `GET /api/cities` | Lista e filtra os 5.571 municípios brasileiros por nome, UF, região, código IBGE e prefixo DDD. |
 | `GET /api/streets` | Busca híbrida de ruas, avenidas, rodovias (`ref`) e POIs em SQLite FTS5 com sinônimos brasileiros, prioridade por proximidade e auto-aprendizado online opcional (`Photon`/`Nominatim`). |
 | `GET /api/streets/reverse` | Geocodificação reversa offline (`?lat=...&lng=...`) sobre tiles MVT locais (`z=13`/`z=14`) retornando a via mais próxima, distância em metros, município e POIs próximos. |
 | `GET /api/nearby-support` | Radar de apoio próximo (`?lat=...&lng=...&radiusKm=25&category=all`) combinando base estratégica (`pois.json`) e POIs extraídos do mapa vetorial no SQLite. |
 | `GET / POST /api/maps/prefetch-city` | Pré-carrega em lote os tiles vetoriais `z=14` ao redor de uma cidade e indexa automaticamente todas as vias residenciais no `brazil-streets.sqlite`. |
 | `GET / POST /api/waypoints` | Lê e persiste em disco (`storage/user_waypoints.json`) os marcadores táticos pessoais do mapa. |
-| `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com quádruplo fallback: OSRM online -> cache permanente em disco -> grafo A\* offline sobre MVT (`forceOfflineGraph=1` força o modo offline) -> corredor tático. |
-| `GET /api/route/gpx` | Exporta qualquer rota calculada em arquivo `.gpx` padrão para Garmin, OsmAnd e aplicativos offline. |
-| `GET /api/kiwix/resolve` | Detecta os livros `.zim` instalados em `storage/zim/` e resolve URLs diretas de artigo e busca para o leitor Kiwix (`:8090`). |
+| `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com suporte a parada intermediária (`viaLat`/`viaLng`/`viaLabel`), quádruplo fallback (OSRM -> cache -> A\* MVT `forceOfflineGraph=1` -> corredor tático) e lista `corridorSupport` (POIs dentro de 5 km). |
+| `GET /api/route/gpx` | Exporta qualquer rota calculada (incluindo waypoint `<wpt>` de parada intermediária `viaLat`/`viaLng`) em arquivo `.gpx` padrão para Garmin e OsmAnd. |
+| `GET /api/kiwix/books` | Catálogo estruturado dos livros `.zim` instalados em `storage/zim/` com metadados de tamanho, idioma, categoria (`wikipedia`, `travel`, `medicine`, `books`) e ícone. |
+| `GET /api/kiwix/resolve` | Resolve URLs diretas de artigo e busca para o leitor Kiwix (`:8090`), aceitando seleção por `?book=` ou `?category=` (`wikipedia`, `travel`, `medicine`, `books`). |
 
 ---
 
