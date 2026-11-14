@@ -10,16 +10,33 @@ const __dirname = path.dirname(__filename);
 const PORT = parseInt(process.env.PORT || '8000', 10);
 const STORAGE_PATH = process.env.STORAGE_PATH || path.join(__dirname, '..', 'storage');
 
-// Open FTS5 Street Index (Option 2 - 100% Offline)
+// Open FTS5 Street Index (Option 2 - 100% Offline + Incremental Auto-Learning)
 const streetsDbPath = path.join(STORAGE_PATH, 'maps', 'brazil-streets.sqlite');
 let streetsDb = null;
 let streetsSearchStmt = null;
+let streetsExistsStmt = null;
+let streetsInsertStmt = null;
 if (fs.existsSync(streetsDbPath)) {
   try {
-    streetsDb = new DatabaseSync(streetsDbPath, { readOnly: true });
+    try {
+      streetsDb = new DatabaseSync(streetsDbPath);
+    } catch {
+      streetsDb = new DatabaseSync(streetsDbPath, { readOnly: true });
+    }
     streetsSearchStmt = streetsDb.prepare(
       "SELECT rowid AS id, name, city, state, kind, lat, lng, bm25(streets_fts, 10.0, 4.0, 1.0, 2.0) AS score FROM streets_fts WHERE streets_fts MATCH ? ORDER BY score LIMIT ?"
     );
+    try {
+      streetsExistsStmt = streetsDb.prepare(
+        'SELECT rowid AS id, name, city, state FROM streets_fts WHERE streets_fts MATCH ? LIMIT 40'
+      );
+      streetsInsertStmt = streetsDb.prepare(
+        'INSERT INTO streets_fts (name, city, state, kind, lat, lng) VALUES (?, ?, ?, ?, ?, ?)'
+      );
+    } catch {
+      streetsExistsStmt = null;
+      streetsInsertStmt = null;
+    }
   } catch (err) {
     console.warn('[NOMAD Brasil] Aviso ao carregar índice SQLite de ruas:', err.message);
     streetsDb = null;
@@ -64,6 +81,446 @@ const MIME_TYPES = {
 // Helper: Normalize accents for search
 function normalizeStr(str) {
   return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
+}
+
+// 1x1 degree spatial grid for fast Brazilian city/UF attribution
+const citySpatialGrid = new Map();
+for (const c of cities) {
+  const gx = Math.floor(c.lng);
+  const gy = Math.floor(c.lat);
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const k = `${gx + dx},${gy + dy}`;
+      let arr = citySpatialGrid.get(k);
+      if (!arr) {
+        arr = [];
+        citySpatialGrid.set(k, arr);
+      }
+      arr.push(c);
+    }
+  }
+}
+
+function findNearestCityForPoint(lat, lng, maxDistSq = 0.12) {
+  const bucket = citySpatialGrid.get(`${Math.floor(lng)},${Math.floor(lat)}`);
+  if (!bucket) return null;
+  let best = null;
+  let bestDist = maxDistSq;
+  for (let i = 0; i < bucket.length; i++) {
+    const c = bucket[i];
+    const d = (c.lat - lat) ** 2 + (c.lng - lng) ** 2;
+    if (d < bestDist) {
+      bestDist = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
+const STATE_NAME_TO_UF = {
+  'acre': 'AC', 'alagoas': 'AL', 'amapa': 'AP', 'amazonas': 'AM', 'bahia': 'BA',
+  'ceara': 'CE', 'distrito federal': 'DF', 'espirito santo': 'ES', 'goias': 'GO',
+  'maranhao': 'MA', 'mato grosso': 'MT', 'mato grosso do sul': 'MS', 'minas gerais': 'MG',
+  'para': 'PA', 'paraiba': 'PB', 'parana': 'PR', 'pernambuco': 'PE', 'piaui': 'PI',
+  'rio de janeiro': 'RJ', 'rio grande do norte': 'RN', 'rio grande do sul': 'RS',
+  'rondonia': 'RO', 'roraima': 'RR', 'santa catarina': 'SC', 'sao paulo': 'SP',
+  'sergipe': 'SE', 'tocantins': 'TO'
+};
+
+function normalizeUf(rawState, fallbackCity) {
+  if (rawState) {
+    const clean = rawState.trim();
+    if (/^[A-Za-z]{2}$/.test(clean)) return clean.toUpperCase();
+    const mapped = STATE_NAME_TO_UF[normalizeStr(clean)];
+    if (mapped) return mapped;
+  }
+  return fallbackCity ? fallbackCity.state : 'BR';
+}
+
+const STREET_PREFIXES = new Set([
+  'r', 'rua', 'av', 'avenida', 'tv', 'trav', 'travessa', 'al', 'alameda',
+  'pc', 'praca', 'rod', 'rodovia', 'estr', 'estrada', 'via', 'viela',
+  'largo', 'lg', 'ponte', 'viaduto', 'vd', 'passagem'
+]);
+
+const SYNONYM_GROUPS = [
+  ['av', 'avenida'],
+  ['r', 'rua'],
+  ['tv', 'trav', 'travessa'],
+  ['al', 'alameda'],
+  ['pc', 'praca'],
+  ['rod', 'rodovia'],
+  ['estr', 'estrada'],
+  ['dr', 'dra', 'doutor', 'doutora'],
+  ['prof', 'profa', 'professor', 'professora'],
+  ['pres', 'presidente'],
+  ['gov', 'governador'],
+  ['sen', 'senador'],
+  ['dep', 'deputado'],
+  ['cel', 'coronel'],
+  ['gen', 'general'],
+  ['mal', 'marechal'],
+  ['brig', 'brigadeiro'],
+  ['eng', 'engenheiro'],
+  ['pe', 'padre'],
+  ['br', 'bar', 'barao'],
+  ['visc', 'visconde'],
+  ['alm', 'almirante'],
+  ['cons', 'conselheiro'],
+  ['com', 'comendador'],
+  ['des', 'desembargador'],
+  ['st', 'sta', 'sto', 'santa', 'santo', 'sao'],
+  ['15', 'xv', 'quinze'],
+  ['7', 'vii', 'sete'],
+  ['9', 'ix', 'nove'],
+  ['1', 'i', 'primeiro'],
+  ['2', 'ii', 'dois'],
+  ['24', 'xxiv'],
+  ['13', 'xiii', 'treze']
+];
+
+const SYNONYM_MAP = new Map();
+for (const group of SYNONYM_GROUPS) {
+  for (const term of group) {
+    SYNONYM_MAP.set(term, group);
+  }
+}
+
+function buildSmartFtsQuery(rawQ, dropStreetPrefix = false) {
+  const cleaned = normalizeStr(rawQ).replace(/[^a-z0-9\s]/g, ' ').trim();
+  if (!cleaned) return '';
+  let rawTokens = cleaned.split(/\s+/).filter(Boolean);
+  if (dropStreetPrefix) {
+    rawTokens = rawTokens.filter((t, idx) => !(idx === 0 && STREET_PREFIXES.has(t)) && !STREET_PREFIXES.has(t));
+  }
+  const tokens = rawTokens.filter(t => t.length >= 2 || /^\d+$/.test(t) || (t === 'r' && !dropStreetPrefix));
+  if (tokens.length === 0) return '';
+
+  return tokens.map(t => {
+    const syns = SYNONYM_MAP.get(t);
+    if (syns) {
+      return `(${syns.map(s => `"${s}"*`).join(' OR ')})`;
+    }
+    return `"${t}"*`;
+  }).join(' AND ');
+}
+
+const learnedStreetKeys = new Set();
+function persistLearnedStreet(name, city, state, kind, lat, lng) {
+  if (!streetsInsertStmt || !streetsExistsStmt || !name || !city) return false;
+  const cleanName = String(name).trim();
+  const cleanCity = String(city).trim();
+  const cleanState = String(state || 'BR').trim();
+  if (cleanName.length < 2 || !/[a-zA-ZÀ-ÿ]/.test(cleanName)) return false;
+
+  const memKey = `${normalizeStr(cleanCity)}|${cleanState}|${normalizeStr(cleanName)}`;
+  if (learnedStreetKeys.has(memKey)) return false;
+  learnedStreetKeys.add(memKey);
+
+  try {
+    const ftsProbe = buildSmartFtsQuery(`${cleanName} ${cleanCity}`, false);
+    if (ftsProbe) {
+      const existing = streetsExistsStmt.all(ftsProbe);
+      const normN = normalizeStr(cleanName);
+      const normC = normalizeStr(cleanCity);
+      if (existing.some(r => normalizeStr(r.name) === normN && normalizeStr(r.city) === normC)) {
+        return false;
+      }
+    }
+    const rLat = Math.round(Number(lat) * 100000) / 100000;
+    const rLng = Math.round(Number(lng) * 100000) / 100000;
+    const info = streetsInsertStmt.run(cleanName, cleanCity, cleanState, kind || 'Via', rLat, rLng);
+    return Number(info.lastInsertRowid || 0);
+  } catch {
+    return false;
+  }
+}
+
+async function fetchOnlineStreetsSupplement(rawQ, mapLat, mapLng) {
+  const hits = [];
+  const hasGeo = !isNaN(mapLat) && !isNaN(mapLng);
+  const photonParams = new URLSearchParams({ q: rawQ, limit: '12' });
+  if (hasGeo) {
+    photonParams.set('lat', String(mapLat));
+    photonParams.set('lon', String(mapLng));
+  }
+  const photonUrl = `https://photon.komoot.io/api/?${photonParams.toString()}`;
+  const nomUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=br&addressdetails=1&limit=8&q=${encodeURIComponent(rawQ)}`;
+
+  const [photonRes, nomRes] = await Promise.allSettled([
+    fetch(photonUrl, { signal: AbortSignal.timeout(2200), headers: { 'User-Agent': 'NOMAD-Brasil-Tactical/1.0' } })
+      .then(r => (r.ok ? r.json() : null)),
+    fetch(nomUrl, { signal: AbortSignal.timeout(2200), headers: { 'User-Agent': 'NOMAD-Brasil-Tactical/1.0' } })
+      .then(r => (r.ok ? r.json() : null))
+  ]);
+
+  if (photonRes.status === 'fulfilled' && photonRes.value?.features) {
+    for (const f of photonRes.value.features) {
+      const p = f.properties || {};
+      const coords = f.geometry?.coordinates;
+      if (!coords || coords.length < 2) continue;
+      const lng = Number(coords[0]);
+      const lat = Number(coords[1]);
+      if (lat < -34 || lat > 6 || lng < -74.5 || lng > -32) continue;
+      if (p.countrycode && p.countrycode !== 'BR' && p.country && !normalizeStr(p.country).includes('brasil')) continue;
+
+      const nearest = findNearestCityForPoint(lat, lng, 0.2);
+      const name = (p.street || p.name || '').trim();
+      const city = (p.city || p.town || p.village || p.municipality || (nearest ? nearest.name : '')).trim();
+      if (!name || !city) continue;
+      const state = normalizeUf(p.state, nearest);
+      const isRoad = p.osm_key === 'highway' || Boolean(p.street) || p.type === 'street';
+      const kind = isRoad ? 'Via' : (p.type === 'district' || p.type === 'locality' ? 'Bairro' : 'POI');
+      hits.push({ name, city, state, kind, lat, lng });
+    }
+  }
+
+  if (nomRes.status === 'fulfilled' && Array.isArray(nomRes.value)) {
+    for (const item of nomRes.value) {
+      const lat = Number(item.lat);
+      const lng = Number(item.lon);
+      if (isNaN(lat) || isNaN(lng) || lat < -34 || lat > 6 || lng < -74.5 || lng > -32) continue;
+      const addr = item.address || {};
+      const nearest = findNearestCityForPoint(lat, lng, 0.2);
+      const name = (addr.road || item.name || '').trim();
+      const city = (addr.city || addr.town || addr.village || addr.municipality || (nearest ? nearest.name : '')).trim();
+      if (!name || !city) continue;
+      const state = normalizeUf(addr.state, nearest);
+      const kind = (item.class === 'highway' || addr.road) ? 'Via' : 'POI';
+      hits.push({ name, city, state, kind, lat, lng });
+    }
+  }
+
+  // Deduplicate and permanently learn discovered streets into SQLite
+  const deduped = [];
+  const seen = new Set();
+  for (const h of hits) {
+    const k = `${normalizeStr(h.city)}|${h.state}|${normalizeStr(h.name)}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const insertedId = persistLearnedStreet(h.name, h.city, h.state, h.kind, h.lat, h.lng);
+    deduped.push({
+      id: insertedId || `net_${deduped.length}`,
+      name: h.name,
+      city: h.city,
+      state: h.state,
+      kind: h.kind,
+      lat: Math.round(h.lat * 100000) / 100000,
+      lng: Math.round(h.lng * 100000) / 100000
+    });
+  }
+  return deduped;
+}
+
+const mvtTextDecoder = new TextDecoder('utf-8');
+function readVarintMvt(u, o) {
+  let r = 0, s = 0, b;
+  do { b = u[o.p++]; r |= (b & 127) << s; s += 7; } while (b >= 128);
+  return r >>> 0;
+}
+function skipMvt(u, o, w) {
+  if (w === 0) readVarintMvt(u, o);
+  else if (w === 1) o.p += 8;
+  else if (w === 2) o.p += readVarintMvt(u, o);
+  else if (w === 5) o.p += 4;
+}
+
+function extractAndLearnDetailTileStreets(pbfBuffer, z, tx, ty) {
+  if (!streetsInsertStmt || z !== 14) return;
+  try {
+    const tileCenterLng = ((tx + 0.5) / (1 << z)) * 360 - 180;
+    const tileCenterLat = Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + 0.5)) / (1 << z)))) * (180 / Math.PI);
+    const nearest = findNearestCityForPoint(tileCenterLat, tileCenterLng, 0.15);
+    if (!nearest) return;
+
+    const u = new Uint8Array(pbfBuffer.buffer, pbfBuffer.byteOffset, pbfBuffer.byteLength);
+    const o = { p: 0 };
+    const learned = [];
+    const targetLayers = new Set(['transportation_name', 'poi']);
+
+    while (o.p < u.length) {
+      const tag = readVarintMvt(u, o);
+      if ((tag >> 3) === 3 && (tag & 7) === 2) {
+        const len = readVarintMvt(u, o);
+        const end = o.p + len;
+        let lname = '', keys = [], vals = [], feats = [], extent = 4096;
+        while (o.p < end) {
+          const lt = readVarintMvt(u, o), lf = lt >> 3, lw = lt & 7;
+          if (lf === 1 && lw === 2) { const sl = readVarintMvt(u, o); lname = mvtTextDecoder.decode(u.subarray(o.p, o.p + sl)); o.p += sl; }
+          else if (lf === 2 && lw === 2) { const fl = readVarintMvt(u, o); feats.push([o.p, o.p + fl]); o.p += fl; }
+          else if (lf === 3 && lw === 2) { const kl = readVarintMvt(u, o); keys.push(mvtTextDecoder.decode(u.subarray(o.p, o.p + kl))); o.p += kl; }
+          else if (lf === 4 && lw === 2) {
+            const vl = readVarintMvt(u, o), ve = o.p + vl; let v = null;
+            while (o.p < ve) {
+              const vt = readVarintMvt(u, o), vf = vt >> 3, vw = vt & 7;
+              if (vf === 1 && vw === 2) { const sl = readVarintMvt(u, o); v = mvtTextDecoder.decode(u.subarray(o.p, o.p + sl)); o.p += sl; }
+              else skipMvt(u, o, vw);
+            }
+            vals.push(v);
+          }
+          else if (lf === 5 && lw === 0) extent = readVarintMvt(u, o) || 4096;
+          else skipMvt(u, o, lw);
+        }
+        if (!targetLayers.has(lname)) continue;
+        for (const [fsPos, fePos] of feats) {
+          const fo = { p: fsPos };
+          const tags = [];
+          let gx = extent / 2, gy = extent / 2, hasGeom = false;
+          while (fo.p < fePos) {
+            const ft = readVarintMvt(u, fo), ff = ft >> 3, fw = ft & 7;
+            if (ff === 2 && fw === 2) { const tl = readVarintMvt(u, fo), te = fo.p + tl; while (fo.p < te) tags.push(readVarintMvt(u, fo)); }
+            else if (ff === 4 && fw === 2) {
+              const gl = readVarintMvt(u, fo), ge = fo.p + gl;
+              if (fo.p < ge) {
+                const cmd = readVarintMvt(u, fo);
+                if ((cmd & 0x7) === 1 && fo.p < ge) {
+                  const dx = readVarintMvt(u, fo), dy = readVarintMvt(u, fo);
+                  gx = (dx >>> 1) ^ -(dx & 1); gy = (dy >>> 1) ^ -(dy & 1);
+                  hasGeom = true;
+                }
+              }
+              fo.p = ge;
+            } else skipMvt(u, fo, fw);
+          }
+          if (!hasGeom || tags.length < 2) continue;
+          let nm = '', ref = '';
+          for (let i = 0; i + 1 < tags.length; i += 2) {
+            const k = keys[tags[i]], v = vals[tags[i + 1]];
+            if (!v) continue;
+            if (k === 'name:pt') nm = v;
+            else if (k === 'name' && !nm) nm = v;
+            else if (k === 'name:latin' && !nm) nm = v;
+            else if (k === 'ref') ref = v;
+          }
+          const finalName = (nm || ref || '').trim();
+          if (finalName.length >= 2 && /[a-zA-ZÀ-ÿ]/.test(finalName)) {
+            const n = 1 << z;
+            const lng = ((tx + gx / extent) / n) * 360 - 180;
+            const lat = Math.atan(Math.sinh(Math.PI * (1 - (2 * (ty + gy / extent)) / n))) * (180 / Math.PI);
+            learned.push({ name: finalName, kind: lname === 'transportation_name' ? 'Via' : 'POI', lat, lng });
+          }
+        }
+      } else {
+        skipMvt(u, o, tag & 7);
+      }
+    }
+
+    if (learned.length > 0 && streetsDb) {
+      for (const item of learned) {
+        persistLearnedStreet(item.name, nearest.name, nearest.state, item.kind, item.lat, item.lng);
+      }
+    }
+  } catch {
+    // ignore background parsing issues
+  }
+}
+
+let openFreeMapTileTemplate = 'https://tiles.openfreemap.org/planet/20261101_080013_pt/{z}/{x}/{y}.pbf';
+let lastOpenFreeMapCheck = 0;
+async function getOpenFreeMapTemplate(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && lastOpenFreeMapCheck > 0 && now - lastOpenFreeMapCheck < 3600 * 1000) {
+    return openFreeMapTileTemplate;
+  }
+  try {
+    const r = await fetch('https://tiles.openfreemap.org/planet', { signal: AbortSignal.timeout(2500) });
+    if (r.ok) {
+      const json = await r.json();
+      if (json.tiles && json.tiles[0]) {
+        openFreeMapTileTemplate = json.tiles[0];
+        lastOpenFreeMapCheck = now;
+      }
+    }
+  } catch {
+    lastOpenFreeMapCheck = now;
+  }
+  return openFreeMapTileTemplate;
+}
+
+async function handleStreetsSearch(req, res, urlObj) {
+  const rawQ = (urlObj.searchParams.get('q') || '').trim();
+  const limit = Math.min(50, Math.max(1, parseInt(urlObj.searchParams.get('limit') || '25', 10) || 25));
+  const mapLat = parseFloat(urlObj.searchParams.get('lat'));
+  const mapLng = parseFloat(urlObj.searchParams.get('lng'));
+  const ctxCity = normalizeStr((urlObj.searchParams.get('city') || '').trim());
+  const hasGeo = !isNaN(mapLat) && !isNaN(mapLng);
+
+  if (!rawQ) {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end('[]');
+    return;
+  }
+
+  let candidates = [];
+  const seenIds = new Set();
+
+  if (streetsSearchStmt) {
+    const primaryMatch = buildSmartFtsQuery(rawQ, false);
+    if (primaryMatch) {
+      try {
+        for (const r of streetsSearchStmt.all(primaryMatch, 250)) {
+          if (!seenIds.has(r.id)) {
+            seenIds.add(r.id);
+            candidates.push({ ...r, _relaxed: false });
+          }
+        }
+      } catch {}
+    }
+
+    if (candidates.length < 5) {
+      const relaxedMatch = buildSmartFtsQuery(rawQ, true);
+      if (relaxedMatch && relaxedMatch !== primaryMatch) {
+        try {
+          for (const r of streetsSearchStmt.all(relaxedMatch, 150)) {
+            if (!seenIds.has(r.id)) {
+              seenIds.add(r.id);
+              candidates.push({ ...r, _relaxed: true });
+            }
+          }
+        } catch {}
+      }
+    }
+  }
+
+  const normQ = normalizeStr(rawQ);
+  const rankRow = (r) => {
+    let score = typeof r.score === 'number' ? r.score : -16;
+    if (r._relaxed) score += 4;
+    if (r.kind === 'Via') score -= 8;
+    else if (r.kind === 'Bairro') score -= 3;
+
+    if (ctxCity && normalizeStr(r.city) === ctxCity) score -= 25;
+    if (hasGeo) {
+      const distKm = haversine(mapLat, mapLng, r.lat, r.lng);
+      if (distKm <= 12) score -= 22;
+      else if (distKm <= 35) score -= 15;
+    }
+    if (normalizeStr(r.name).includes(normQ)) score -= 10;
+    return score;
+  };
+
+  candidates.sort((a, b) => rankRow(a) - rankRow(b));
+
+  // Online residential supplement if local SQLite has fewer than 8 matching roads
+  const localRoadsCount = candidates.filter(c => c.kind === 'Via' && !c._relaxed).length;
+  if (rawQ.length >= 3 && localRoadsCount < 8) {
+    try {
+      const netHits = await fetchOnlineStreetsSupplement(rawQ, mapLat, mapLng);
+      const existingPairs = new Set(candidates.map(c => `${normalizeStr(c.city)}|${normalizeStr(c.name)}`));
+      for (const nh of netHits) {
+        const pair = `${normalizeStr(nh.city)}|${normalizeStr(nh.name)}`;
+        if (!existingPairs.has(pair)) {
+          existingPairs.add(pair);
+          candidates.push({ ...nh, score: -26, _relaxed: false });
+        }
+      }
+      candidates.sort((a, b) => rankRow(a) - rankRow(b));
+    } catch {}
+  }
+
+  const result = candidates.slice(0, limit).map(({ score, _relaxed, ...rest }) => rest);
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(result));
 }
 
 // Haversine distance formula
@@ -269,44 +726,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 2.1 API: Offline Streets / Roads / POIs search via SQLite FTS5
+  // 2.1 API: Offline Streets / Roads / POIs search via SQLite FTS5 + Residential Auto-Learning
   if (pathname === '/api/streets') {
-    const rawQ = (urlObj.searchParams.get('q') || '').trim();
-    const limit = Math.min(50, Math.max(1, parseInt(urlObj.searchParams.get('limit') || '20', 10) || 20));
-
-    if (!streetsSearchStmt || !rawQ) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+    handleStreetsSearch(req, res, urlObj).catch(() => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end('[]');
-      return;
-    }
-
-    const cleaned = rawQ.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
-    const tokens = cleaned.split(/\s+/).filter(t => t.length >= 2);
-    if (tokens.length === 0) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end('[]');
-      return;
-    }
-
-    const matchExpr = tokens.map(t => `"${t}"*`).join(' AND ');
-    try {
-      const rawRows = streetsSearchStmt.all(matchExpr, Math.min(80, limit * 3));
-      const kindRank = (k) => (k === 'Via' ? 0 : k === 'Bairro' ? 1 : 2);
-      const rows = rawRows
-        .sort((a, b) => {
-          if (Math.abs(a.score - b.score) > 0.5) return a.score - b.score;
-          const kr = kindRank(a.kind) - kindRank(b.kind);
-          if (kr !== 0) return kr;
-          return a.name.length - b.name.length;
-        })
-        .slice(0, limit)
-        .map(({ score, ...rest }) => rest);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(rows));
-    } catch (err) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end('[]');
-    }
+    });
     return;
   }
 
@@ -605,6 +1030,59 @@ ${trkpts}
       fs.createReadStream(spriteFile).pipe(res);
       return;
     }
+  }
+
+  // 5.3 API: High-detail residential street vector tiles (z=14) with persistent disk cache & street learning
+  const detailMatch = pathname.match(/^\/api\/maps\/detail-tiles\/(\d+)\/(\d+)\/(\d+)\.pbf$/);
+  if (detailMatch) {
+    const zNum = parseInt(detailMatch[1], 10);
+    const xNum = parseInt(detailMatch[2], 10);
+    const yNum = parseInt(detailMatch[3], 10);
+    const cacheFile = path.join(STORAGE_PATH, 'maps', 'detail_tiles_cache', String(zNum), String(xNum), `${yNum}.pbf`);
+
+    if (fs.existsSync(cacheFile)) {
+      res.writeHead(200, {
+        'Content-Type': 'application/x-protobuf',
+        'Cache-Control': 'public, max-age=86400'
+      });
+      fs.createReadStream(cacheFile).pipe(res);
+      return;
+    }
+
+    (async () => {
+      try {
+        let tmpl = await getOpenFreeMapTemplate(false);
+        let tileUrl = tmpl.replace('{z}', zNum).replace('{x}', xNum).replace('{y}', yNum);
+        let tileRes = await fetch(tileUrl, { signal: AbortSignal.timeout(4500) });
+        if (tileRes.status === 404 || tileRes.status === 410) {
+          tmpl = await getOpenFreeMapTemplate(true);
+          tileUrl = tmpl.replace('{z}', zNum).replace('{x}', xNum).replace('{y}', yNum);
+          tileRes = await fetch(tileUrl, { signal: AbortSignal.timeout(4500) });
+        }
+        if (!tileRes.ok) {
+          res.writeHead(204);
+          res.end();
+          return;
+        }
+        const buf = Buffer.from(await tileRes.arrayBuffer());
+        try {
+          fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
+          fs.writeFileSync(cacheFile, buf);
+        } catch {}
+        res.writeHead(200, {
+          'Content-Type': 'application/x-protobuf',
+          'Cache-Control': 'public, max-age=86400'
+        });
+        res.end(buf);
+        if (zNum === 14) {
+          setImmediate(() => extractAndLearnDetailTileStreets(buf, zNum, xNum, yNum));
+        }
+      } catch {
+        res.writeHead(204);
+        res.end();
+      }
+    })();
+    return;
   }
 
   // 6. Static files

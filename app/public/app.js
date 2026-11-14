@@ -249,6 +249,12 @@ function initMap() {
         url: 'pmtiles://http://' + window.location.host + '/api/maps/pmtiles',
         maxzoom: 13,
         attribution: 'Project NOMAD Brasil &bull; OpenStreetMap'
+      },
+      'detail-tiles': {
+        type: 'vector',
+        tiles: [window.location.origin + '/api/maps/detail-tiles/{z}/{x}/{y}.pbf'],
+        minzoom: 13,
+        maxzoom: 14
       }
     },
     glyphs: '/api/maps/fonts/{fontstack}/{range}.pbf',
@@ -381,6 +387,52 @@ function initMap() {
         }
       },
       {
+        id: 'detail_buildings',
+        type: 'fill',
+        source: 'detail-tiles',
+        'source-layer': 'building',
+        minzoom: 13.5,
+        paint: {
+          'fill-color': '#182230',
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, 0.15, 15, 0.45],
+          'fill-outline-color': '#263547'
+        }
+      },
+      {
+        id: 'detail_roads_casing',
+        type: 'line',
+        source: 'detail-tiles',
+        'source-layer': 'transportation',
+        minzoom: 13,
+        filter: ['in', ['get', 'class'], ['literal', ['minor', 'service', 'track', 'path']]],
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': '#0b1017',
+          'line-width': ['interpolate', ['exponential', 1.5], ['zoom'], 13, 2, 16, 7],
+          'line-opacity': 0.8
+        }
+      },
+      {
+        id: 'detail_roads_minor',
+        type: 'line',
+        source: 'detail-tiles',
+        'source-layer': 'transportation',
+        minzoom: 13,
+        filter: ['in', ['get', 'class'], ['literal', ['minor', 'service', 'track', 'path']]],
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': ['match', ['get', 'class'], 'service', '#1e293b', 'track', '#292524', 'path', '#334155', '#2a384b'],
+          'line-width': ['interpolate', ['exponential', 1.5], ['zoom'], 13, 1.1, 16, 5],
+          'line-opacity': 0.9
+        }
+      },
+      {
         id: 'pois_labels',
         type: 'symbol',
         source: 'world-tiles',
@@ -397,6 +449,27 @@ function initMap() {
           'text-halo-color': '#090d10',
           'text-halo-width': 1.5
         }
+      },
+      {
+        id: 'detail_roads_labels',
+        type: 'symbol',
+        source: 'detail-tiles',
+        'source-layer': 'transportation_name',
+        minzoom: 13,
+        filter: ['in', ['get', 'class'], ['literal', ['minor', 'service', 'track', 'path', 'tertiary']]],
+        layout: {
+          'symbol-placement': 'line',
+          'text-field': ['coalesce', ['get', 'name:pt'], ['get', 'name:latin'], ['get', 'name'], ''],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10, 16, 12.5],
+          'text-max-angle': 30,
+          'text-padding': 6
+        },
+        paint: {
+          'text-color': '#cbd5e1',
+          'text-halo-color': '#090d10',
+          'text-halo-width': 1.5
+        }
       }
     ]
   };
@@ -407,7 +480,7 @@ function initMap() {
       style: mapStyle,
       center: [-47.9292, -15.7801], // Brasil / DF
       zoom: 4.2,
-      maxZoom: 16,
+      maxZoom: 18,
       minZoom: 2
     });
 
@@ -517,7 +590,7 @@ function highlightRenderedStreet(streetName) {
 
   try {
     const targetNorm = normalizeSearchStr(streetName).trim();
-    const layers = ['roads_minor', 'roads_medium', 'roads_major'].filter(id => mapInstance.getLayer(id));
+    const layers = ['roads_minor', 'roads_medium', 'roads_major', 'detail_roads_minor', 'detail_roads_labels'].filter(id => mapInstance.getLayer(id));
     if (layers.length === 0) return;
 
     const features = mapInstance.queryRenderedFeatures({ layers });
@@ -542,7 +615,7 @@ function highlightRenderedStreet(streetName) {
 function findRenderedViewportStreets(normQuery, limit = 5) {
   if (!mapInstance || !normQuery || normQuery.length < 3) return [];
   try {
-    const layers = ['roads_minor', 'roads_medium', 'roads_major'].filter(id => mapInstance.getLayer(id));
+    const layers = ['roads_minor', 'roads_medium', 'roads_major', 'detail_roads_minor', 'detail_roads_labels'].filter(id => mapInstance.getLayer(id));
     if (layers.length === 0) return [];
     const features = mapInstance.queryRenderedFeatures({ layers });
     const seen = new Set();
@@ -579,7 +652,7 @@ function findRenderedViewportStreets(normQuery, limit = 5) {
   }
 }
 
-async function fetchHybridSearchResults(q, cityLimit = 5, streetLimit = 15, signal = null) {
+async function fetchHybridSearchResults(q, cityLimit = 5, streetLimit = 25, signal = null) {
   const normQ = normalizeSearchStr(q.trim());
   const cityMatches = citiesList.filter(c => {
     const normName = normalizeSearchStr(c.name);
@@ -601,7 +674,18 @@ async function fetchHybridSearchResults(q, cityLimit = 5, streetLimit = 15, sign
   if (normQ.length >= 2) {
     try {
       const opts = signal ? { signal } : {};
-      const res = await fetch(`/api/streets?q=${encodeURIComponent(q)}&limit=${streetLimit}`, opts);
+      const params = new URLSearchParams({ q, limit: String(streetLimit) });
+      if (mapInstance && typeof mapInstance.getCenter === 'function') {
+        const center = mapInstance.getCenter();
+        if (center && Number.isFinite(center.lat) && Number.isFinite(center.lng)) {
+          params.set('lat', center.lat.toFixed(5));
+          params.set('lng', center.lng.toFixed(5));
+        }
+      }
+      if (currentSelectedCity && currentSelectedCity.name) {
+        params.set('city', currentSelectedCity.name);
+      }
+      const res = await fetch(`/api/streets?${params.toString()}`, opts);
       if (res.ok) {
         streetMatches = await res.json();
       }
@@ -748,7 +832,7 @@ function setupMapSearch() {
       if (searchAbort) searchAbort.abort();
       searchAbort = new AbortController();
       try {
-        const { cities, streets } = await fetchHybridSearchResults(q, 5, 15, searchAbort.signal);
+        const { cities, streets } = await fetchHybridSearchResults(q, 5, 25, searchAbort.signal);
         renderDropdown(cities, streets);
       } catch (e) {
         // aborted on newer keystroke

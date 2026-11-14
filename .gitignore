@@ -3,6 +3,7 @@ storage/zim/*.zim
 storage/maps/*.pmtiles
 storage/maps/*.sqlite
 storage/maps/*.sqlite-*
+storage/maps/detail_tiles_cache/
 storage/routes_cache/
 app/data/routes_cache/
 

@@ -10,7 +10,7 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/app
-      - ./storage:/storage:ro
+      - ./storage:/storage
     environment:
       - PORT=8000
       - STORAGE_PATH=/storage

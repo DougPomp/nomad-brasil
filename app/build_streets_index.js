@@ -189,18 +189,29 @@ function extractMvtFeatures(tileBuffer, z, tx, ty) {
           else if (k === 'kind') kind = v;
         }
 
-        const rawName = (namePt || nameBase || ref || '').trim();
-        if (rawName.length < 3) continue;
-        if (!/[a-zA-ZÀ-ÿ]/.test(rawName)) continue;
+        const rawName = (namePt || nameBase || '').trim();
+        const rawRef = ref.trim();
+        const namesToEmit = [];
+        if (rawName.length >= 2 && /[a-zA-ZÀ-ÿ]/.test(rawName)) {
+          namesToEmit.push(rawName);
+        }
+        if (rawRef.length >= 2 && /[a-zA-ZÀ-ÿ]/.test(rawRef) && rawRef.toLowerCase() !== rawName.toLowerCase()) {
+          namesToEmit.push(rawRef);
+        }
+        if (namesToEmit.length === 0) continue;
 
         const [lat, lng] = tileCoordToLatLng(z, tx, ty, gx, gy, extent);
-        extracted.push({
-          name: rawName,
-          kind: kindDetail || kind || layerName,
-          layer: layerName,
-          lat: Math.round(lat * 100000) / 100000,
-          lng: Math.round(lng * 100000) / 100000
-        });
+        const rLat = Math.round(lat * 100000) / 100000;
+        const rLng = Math.round(lng * 100000) / 100000;
+        for (const nm of namesToEmit) {
+          extracted.push({
+            name: nm,
+            kind: kindDetail || kind || layerName,
+            layer: layerName,
+            lat: rLat,
+            lng: rLng
+          });
+        }
       }
     } else {
       skipProto(u, o, wire);
@@ -225,29 +236,42 @@ function main() {
 
   const cities = JSON.parse(fs.readFileSync(CITIES_PATH, 'utf8'));
   const z = 13;
-  const maxCoord = 1 << z;
+  const z13Start = pm.zxyToTileId(13, 0, 0);
+  const z14Start = pm.zxyToTileId(14, 0, 0);
 
-  // Map z=13 urban tiles to closest municipality
-  const tileMap = new Map();
+  // Build 1x1 degree spatial grid covering all 5,571 Brazilian municipalities
+  const cityGrid = new Map();
   for (const c of cities) {
-    const [cx, cy] = latLngToTile(c.lat, c.lng, z);
-    const rad = c.capital ? 4 : 1;
-    for (let dx = -rad; dx <= rad; dx++) {
-      for (let dy = -rad; dy <= rad; dy++) {
-        const tx = cx + dx;
-        const ty = cy + dy;
-        if (tx < 0 || tx >= maxCoord || ty < 0 || ty >= maxCoord) continue;
-        const tileId = pm.zxyToTileId(z, tx, ty);
-        const [tLat, tLng] = tileCoordToLatLng(z, tx, ty, 2048, 2048, 4096);
-        const distSq = (c.lat - tLat) ** 2 + (c.lng - tLng) ** 2;
-        const prev = tileMap.get(tileId);
-        if (!prev || distSq < prev.distSq) {
-          tileMap.set(tileId, { city: c, tx, ty, distSq });
+    const gx = Math.floor(c.lng);
+    const gy = Math.floor(c.lat);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = `${gx + dx},${gy + dy}`;
+        let bucket = cityGrid.get(key);
+        if (!bucket) {
+          bucket = [];
+          cityGrid.set(key, bucket);
         }
+        bucket.push(c);
       }
     }
   }
-  console.log(`[Indexador] Tiles urbanos z=${z} mapeados: ${tileMap.size}`);
+
+  function findNearestCity(lat, lng) {
+    const bucket = cityGrid.get(`${Math.floor(lng)},${Math.floor(lat)}`);
+    if (!bucket) return null;
+    let best = null;
+    let bestDistSq = 0.08; // ~30 km radius around nearest city
+    for (let i = 0; i < bucket.length; i++) {
+      const c = bucket[i];
+      const d = (c.lat - lat) ** 2 + (c.lng - lng) ** 2;
+      if (d < bestDistSq) {
+        bestDistSq = d;
+        best = c;
+      }
+    }
+    return best;
+  }
 
   // Read PMTiles directories
   const fd = fs.openSync(PMTILES_PATH, 'r');
@@ -263,6 +287,24 @@ function main() {
   fs.readSync(fd, leafBuf, 0, header.leafDirectoryLength, header.leafDirectoryOffset);
 
   const tilesToRead = [];
+  const considerEntry = (entry) => {
+    if (entry.tileId < z13Start || entry.tileId >= z14Start) return;
+    if (entry.runLength !== 1 || entry.length <= 250) return;
+    const [, tx, ty] = pm.tileIdToZxy(entry.tileId);
+    const [tLat, tLng] = tileCoordToLatLng(z, tx, ty, 2048, 2048, 4096);
+    const city = findNearestCity(tLat, tLng);
+    if (city) {
+      tilesToRead.push({
+        tileId: entry.tileId,
+        offset: header.tileDataOffset + entry.offset,
+        length: entry.length,
+        tx,
+        ty,
+        city
+      });
+    }
+  };
+
   for (const re of rootDir) {
     if (re.runLength === 0) {
       const ld = deserializeDirectory(
@@ -270,36 +312,15 @@ function main() {
         pm.readVarint
       );
       for (const le of ld) {
-        if (le.runLength === 0 || le.length <= 600) continue;
-        const match = tileMap.get(le.tileId);
-        if (match) {
-          tilesToRead.push({
-            tileId: le.tileId,
-            offset: header.tileDataOffset + le.offset,
-            length: le.length,
-            tx: match.tx,
-            ty: match.ty,
-            city: match.city
-          });
-        }
+        considerEntry(le);
       }
-    } else if (re.length > 600) {
-      const match = tileMap.get(re.tileId);
-      if (match) {
-        tilesToRead.push({
-          tileId: re.tileId,
-          offset: header.tileDataOffset + re.offset,
-          length: re.length,
-          tx: match.tx,
-          ty: match.ty,
-          city: match.city
-        });
-      }
+    } else {
+      considerEntry(re);
     }
   }
 
   tilesToRead.sort((a, b) => a.offset - b.offset);
-  console.log(`[Indexador] Tiles filtrados para leitura sequencial: ${tilesToRead.length}`);
+  console.log(`[Indexador] Tiles z=${z} nacionais filtrados para leitura sequencial: ${tilesToRead.length}`);
 
   // Prepare SQLite database
   const tmpDbPath = DB_PATH + '.tmp';
@@ -366,7 +387,7 @@ function main() {
       }
     }
 
-    if ((i + 1) % 5000 === 0 || i === tilesToRead.length - 1) {
+    if ((i + 1) % 15000 === 0 || i === tilesToRead.length - 1) {
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
       console.log(`[Indexador] ${i + 1}/${tilesToRead.length} tiles | ${totalInserted} logradouros/POIs únicos (${elapsed}s)`);
     }
@@ -379,6 +400,7 @@ function main() {
 
   console.log('[Indexador] Otimizando índice FTS5...');
   db.exec("INSERT INTO streets_fts(streets_fts) VALUES('optimize');");
+  db.exec('PRAGMA journal_mode = WAL;');
   db.close();
 
   if (fs.existsSync(DB_PATH)) fs.unlinkSync(DB_PATH);

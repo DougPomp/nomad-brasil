@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomad-brasil-v8';
+const CACHE_NAME = 'nomad-brasil-v9';
 const OFFLINE_URLS = [
   '/',
   '/index.html',
@@ -51,6 +51,24 @@ self.addEventListener('fetch', (event) => {
 
   // Range requests (such as PMTiles) bypass default cache to avoid chunk corruptions
   if (event.request.headers.get('range')) {
+    return;
+  }
+
+  // Detail vector tiles are persisted by the local backend; bypass SW cache so offline 204s aren't cached
+  if (url.pathname.startsWith('/api/maps/detail-tiles/')) {
+    return;
+  }
+
+  // Street search API: Network-First so newly learned SQLite entries always reflect immediately
+  if (url.pathname.startsWith('/api/streets')) {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        new Response('[]', {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    );
     return;
   }
 
