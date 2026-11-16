@@ -25,7 +25,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 - **📍 Todos os 5.571 Municípios do IBGE + 416 mil+ Logradouros (SQLite FTS5):** Busca híbrida instantânea de cidades, ruas, avenidas, rodovias (`ref`) e POIs com sinônimos brasileiros (`Av`/`Avenida`, `Dr`/`Doutor`, `15`/`XV`), Radar de Socorro próximo (`🚑 Socorro`), prioridade por proximidade e auto-aprendizado em SQLite.
 - **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline) + Importador GPX/KML:** Roteamento por rua ou município com **parada intermediária (`Via`)**, OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, **POIs de apoio no corredor (5 km)**, importação de trilhas `.gpx`/`.kml`, exportação **GPX** e **Dossiê Tático A4 imprimível**.
 - **📚 Estante Multi-ZIM Kiwix Integrada (11+ Acervos / 23+ GB):** Wikipédia PT, Wikivoyage PT, Wikibooks PT, Wikipédia Médica PT, NHS Medicines, CDC, FAS Military Medicine e Zimgit servidos na porta 8090 com catálogo `/api/kiwix/books`, **busca unificada simultânea `/api/kiwix/search`**, atalho Wikivoyage por município e busca médica + **Ficha de Triagem TCCC (MARCHE)** imprimível na aba de Emergências.
-- **📡 Modo Acampamento / Rede Local (Mural LAN + QR Code) & Backup Portátil:** **Mural de Operações compartilhado na LAN** (`/api/camp-board` em `storage/camp_board.json`), modal de conexão em rede local com QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `BOB`, `PACE`, `TCCC` e `Breadcrumb`).
+- **📡 Modo Acampamento / Rede Local (Mural LAN + QR Code), Estoque Real PEPS & Backup Portátil:** **Mural de Operações compartilhado na LAN** (`/api/camp-board` em `storage/camp_board.json`), **Controle de Estoque Real com Alerta de Validade PEPS** (`/api/inventory` em `storage/supply_inventory.json`), modal de conexão em rede local com QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `BOB`, `PACE`, `TCCC`, `Estoque PEPS` e `Breadcrumb`).
 - **🛠️ 56 Módulos Especializados:** Guias interativos, calculadoras técnicas e protocolos operacionais para todas as dimensões de sobrevivência e autossuficiência.
 
 ---
@@ -64,7 +64,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 25. **Satélites Meteorológicos & Ciclo Lunar:** Previsão de passagens de satélites NOAA/GOES e tábua de luminosidade lunar.
 
 ### 4. 🌾 Resiliência Alimentar, Água & Agrofloresta
-26. **Calculadora Tática de Racionamento & Inventário Real PEPS:** Dimensionamento exato de água (3 L/dia/pessoa), calorias totais e cesta padrão nacional, integrado ao **Controle de Estoque Real da Base** (`/api/inventory` em `storage/supply_inventory.json`) com alertas de validade ($\le$ 60 dias), comparação em barra de Água/Calorias Reais vs. Meta e inclusão automática no backup `.JSON`.
+26. **Calculadora Tática de Racionamento & Inventário Real PEPS:** Dimensionamento exato de água (3 L/dia/pessoa), calorias totais e cesta padrão nacional, integrado ao **Controle de Estoque Real da Base** (`/api/inventory` em `storage/supply_inventory.json`) com alertas de validade (≤ 60 dias), comparação em barra de Água/Calorias Reais vs. Meta e inclusão automática no backup `.JSON`.
 27. **Captação, Filtração & Cloração de Água:** Construção de biofiltros de areia/brita e tabela de dosagem de hipoclorito de sódio a 2,5%.
 28. **Poço Caipira Manual & Carneiro Hidráulico:** Perfuração manual de poços rasos e montagem de bomba de carneiro sem energia elétrica.
 29. **Plantas Alimentícias Não Convencionais (PANC):** Guia botânico de identificação e preparo de Ora-pro-nóbis, Taioba, Beldroega, Dente-de-leão e Caruru.
@@ -103,13 +103,14 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 56. **Química Prática & Sabão de Cinzas:** Saponificação tradicional utilizando lixívia de cinzas de madeira e gordura animal.
 - **Cartão Tático de Bolso Imprimível (A4 Dobrável):** Folha única ultra-compacta contendo todas as frequências vitais, ficha médica, nós e protocolos de choque.
 - **Pacote Portátil Offline:** Exportação compacta em arquivo único para armazenamento seguro em pen-drives criptografados.
-- **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Checklist da Mochila 72h (BOB), Plano de Comunicação PACE, Fichas TCCC e Rastro GPS (*Breadcrumb*).
+- **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Checklist da Mochila 72h (BOB), Plano de Comunicação PACE, Fichas TCCC, Inventário de Estoque Real (PEPS) e Rastro GPS (*Breadcrumb*).
 - **Dossiê Tático de Movimento Imprimível (A4):** Ordem de Movimento gerada em 1 clique a partir da rota traçada com coordenadas Decimal/DMS/UTM de Origem, Parada (`Via`) e Destino, POIs de apoio até 5 km no corredor, passo a passo, estimativa de combustível/água/calorias, janela de luz solar no destino, PEF e plano PACE.
 - **Modo Acampamento / Rede Local (LAN QR Code SVG):** Modal de compartilhamento local (`:8000` e `:8090`) com gerador nativo de QR Code SVG 100% offline (ISO-18004) para celulares e tablets na mesma rede Wi-Fi/hotspot.
 - **Mural de Operações na Rede Local (`Camp Board LAN`):** Quadro compartilhado em disco (`storage/camp_board.json` via `/api/camp-board`) para postagem de alertas, QTH com salto direto no mapa, suprimentos, rádio QAP e logs de turno entre todos os dispositivos conectados no Wi-Fi/hotspot.
 - **Importador Visual de Trilhas e Waypoints (`.GPX` / `.KML` / `.JSON`):** Carregamento direto de trilhas externas no mapa vetorial offline com cálculo de extensão total, marcadores de início/fim e importação automática de `<wpt>` e `<Placemark>`.
 - **Anéis de Raio Tático (`2 / 5 / 10 / 25 km`), Rastro GPS (*Breadcrumb*) & Modo Visão Noturna:** Círculos geodésicos de perímetro com contagem de municípios e POIs de socorro, gravação contínua de trilha GPS exportável em `.gpx` e filtro monocromático vermelho (`🔴 Visão Noturna`) para preservar a adaptação visual no escuro.
 - **Ficha de Atendimento de Campo & Cartão de Triagem TCCC (A4):** Registro persistente de vítimas com cronômetro de alerta de torniquete, escala AVPU, sinais vitais, lesões, condutas e impressão em folha A4 para entrega ao resgate.
+- **Controle de Estoque Real & Alerta de Validade (Dispensa / Farmácia PEPS):** Gestão persistente em disco (`storage/supply_inventory.json` via `/api/inventory`) comparando água (L) e calorias (kcal) reais contra a meta planejada, com alertas automáticos de validade (`🟢 OK`, `🟡 ≤ 60 dias — Rodízio PEPS`, `🔴 Vencido`), importação em 1 clique da cesta calculada e ajuste rápido `+1`/`-1`.
 
 ---
 
@@ -181,7 +182,7 @@ nomad-brasil/
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
 │   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Estoque PEPS + TCCC + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v15)
+│   ├── sw.js                   # Service Worker do GitHub Pages (v16)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -264,7 +265,7 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 | `GET / POST /api/maps/prefetch-city` | Pré-carrega em lote os tiles vetoriais `z=14` ao redor de uma cidade e indexa automaticamente todas as vias residenciais no `brazil-streets.sqlite`. |
 | `GET / POST /api/waypoints` | Lê e persiste em disco (`storage/user_waypoints.json`) os marcadores táticos pessoais do mapa. |
 | `GET / POST / DELETE /api/camp-board` | Mural de operações compartilhado na LAN (`storage/camp_board.json`) para alertas, QTH, suprimentos, rádio QAP e log de turno entre dispositivos conectados. |
-| `GET / POST / DELETE /api/inventory` | Controle de estoque real da dispensa, farmácia e combustível da base (`storage/supply_inventory.json`) com alertas de validade PEPS ($\le$ 60 dias). |
+| `GET / POST / DELETE /api/inventory` | Controle de estoque real da dispensa, farmácia e combustível da base (`storage/supply_inventory.json`) com alertas de validade PEPS (≤ 60 dias). |
 | `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com suporte a parada intermediária (`viaLat`/`viaLng`/`viaLabel`), quádruplo fallback (OSRM -> cache -> A\* MVT `forceOfflineGraph=1` -> corredor tático) e lista `corridorSupport` (POIs dentro de 5 km). |
 | `GET /api/route/gpx` | Exporta qualquer rota calculada (incluindo waypoint `<wpt>` de parada intermediária `viaLat`/`viaLng`) em arquivo `.gpx` padrão para Garmin e OsmAnd. |
 | `GET /api/kiwix/books` | Catálogo estruturado dos livros `.zim` instalados em `storage/zim/` com metadados de tamanho, idioma, categoria (`wikipedia`, `travel`, `medicine`, `books`) e ícone. |
