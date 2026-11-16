@@ -7,8 +7,8 @@
   <!-- Primary Meta Tags & SEO -->
   <title>NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline</title>
   <meta name="title" content="NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline">
-  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), estante Multi-ZIM (busca simultânea em Wikivoyage, NHS, CDC, FAS), rotas A* + parada Via + corredor 5 km, importador GPX/KML, anéis de raio 2/5/10/25 km, rastro GPS Breadcrumb, visão noturna vermelha, Mural LAN, estoque real PEPS validade, dossiê A4, ficha TCCC e 56 módulos táticos.">
-  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, parada via corredor 5km, importador gpx kml, aneis de raio perimetro, rastro gps breadcrumb, visao noturna vermelha, mural camp board lan, busca multi zim, estoque real peps validade, ficha triagem tccc, efemerides solar lunar, lan qr code offline, dossie tatico a4, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
+  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), estante Multi-ZIM (busca simultânea em Wikivoyage, NHS, CDC, FAS), rotas A* + parada Via + corredor 5 km, importador GPX/KML, anéis de raio 2/5/10/25 km, rastro GPS Breadcrumb, visão noturna vermelha, Mural LAN, estoque real PEPS validade, cofre criptografado AES-256-GCM, dossiê A4, ficha TCCC e 56 módulos táticos.">
+  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, parada via corredor 5km, importador gpx kml, aneis de raio perimetro, rastro gps breadcrumb, visao noturna vermelha, mural camp board lan, busca multi zim, estoque real peps validade, cofre criptografado aes 256 gcm pbkdf2, ficha triagem tccc, efemerides solar lunar, lan qr code offline, dossie tatico a4, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
   <meta name="author" content="DougPomp">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#090d10">
@@ -1200,7 +1200,7 @@
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="pef" onclick="switchDemoTab('pef')">
             <span class="tab-icon">👨‍👩‍👧‍👦</span>
-            <span>Plano Familiar (PEF)</span>
+            <span>Plano Familiar &amp; Cofre</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="perimeter" onclick="switchDemoTab('perimeter')">
             <span class="tab-icon">🛡️</span>
@@ -1252,7 +1252,7 @@
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="rationing" onclick="switchDemoTab('rationing')">
             <span class="tab-icon">🍲</span>
-            <span>Racionamento &amp; Água</span>
+            <span>Racionamento &amp; Estoque</span>
           </button>
           <button type="button" class="demo-tab-btn" data-demo-tab="pocketcard" onclick="switchDemoTab('pocketcard')">
             <span class="tab-icon">📄</span>
@@ -1882,7 +1882,7 @@
               </div>
               <div class="metric-card">
                 <h4 style="color: #fbbf24; margin-bottom: 0.35rem;">🧭 Rotas A* Offline, GPX &amp; Backup JSON</h4>
-                <p style="font-size: 0.83rem; color: var(--text-secondary);">Motor OSRM + fallback A* curva a curva sobre tiles MVT locais até 30 km, cache em disco, GPX e persistência no servidor + backup JSON (Waypoints, PEF, BOB, PACE, TCCC e Estoque PEPS).</p>
+                <p style="font-size: 0.83rem; color: var(--text-secondary);">Motor OSRM + fallback A* curva a curva sobre tiles MVT locais até 30 km, cache em disco, GPX e persistência no servidor + backup JSON (Waypoints, PEF, Cofre AES-256, BOB, PACE, TCCC e Estoque PEPS).</p>
               </div>
             </div>
 
@@ -1914,8 +1914,8 @@
                 <p style="font-size: 0.82rem; color: var(--text-secondary);">Quadro compartilhado na rede local (<code>/api/camp-board</code>), importador visual de trilhas <code>.gpx</code> e <code>.kml</code> no mapa offline e anéis geodésicos de raio tático (2/5/10/25 km).</p>
               </div>
               <div class="metric-card">
-                <h4 style="color: #f87171; margin-bottom: 0.35rem;">🔴 Visão Noturna, Rastro GPS, TCCC &amp; Estoque PEPS</h4>
-                <p style="font-size: 0.82rem; color: var(--text-secondary);">Filtro monocromático vermelho noturno, gravador de rastro GPS contínuo (<em>Breadcrumb</em> com exportação GPX), prontuário de triagem TCCC com alerta de torniquete e controle de estoque real PEPS (<code>/api/inventory</code>).</p>
+                <h4 style="color: #f87171; margin-bottom: 0.35rem;">🔴 Visão Noturna, TCCC, Estoque PEPS &amp; Cofre AES-256</h4>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Filtro monocromático vermelho noturno, gravador de rastro GPS contínuo (<em>Breadcrumb</em> com exportação GPX), prontuário de triagem TCCC, controle de estoque real PEPS (<code>/api/inventory</code>) e cofre criptografado da família (<code>AES-256-GCM</code> / <code>/api/vault</code>).</p>
               </div>
             </div>
 
@@ -2562,7 +2562,7 @@
             <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💾</div>
             <h2 class="card-title" style="justify-content: center;">Backup &amp; Restauração de Dados Pessoais (.JSON)</h2>
             <p class="card-subtitle" style="max-width: 650px; margin: 0 auto 1.25rem;">
-              Exporte ou restaure seu Plano de Emergência Familiar (PEF), checklist da Mochila 72h (BOB), plano PACE e Waypoints compatíveis com a instância local Docker do NOMAD Brasil.
+              Exporte ou restaure seu Plano de Emergência Familiar (PEF), Cofre Criptografado (AES-256-GCM), checklist da Mochila 72h (BOB), plano PACE, fichas TCCC, estoque PEPS e Waypoints compatíveis com a instância local Docker do NOMAD Brasil.
             </p>
             <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; align-items: center;">
               <button type="button" class="btn-sidebar-action primary" style="display: inline-flex; padding: 0.7rem 1.35rem; font-size: 0.88rem;" onclick="exportOnlineFullBackup()">

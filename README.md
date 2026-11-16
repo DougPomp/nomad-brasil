@@ -25,7 +25,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 - **📍 Todos os 5.571 Municípios do IBGE + 416 mil+ Logradouros (SQLite FTS5):** Busca híbrida instantânea de cidades, ruas, avenidas, rodovias (`ref`) e POIs com sinônimos brasileiros (`Av`/`Avenida`, `Dr`/`Doutor`, `15`/`XV`), Radar de Socorro próximo (`🚑 Socorro`), prioridade por proximidade e auto-aprendizado em SQLite.
 - **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline) + Importador GPX/KML:** Roteamento por rua ou município com **parada intermediária (`Via`)**, OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, **POIs de apoio no corredor (5 km)**, importação de trilhas `.gpx`/`.kml`, exportação **GPX** e **Dossiê Tático A4 imprimível**.
 - **📚 Estante Multi-ZIM Kiwix Integrada (11+ Acervos / 23+ GB):** Wikipédia PT, Wikivoyage PT, Wikibooks PT, Wikipédia Médica PT, NHS Medicines, CDC, FAS Military Medicine e Zimgit servidos na porta 8090 com catálogo `/api/kiwix/books`, **busca unificada simultânea `/api/kiwix/search`**, atalho Wikivoyage por município e busca médica + **Ficha de Triagem TCCC (MARCHE)** imprimível na aba de Emergências.
-- **📡 Modo Acampamento / Rede Local (Mural LAN + QR Code), Estoque Real PEPS & Backup Portátil:** **Mural de Operações compartilhado na LAN** (`/api/camp-board` em `storage/camp_board.json`), **Controle de Estoque Real com Alerta de Validade PEPS** (`/api/inventory` em `storage/supply_inventory.json`), modal de conexão em rede local com QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `BOB`, `PACE`, `TCCC`, `Estoque PEPS` e `Breadcrumb`).
+- **📡 Modo Acampamento / Rede Local (Mural LAN + QR Code), Estoque Real PEPS, Cofre AES-256-GCM & Backup Portátil:** **Mural de Operações compartilhado na LAN** (`/api/camp-board` em `storage/camp_board.json`), **Controle de Estoque Real com Alerta de Validade PEPS** (`/api/inventory` em `storage/supply_inventory.json`), **Cofre Criptografado da Família** (`AES-256-GCM` + `PBKDF2-SHA256` em `storage/encrypted_vault.json` via `/api/vault`), modal de conexão em rede local com QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `Cofre Cifrado`, `BOB`, `PACE`, `TCCC`, `Estoque PEPS` e `Breadcrumb`).
 - **🛠️ 56 Módulos Especializados:** Guias interativos, calculadoras técnicas e protocolos operacionais para todas as dimensões de sobrevivência e autossuficiência.
 
 ---
@@ -103,7 +103,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 56. **Química Prática & Sabão de Cinzas:** Saponificação tradicional utilizando lixívia de cinzas de madeira e gordura animal.
 - **Cartão Tático de Bolso Imprimível (A4 Dobrável):** Folha única ultra-compacta contendo todas as frequências vitais, ficha médica, nós e protocolos de choque.
 - **Pacote Portátil Offline:** Exportação compacta em arquivo único para armazenamento seguro em pen-drives criptografados.
-- **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Checklist da Mochila 72h (BOB), Plano de Comunicação PACE, Fichas TCCC, Inventário de Estoque Real (PEPS) e Rastro GPS (*Breadcrumb*).
+- **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Cofre Criptografado da Família (`AES-256-GCM`), Checklist da Mochila 72h (BOB), Plano de Comunicação PACE, Fichas TCCC, Inventário de Estoque Real (PEPS) e Rastro GPS (*Breadcrumb*).
 - **Dossiê Tático de Movimento Imprimível (A4):** Ordem de Movimento gerada em 1 clique a partir da rota traçada com coordenadas Decimal/DMS/UTM de Origem, Parada (`Via`) e Destino, POIs de apoio até 5 km no corredor, passo a passo, estimativa de combustível/água/calorias, janela de luz solar no destino, PEF e plano PACE.
 - **Modo Acampamento / Rede Local (LAN QR Code SVG):** Modal de compartilhamento local (`:8000` e `:8090`) com gerador nativo de QR Code SVG 100% offline (ISO-18004) para celulares e tablets na mesma rede Wi-Fi/hotspot.
 - **Mural de Operações na Rede Local (`Camp Board LAN`):** Quadro compartilhado em disco (`storage/camp_board.json` via `/api/camp-board`) para postagem de alertas, QTH com salto direto no mapa, suprimentos, rádio QAP e logs de turno entre todos os dispositivos conectados no Wi-Fi/hotspot.
@@ -111,6 +111,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 - **Anéis de Raio Tático (`2 / 5 / 10 / 25 km`), Rastro GPS (*Breadcrumb*) & Modo Visão Noturna:** Círculos geodésicos de perímetro com contagem de municípios e POIs de socorro, gravação contínua de trilha GPS exportável em `.gpx` e filtro monocromático vermelho (`🔴 Visão Noturna`) para preservar a adaptação visual no escuro.
 - **Ficha de Atendimento de Campo & Cartão de Triagem TCCC (A4):** Registro persistente de vítimas com cronômetro de alerta de torniquete, escala AVPU, sinais vitais, lesões, condutas e impressão em folha A4 para entrega ao resgate.
 - **Controle de Estoque Real & Alerta de Validade (Dispensa / Farmácia PEPS):** Gestão persistente em disco (`storage/supply_inventory.json` via `/api/inventory`) comparando água (L) e calorias (kcal) reais contra a meta planejada, com alertas automáticos de validade (`🟢 OK`, `🟡 ≤ 60 dias — Rodízio PEPS`, `🔴 Vencido`), importação em 1 clique da cesta calculada e ajuste rápido `+1`/`-1`.
+- **Cofre Criptografado da Família (`AES-256-GCM` + `PBKDF2-SHA256` Offline):** Criptografia autenticada de 256 bits com derivação de chave por senha mestre (`100.000` iterações `PBKDF2-SHA256`, salt de 16 bytes e IV de 12 bytes) persistida em `storage/encrypted_vault.json` via `/api/vault` (com fallback transparente `/api/vault/crypto` em conexões HTTP na LAN), protegendo documentos, dados médicos críticos, coordenadas de refúgio, frequências privadas e notas sem jamais gravar texto aberto em disco ou no backup `.JSON`.
 
 ---
 
@@ -164,7 +165,7 @@ chmod +x setup-nomad-brasil.sh
 nomad-brasil/
 ├── app/
 │   ├── build_streets_index.js  # Indexador nacional PMTiles -> SQLite FTS5 com 416k+ ruas e POIs
-│   ├── server.js               # Servidor HTTP Node.js 22 com Range 206, busca FTS5 /api/streets, cache z=14 e rotas
+│   ├── server.js               # Servidor HTTP Node.js 22 com Range 206, busca FTS5 /api/streets, cofre AES-256, cache z=14 e rotas
 │   ├── data/
 │   │   ├── cities.json         # Todos os 5.571 municípios do IBGE (UTF-8, DDD, Lat/Lng)
 │   │   ├── emergencies.json    # Protocolos de atendimento pré-hospitalar
@@ -176,13 +177,13 @@ nomad-brasil/
 │       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, Mural LAN, Estoque PEPS, Cofre AES-256, TCCC e Visão Noturna
 │       ├── styles.css          # Design system com sidebar tática, controles escuros e filtro de visão noturna
 │       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, Multi-ZIM, estoque PEPS, cofre AES-256, QR SVG, TCCC e A4
-│       ├── sw.js               # Service Worker PWA (v14) para operação offline e Network-First nas APIs
+│       ├── sw.js               # Service Worker PWA (v15) para operação offline e Network-First nas APIs
 │       ├── banner.svg          # Banner vetorizado da marca
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
 │   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Estoque PEPS + Cofre AES-256 + TCCC + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v17)
+│   ├── sw.js                   # Service Worker do GitHub Pages (v18)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
