@@ -30,7 +30,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
 
-  <link rel="stylesheet" href="/styles.css?v=3.0">
+  <link rel="stylesheet" href="/styles.css?v=3.1">
   <link rel="stylesheet" href="/vendor/maplibre-gl.css">
   <script src="/vendor/maplibre-gl.js"></script>
   <script src="/vendor/pmtiles.js"></script>
@@ -96,6 +96,10 @@
           <button type="button" class="nav-tab-btn" data-tab-target="wiki">
             <span class="nav-icon">📚</span>
             <span class="nav-label">Wikipédia Offline</span>
+          </button>
+          <button type="button" class="nav-tab-btn" data-tab-target="ai">
+            <span class="nav-icon">🤖</span>
+            <span class="nav-label">IA Tática Offline</span>
           </button>
         </div>
 
@@ -339,6 +343,7 @@
           <button type="button" onclick="openLanConnectModal()" class="text-cyan-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">📡 LAN</button>
           <button type="button" onclick="openCampBoardModal()" class="text-amber-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">📋 Mural</button>
           <button type="button" onclick="openEncryptedVaultSection()" class="text-purple-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;" title="Abrir Cofre Criptografado AES-256-GCM">🔐 Cofre</button>
+          <button type="button" onclick="switchTab('ai')" class="text-emerald-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;" title="Abrir Assistente IA Offline (Ollama + RAG)">🤖 IA</button>
           <button type="button" onclick="toggleNightVisionMode()" class="night-vision-toggle-btn font-bold text-red-400" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;" title="Filtro vermelho para preservar adaptação noturna">🔴 Noturno</button>
           <a href="http://localhost:8090" id="kiwix-sidebar-link" target="_blank" class="text-emerald-400 font-bold">Kiwix :8090 ↗</a>
         </div>
@@ -500,6 +505,9 @@
               </button>
               <button type="button" onclick="openEncryptedVaultSection()" class="chip-btn" style="padding:0.25rem 0.65rem;font-size:0.72rem;border-color:rgba(168,85,247,0.45);color:#c084fc;">
                 🔐 Cofre AES-256
+              </button>
+              <button type="button" onclick="switchTab('ai')" class="chip-btn" style="padding:0.25rem 0.65rem;font-size:0.72rem;border-color:rgba(16,185,129,0.45);color:#34d399;">
+                🤖 IA Offline
               </button>
               <button type="button" id="btn-night-vision" onclick="toggleNightVisionMode()" class="chip-btn night-vision-toggle-btn" style="padding:0.25rem 0.65rem;font-size:0.72rem;border-color:rgba(239,68,68,0.4);color:#fca5a5;">
                 🔴 Visão Noturna
@@ -2714,6 +2722,105 @@
             </div>
             <div class="text-xs text-gray-400 mt-3" id="backup-status-message">
               Inclui Waypoints (sincronizados no servidor), PEF, Cofre Cifrado (AES-256-GCM), BOB, PACE, TCCC, Estoque PEPS e Breadcrumb.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           21B. TAB: ASSISTENTE IA TÁTICO OFFLINE (OLLAMA + RAG LOCAL)
+           ================================================================= -->
+      <section class="tab-view" id="tab-ai">
+        <div class="page-container">
+          <div class="page-header">
+            <div class="page-title-group">
+              <span class="page-eyebrow">INTELIGÊNCIA ARTIFICIAL LOCAL &bull; RAG VERIFICADO</span>
+              <h2 class="page-title">🤖 Assistente IA Tático Offline (Qwen 2.5 1.5B / Ollama)</h2>
+              <p class="page-subtitle">
+                Consultor tático 100% desconectado que cruza os manuais validados do NOMAD Brasil (APH, Água, Rádio, Peçonhentos, PANC, Estoque PEPS e Kiwix) com um LLM local leve.
+              </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+              <span id="ai-status-badge" class="status-pill" style="border-color:rgba(245,158,11,0.5);color:#fbbf24;">🟡 Verificando IA...</span>
+              <button type="button" id="ai-refresh-btn" class="chip-btn" onclick="refreshAiStatus(true)">🔄 Verificar IA</button>
+              <button type="button" class="chip-btn" onclick="clearAiChat()">🧹 Limpar Chat</button>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 1rem;">
+            <div class="tactical-card" style="border-left: 3px solid var(--accent-green);">
+              <div class="section-heading">
+                <span>🧠</span> Modelo Local Selecionado
+              </div>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:0.5rem;min-width:0;">
+                <select id="ai-model-select" class="route-input" style="flex:1 1 200px;min-width:0;max-width:100%;" onchange="onAiModelChange()">
+                  <option value="qwen2.5:1.5b">qwen2.5:1.5b — Recomendado (~1,0 GB / PT-BR + CPU)</option>
+                </select>
+                <button type="button" id="ai-pull-btn" class="chip-btn chip-highlight" onclick="pullSelectedAiModel()" title="Requer internet na preparação inicial para baixar os pesos do modelo para ./storage/ollama">⬇️ Baixar Modelo</button>
+              </div>
+              <div id="ai-model-note" class="text-xs text-gray-300 mb-2">
+                Padrão recomendado: <strong>qwen2.5:1.5b</strong> (~1,0 GB em disco, ~1,5–2 GB RAM). Melhor equilíbrio entre velocidade em CPU e qualidade em português.
+              </div>
+              <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.76rem;color:#cbd5e1;cursor:pointer;">
+                <input type="checkbox" id="ai-rag-checkbox" checked>
+                <span>📚 Cruzar automaticamente com base local verificada (RAG + Estoque PEPS + Kiwix)</span>
+              </label>
+              <div id="ai-pull-feedback" class="text-xs text-gray-400 mt-2"></div>
+              <div id="ai-pull-progress-wrap" style="display:none;margin-top:0.45rem;background:rgba(0,0,0,0.45);border:1px solid var(--border);border-radius:999px;height:10px;overflow:hidden;">
+                <div id="ai-pull-progress-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#10b981,#38bdf8);transition:width 0.25s ease;"></div>
+              </div>
+            </div>
+
+            <div class="tactical-card" style="border-left: 3px solid #38bdf8;">
+              <div class="section-heading">
+                <span>⚡</span> Ativação Rápida do Motor Ollama Offline
+              </div>
+              <div style="display:flex;flex-direction:column;gap:0.4rem;font-size:0.76rem;color:#cbd5e1;margin-bottom:0.65rem;min-width:0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  <span><strong>1.</strong> Ligar motor local (2 cliques em <code>ativar-ia-nomad.bat</code>)</span>
+                  <span id="ai-step1-badge" class="font-mono" style="color:#fbbf24;">⚪ Aguardando</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  <span><strong>2.</strong> Modelo offline (<code id="ai-cmd-model-name">qwen2.5:1.5b</code>)</span>
+                  <span id="ai-step2-badge" class="font-mono" style="color:#94a3b8;">⏳ Pendente</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  <span><strong>3.</strong> Modo de resposta atual</span>
+                  <span id="ai-step3-badge" class="font-mono" style="color:#34d399;">📚 RAG Local Ativo</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;background:rgba(0,0,0,0.45);padding:0.5rem 0.65rem;border-radius:6px;border:1px solid var(--border);min-width:0;max-width:100%;">
+                <code id="ai-one-liner-cmd" class="font-mono text-[11px]" style="flex:1 1 200px;min-width:0;color:#a7f3d0;white-space:normal;word-break:break-word;line-height:1.45;">docker compose --profile ai up -d && docker exec -it nomad_brasil_ollama ollama pull qwen2.5:1.5b</code>
+                <button type="button" id="ai-copy-cmd-btn" class="chip-btn" style="padding:0.25rem 0.55rem;font-size:11px;white-space:nowrap;flex-shrink:0;" onclick="copyAiActivationCommand()">📋 Copiar</button>
+              </div>
+              <div class="text-[11px] text-gray-400 mt-1.5">
+                💡 No Windows use <code>ativar-ia-nomad.bat</code> (ou <code>./ativar-ia-nomad.sh</code> no Linux/Mac). Depois disso, o <code>iniciar-nomad-brasil.bat</code> liga a IA automaticamente.
+              </div>
+            </div>
+          </div>
+
+          <div class="tactical-card" style="display:flex;flex-direction:column;gap:0.85rem;">
+            <div style="display:flex;gap:0.45rem;flex-wrap:wrap;align-items:center;">
+              <span class="text-xs text-gray-400 font-bold">Atalhos Táticos:</span>
+              <button type="button" class="chip-btn" onclick="askAiQuick('Como purificar água turva com hipoclorito de sódio?')">💧 Cloração de Água</button>
+              <button type="button" class="chip-btn" onclick="askAiQuick('Quais são as frequências de emergência no Rádio PX, VHF Marítimo e RENER?')">📻 Frequências SOS</button>
+              <button type="button" class="chip-btn" onclick="askAiQuick('Como agir em picada de jararaca e qual soro é indicado?')">🐍 Picada de Jararaca</button>
+              <button type="button" class="chip-btn" onclick="askAiQuick('Resuma meu estoque atual PEPS e aponte itens perto de vencer.')">📦 Analisar Estoque PEPS</button>
+              <button type="button" class="chip-btn" onclick="askAiQuick('Qual o passo a passo da RCP em parada cardíaca?')">🚑 Passo a passo RCP</button>
+            </div>
+
+            <div id="ai-chat-messages" style="background:rgba(7,11,14,0.72);border:1px solid var(--border);border-radius:8px;padding:0.9rem;min-height:280px;max-height:460px;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere;word-break:break-word;display:flex;flex-direction:column;gap:0.75rem;">
+              <div class="metric-card" style="border-left:3px solid var(--accent-green);">
+                <div class="text-xs font-bold text-emerald-400 mb-1">🤖 Assistente Tático NOMAD Brasil</div>
+                <div class="text-xs text-gray-200" style="line-height:1.5;">
+                  Pronto para operar offline. Pergunte sobre tratamento de água, frequências de rádio, primeiros socorros, animais peçonhentos, plantas PANC ou seu estoque PEPS. As respostas citam diretamente as abas verificadas do portal.
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:0.55rem;align-items:flex-end;flex-wrap:wrap;">
+              <textarea id="ai-chat-input" class="route-input" rows="2" style="flex:1;min-width:240px;resize:vertical;" placeholder="Digite sua pergunta tática offline (Ctrl+Enter ou botão Enviar)..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiChatMessage();}"></textarea>
+              <button type="button" id="ai-send-btn" class="btn-calc-route" style="width:auto;padding:0.75rem 1.35rem;white-space:nowrap;" onclick="sendAiChatMessage()">📤 Enviar Pergunta</button>
             </div>
           </div>
         </div>
@@ -5509,6 +5616,6 @@
 
   </div>
 
-  <script src="/app.js?v=7.0"></script>
+  <script src="/app.js?v=7.3"></script>
 </body>
 </html>

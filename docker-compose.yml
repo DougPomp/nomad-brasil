@@ -14,6 +14,10 @@ services:
     environment:
       - PORT=8000
       - STORAGE_PATH=/storage
+      - OLLAMA_URL=http://nomad_brasil_ollama:11434
+      - OLLAMA_MODEL=qwen2.5:1.5b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: ["node", "server.js"]
 
   nomad_brasil_kiwix:
@@ -25,3 +29,13 @@ services:
     volumes:
       - ./storage/zim:/data:ro
     command: ["--library", "/data/kiwix-library.xml"]
+
+  nomad_brasil_ollama:
+    image: ollama/ollama:latest
+    container_name: nomad_brasil_ollama
+    profiles: ["ai"]
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./storage/ollama:/root/.ollama

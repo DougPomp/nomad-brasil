@@ -7,7 +7,12 @@ echo.
 cd /d "%~dp0"
 
 echo Verificando e iniciando servicos Docker...
-docker compose up -d
+if exist "storage\ollama\models\manifests" (
+    echo [*] Modelos de IA offline detectados em storage\ollama - iniciando com perfil AI...
+    docker compose --profile ai up -d
+) else (
+    docker compose up -d
+)
 
 echo.
 echo Aguardando inicializacao do portal...

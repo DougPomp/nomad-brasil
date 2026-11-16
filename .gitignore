@@ -8,6 +8,7 @@ storage/user_waypoints.json
 storage/camp_board.json
 storage/supply_inventory.json
 storage/encrypted_vault.json
+storage/ollama/
 storage/routes_cache/
 app/data/routes_cache/
 

@@ -7,8 +7,8 @@
   <!-- Primary Meta Tags & SEO -->
   <title>NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline</title>
   <meta name="title" content="NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline">
-  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), estante Multi-ZIM (busca simultânea em Wikivoyage, NHS, CDC, FAS), rotas A* + parada Via + corredor 5 km, importador GPX/KML, anéis de raio 2/5/10/25 km, rastro GPS Breadcrumb, visão noturna vermelha, Mural LAN, estoque real PEPS validade, cofre criptografado AES-256-GCM, dossiê A4, ficha TCCC e 56 módulos táticos.">
-  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, parada via corredor 5km, importador gpx kml, aneis de raio perimetro, rastro gps breadcrumb, visao noturna vermelha, mural camp board lan, busca multi zim, estoque real peps validade, cofre criptografado aes 256 gcm pbkdf2, ficha triagem tccc, efemerides solar lunar, lan qr code offline, dossie tatico a4, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
+  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), estante Multi-ZIM (busca simultânea em Wikivoyage, NHS, CDC, FAS), rotas A* + parada Via + corredor 5 km, importador GPX/KML, anéis de raio 2/5/10/25 km, rastro GPS Breadcrumb, visão noturna vermelha, Mural LAN, estoque real PEPS validade, cofre criptografado AES-256-GCM, assistente IA offline Ollama qwen2.5 + RAG local, dossiê A4, ficha TCCC e 56 módulos táticos.">
+  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, parada via corredor 5km, importador gpx kml, aneis de raio perimetro, rastro gps breadcrumb, visao noturna vermelha, mural camp board lan, busca multi zim, estoque real peps validade, cofre criptografado aes 256 gcm pbkdf2, assistente ia offline ollama qwen2.5 rag local, ficha triagem tccc, efemerides solar lunar, lan qr code offline, dossie tatico a4, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
   <meta name="author" content="DougPomp">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#090d10">
@@ -1303,19 +1303,19 @@
                 </ol>
                 <div class="install-box">git clone https://github.com/DougPomp/nomad-brasil.git<br>cd nomad-brasil</div>
                 <div style="font-size: 0.84rem; color: var(--text-secondary);">
-                  Execute <strong><code>setup-nomad-brasil.bat</code></strong>. Ele baixa os mapas vetoriais do Brasil (1,57 GB), gera o índice de 416 mil+ ruas em SQLite FTS5, baixa a Wikipédia em Português e sobe os contêineres automaticamente.
+                  Execute <strong><code>setup-nomad-brasil.bat</code></strong> para baixar mapas e subir os contêineres. Para ativar também a <strong>IA Offline (Qwen 2.5 1.5B)</strong> em 1 clique, execute <strong><code>ativar-ia-nomad.bat</code></strong>.
                 </div>
               </div>
 
               <div class="metric-card">
                 <h3 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.35rem;">🐧 Linux / macOS / Raspberry Pi</h3>
                 <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                  Torne o instalador executável e inicie o provisionamento automático:
+                  Torne o instalador executável e inicie o provisionamento automático (e opcionalmente a IA local):
                 </div>
-                <div class="install-box">chmod +x setup-nomad-brasil.sh<br>./setup-nomad-brasil.sh</div>
+                <div class="install-box">chmod +x setup-nomad-brasil.sh ativar-ia-nomad.sh<br>./setup-nomad-brasil.sh<br>./ativar-ia-nomad.sh</div>
                 <div style="font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.35rem;">
                   🌐 <strong>Portal Tático:</strong> <code>http://localhost:8000</code><br>
-                  📚 <strong>Servidor Kiwix:</strong> <code>http://localhost:8090</code>
+                  📚 <strong>Servidor Kiwix:</strong> <code>http://localhost:8090</code> &bull; 🤖 <strong>Ollama (Opcional):</strong> <code>:11434</code>
                 </div>
               </div>
             </div>
@@ -1915,7 +1915,7 @@
               </div>
               <div class="metric-card">
                 <h4 style="color: #f87171; margin-bottom: 0.35rem;">🔴 Visão Noturna, TCCC, Estoque PEPS &amp; Cofre AES-256</h4>
-                <p style="font-size: 0.82rem; color: var(--text-secondary);">Filtro monocromático vermelho noturno, gravador de rastro GPS contínuo (<em>Breadcrumb</em> com exportação GPX), prontuário de triagem TCCC, controle de estoque real PEPS (<code>/api/inventory</code>) e cofre criptografado da família (<code>AES-256-GCM</code> / <code>/api/vault</code>).</p>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Filtro monocromático vermelho noturno, gravador de rastro GPS contínuo (<em>Breadcrumb</em> com exportação GPX), prontuário de triagem TCCC, controle de estoque real PEPS (<code>/api/inventory</code>), cofre criptografado da família (<code>AES-256-GCM</code> / <code>/api/vault</code>) e <strong>Assistente IA Offline</strong> (<code>Ollama qwen2.5:1.5b</code> + RAG local em <code>/api/ai/*</code>).</p>
               </div>
             </div>
 
@@ -1966,6 +1966,8 @@
                       <tr><td><code>GET/POST/DELETE /api/camp-board</code></td><td>Mural de avisos compartilhado na LAN</td></tr>
                       <tr><td><code>GET/POST/DELETE /api/inventory</code></td><td>Inventário real da base com validade PEPS</td></tr>
                       <tr><td><code>GET/POST/DELETE /api/vault</code></td><td>Cofre criptografado AES-256-GCM (PBKDF2 100k)</td></tr>
+                      <tr><td><code>GET /api/ai/status</code> &bull; <code>POST /api/ai/chat</code></td><td>IA Offline (Ollama <code>qwen2.5:1.5b</code> + RAG Local)</td></tr>
+                      <tr><td><code>POST /api/ai/pull</code> &bull; <code>GET /api/ai/pull-status</code></td><td>Download de modelos com progresso em tempo real</td></tr>
                     </tbody>
                   </table>
                 </div>

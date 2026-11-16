@@ -26,6 +26,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 - **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline) + Importador GPX/KML:** Roteamento por rua ou município com **parada intermediária (`Via`)**, OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, **POIs de apoio no corredor (5 km)**, importação de trilhas `.gpx`/`.kml`, exportação **GPX** e **Dossiê Tático A4 imprimível**.
 - **📚 Estante Multi-ZIM Kiwix Integrada (11+ Acervos / 23+ GB):** Wikipédia PT, Wikivoyage PT, Wikibooks PT, Wikipédia Médica PT, NHS Medicines, CDC, FAS Military Medicine e Zimgit servidos na porta 8090 com catálogo `/api/kiwix/books`, **busca unificada simultânea `/api/kiwix/search`**, atalho Wikivoyage por município e busca médica + **Ficha de Triagem TCCC (MARCHE)** imprimível na aba de Emergências.
 - **📡 Modo Acampamento / Rede Local (Mural LAN + QR Code), Estoque Real PEPS, Cofre AES-256-GCM & Backup Portátil:** **Mural de Operações compartilhado na LAN** (`/api/camp-board` em `storage/camp_board.json`), **Controle de Estoque Real com Alerta de Validade PEPS** (`/api/inventory` em `storage/supply_inventory.json`), **Cofre Criptografado da Família** (`AES-256-GCM` + `PBKDF2-SHA256` em `storage/encrypted_vault.json` via `/api/vault`), modal de conexão em rede local com QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `Cofre Cifrado`, `BOB`, `PACE`, `TCCC`, `Estoque PEPS` e `Breadcrumb`).
+- **🤖 Assistente IA Tático Offline (`Ollama qwen2.5:1.5b` + RAG Local Verificado):** Aba dedicada (`🤖 IA Tática Offline`) com presets leves selecionáveis (`qwen2.5:1.5b` recomendado ~1 GB, `llama3.2:1b`, `gemma3:1b`, `phi4-mini`, `gemma3:4b`), ativação opcional em 1 clique (`ativar-ia-nomad.bat` / `ativar-ia-nomad.sh`), download com barra de progresso em tempo real e **fallback determinístico RAG Local** nas bases verificadas (`emergencies.json`, `survival.json`, `radio_frequencies.json`, `venomous_animals.json`, `panc_plants.json`, estoque PEPS e Kiwix) mesmo quando o motor LLM estiver desligado.
 - **🛠️ 56 Módulos Especializados:** Guias interativos, calculadoras técnicas e protocolos operacionais para todas as dimensões de sobrevivência e autossuficiência.
 
 ---
@@ -112,6 +113,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 - **Ficha de Atendimento de Campo & Cartão de Triagem TCCC (A4):** Registro persistente de vítimas com cronômetro de alerta de torniquete, escala AVPU, sinais vitais, lesões, condutas e impressão em folha A4 para entrega ao resgate.
 - **Controle de Estoque Real & Alerta de Validade (Dispensa / Farmácia PEPS):** Gestão persistente em disco (`storage/supply_inventory.json` via `/api/inventory`) comparando água (L) e calorias (kcal) reais contra a meta planejada, com alertas automáticos de validade (`🟢 OK`, `🟡 ≤ 60 dias — Rodízio PEPS`, `🔴 Vencido`), importação em 1 clique da cesta calculada e ajuste rápido `+1`/`-1`.
 - **Cofre Criptografado da Família (`AES-256-GCM` + `PBKDF2-SHA256` Offline):** Criptografia autenticada de 256 bits com derivação de chave por senha mestre (`100.000` iterações `PBKDF2-SHA256`, salt de 16 bytes e IV de 12 bytes) persistida em `storage/encrypted_vault.json` via `/api/vault` (com fallback transparente `/api/vault/crypto` em conexões HTTP na LAN), protegendo documentos, dados médicos críticos, coordenadas de refúgio, frequências privadas e notas sem jamais gravar texto aberto em disco ou no backup `.JSON`.
+- **Assistente IA Tático Offline (`Ollama qwen2.5:1.5b` + RAG Local Verificado):** Consulta em português cruzando os protocolos validados do portal (`emergencies.json`, `survival.json`, `radio_frequencies.json`, `venomous_animals.json`, `panc_plants.json`), o estoque PEPS e sugestões Kiwix com modelos locais leves (`qwen2.5:1.5b` recomendado, `llama3.2:1b`, `gemma3:1b`, `phi4-mini`, `gemma3:4b`), incluindo barra de progresso no download (`/api/ai/pull`), fontes clicáveis e **fallback RAG Local** mesmo sem LLM ativo.
 
 ---
 
@@ -138,13 +140,20 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
    ```cmd
    iniciar-nomad-brasil.bat
    ```
+4. **(Opcional) Para ativar o Assistente IA Offline (Ollama + `qwen2.5:1.5b`, ~1,0 GB):**
+   ```cmd
+   ativar-ia-nomad.bat
+   ```
+   *Sobe automaticamente o perfil `ai` no Docker, baixa o modelo escolhido para `storage\ollama\` e faz o `iniciar-nomad-brasil.bat` reativar a IA automaticamente nos próximos inícios.*
 
 ### No Linux / macOS / Raspberry Pi:
 ```bash
 git clone https://github.com/DougPomp/nomad-brasil.git
 cd nomad-brasil
-chmod +x setup-nomad-brasil.sh
+chmod +x setup-nomad-brasil.sh ativar-ia-nomad.sh
 ./setup-nomad-brasil.sh
+# Opcional — ativar IA local offline (qwen2.5:1.5b):
+./ativar-ia-nomad.sh
 ```
 *O script também gera automaticamente o índice `storage/maps/brazil-streets.sqlite` (reconstruível via `docker run --rm -v "$(pwd):/repo" node:22-slim node /repo/app/build_streets_index.js`).*
 
@@ -154,8 +163,9 @@ chmod +x setup-nomad-brasil.sh
 
 | Serviço | Endereço | Descrição |
 | :--- | :--- | :--- |
-| **Portal NOMAD Brasil** | [http://localhost:8000](http://localhost:8000) | Dashboard tático, mapa vetorial, rotas e 56 módulos de sobrevivência |
+| **Portal NOMAD Brasil** | [http://localhost:8000](http://localhost:8000) | Dashboard tático, mapa vetorial, rotas, IA RAG offline e 56 módulos de sobrevivência |
 | **Biblioteca Kiwix** | [http://localhost:8090](http://localhost:8090) | Servidor e leitor nativo dos acervos ZIM da Wikipédia |
+| **Ollama IA Offline (Opcional)** | `http://localhost:11434` | Motor LLM local ativado via `ativar-ia-nomad.bat` / `--profile ai` (pesos em `storage/ollama/`) |
 
 ---
 
@@ -165,7 +175,7 @@ chmod +x setup-nomad-brasil.sh
 nomad-brasil/
 ├── app/
 │   ├── build_streets_index.js  # Indexador nacional PMTiles -> SQLite FTS5 com 416k+ ruas e POIs
-│   ├── server.js               # Servidor HTTP Node.js 22 com Range 206, busca FTS5 /api/streets, cofre AES-256, cache z=14 e rotas
+│   ├── server.js               # Servidor HTTP Node.js 22 com Range 206, busca FTS5 /api/streets, cofre AES-256, IA RAG /api/ai/*, cache z=14 e rotas
 │   ├── data/
 │   │   ├── cities.json         # Todos os 5.571 municípios do IBGE (UTF-8, DDD, Lat/Lng)
 │   │   ├── emergencies.json    # Protocolos de atendimento pré-hospitalar
@@ -174,16 +184,16 @@ nomad-brasil/
 │   │   ├── survival.json       # Manuais técnicos de resiliência e campo
 │   │   └── routes_cache/       # Cache permanente em disco de todas as rotas traçadas
 │   └── public/
-│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, Mural LAN, Estoque PEPS, Cofre AES-256, TCCC e Visão Noturna
-│       ├── styles.css          # Design system com sidebar tática, controles escuros e filtro de visão noturna
-│       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, Multi-ZIM, estoque PEPS, cofre AES-256, QR SVG, TCCC e A4
-│       ├── sw.js               # Service Worker PWA (v15) para operação offline e Network-First nas APIs
+│       ├── index.html          # Interface tática em dark mode com os 56 módulos, IA Tática Offline, estante Multi-ZIM, Mural LAN, Estoque PEPS, Cofre AES-256, TCCC e Visão Noturna
+│       ├── styles.css          # Design system com sidebar tática, grid responsivo, controles escuros e filtro de visão noturna
+│       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, IA RAG/Ollama, Multi-ZIM, estoque PEPS, cofre AES-256, QR SVG, TCCC e A4
+│       ├── sw.js               # Service Worker PWA (v19) para operação offline e Network-First nas APIs
 │       ├── banner.svg          # Banner vetorizado da marca
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
 │   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Estoque PEPS + Cofre AES-256 + TCCC + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v18)
+│   ├── sw.js                   # Service Worker do GitHub Pages (v19)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -197,14 +207,17 @@ nomad-brasil/
 │   ├── camp_board.json                 # Mural de operações compartilhado na rede local (Camp Board LAN)
 │   ├── supply_inventory.json           # Inventário real de suprimentos e farmácia da base com controle de validade (PEPS)
 │   ├── encrypted_vault.json            # Cofre criptografado da família (AES-256-GCM + PBKDF2-SHA256)
+│   ├── ollama/                         # Pesos dos modelos LLM offline (ex.: qwen2.5:1.5b via perfil ai)
 │   └── zim/                            # Biblioteca Multi-ZIM (Wikipédia, Wikivoyage, Wikibooks, Medicina, NHS, CDC, FAS)
 │       ├── *.zim                       # 11+ acervos enciclopédicos e médicos offline
 │       └── kiwix-library.xml           # Catálogo XML gerado
 ├── tools/                      # Utilitário go-pmtiles
-├── docker-compose.yml          # Orquestração dos serviços (Web com storage rw e Kiwix ro)
+├── docker-compose.yml          # Orquestração dos serviços (Web rw, Kiwix ro e Ollama opcional no perfil ai)
+├── ativar-ia-nomad.bat         # Ativador de 1 clique da IA offline (Ollama + qwen2.5:1.5b) no Windows
+├── ativar-ia-nomad.sh          # Ativador de 1 clique da IA offline no Linux/macOS
 ├── setup-nomad-brasil.bat      # Instalador e downloader automático para Windows
 ├── setup-nomad-brasil.sh       # Instalador e downloader automático para Linux/macOS
-├── iniciar-nomad-brasil.bat    # Inicializador rápido portátil (%~dp0)
+├── iniciar-nomad-brasil.bat    # Inicializador rápido portátil (auto-ativa perfil ai se houver modelos em storage\ollama)
 └── README.md
 ```
 
@@ -270,6 +283,9 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 | `GET / POST / DELETE /api/inventory` | Controle de estoque real da dispensa, farmácia e combustível da base (`storage/supply_inventory.json`) com alertas de validade PEPS (≤ 60 dias). |
 | `GET / POST / DELETE /api/vault` | Armazena e recupera o envelope criptografado da família (`storage/encrypted_vault.json`, cifrado em `AES-256-GCM` + `PBKDF2-SHA256`). |
 | `POST /api/vault/crypto` | Utilitário local de criptografia/descriptografia `AES-256-GCM` (usado automaticamente como fallback em acessos HTTP sem `crypto.subtle`). |
+| `GET /api/ai/status` | Detecta em paralelo o motor Ollama (`:11434`), lista modelos instalados em `storage/ollama/` e retorna os presets leves (`qwen2.5:1.5b` recomendado). |
+| `POST /api/ai/pull` & `GET /api/ai/pull-status` | Inicia o download em streaming do modelo selecionado no Ollama (`202 Accepted`) e expõe o progresso em `%` e `MB` em tempo real. |
+| `POST /api/ai/chat` | Assistente tático em português com injeção automática de RAG local verificado (`emergencies`, `survival`, `radio`, `venomous`, `panc`, estoque PEPS e Kiwix) e fallback determinístico `rag_fallback` quando o Ollama estiver desligado. |
 | `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com suporte a parada intermediária (`viaLat`/`viaLng`/`viaLabel`), quádruplo fallback (OSRM -> cache -> A\* MVT `forceOfflineGraph=1` -> corredor tático) e lista `corridorSupport` (POIs dentro de 5 km). |
 | `GET /api/route/gpx` | Exporta qualquer rota calculada (incluindo waypoint `<wpt>` de parada intermediária `viaLat`/`viaLng`) em arquivo `.gpx` padrão para Garmin e OsmAnd. |
 | `GET /api/kiwix/books` | Catálogo estruturado dos livros `.zim` instalados em `storage/zim/` com metadados de tamanho, idioma, categoria (`wikipedia`, `travel`, `medicine`, `books`) e ícone. |

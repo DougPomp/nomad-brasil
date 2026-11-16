@@ -124,6 +124,9 @@ function switchTab(tabId) {
     loadPefData();
     if (typeof window.loadEncryptedVaultState === 'function') window.loadEncryptedVaultState();
   }
+  if (tabId === 'ai') {
+    if (typeof window.refreshAiStatus === 'function') window.refreshAiStatus();
+  }
   if (tabId === 'march') {
     calculateMarch();
   }
@@ -7229,6 +7232,401 @@ window.deleteEncryptedVault = async function() {
   setVaultFeedback('🗑️ Cofre criptografado removido.', 'warn');
 };
 
+// =====================================================================
+// 45. ASSISTENTE IA TÁTICO OFFLINE (OLLAMA + RAG LOCAL VERIFICADO)
+// =====================================================================
+let aiChatHistory = [];
+let aiStatusCache = null;
+
+function formatAiPlainMarkup(rawText) {
+  let html = escapeHtmlSafe(String(rawText || ''));
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong style="color:#fff;">$1</strong>');
+  html = html.replace(/`([^`\n]+)`/g, '<code style="background:rgba(255,255,255,0.08);padding:0.08rem 0.3rem;border-radius:4px;color:#a7f3d0;">$1</code>');
+  return html.replace(/\n/g, '<br>');
+}
+
+function updateAiModelNote() {
+  const select = document.getElementById('ai-model-select');
+  const noteEl = document.getElementById('ai-model-note');
+  const cmdNameEl = document.getElementById('ai-cmd-model-name');
+  const oneLinerEl = document.getElementById('ai-one-liner-cmd');
+  if (!select) return;
+  const val = select.value || 'qwen2.5:1.5b';
+  if (cmdNameEl) cmdNameEl.textContent = val;
+  if (oneLinerEl) {
+    oneLinerEl.textContent = `docker compose --profile ai up -d && docker exec -it nomad_brasil_ollama ollama pull ${val}`;
+  }
+
+  const preset = (aiStatusCache?.presets || []).find(p => p.id === val);
+  const installed = (aiStatusCache?.installedModels || []).some(m => m.name === val || m.name.startsWith(`${val}:`));
+  if (noteEl) {
+    if (preset) {
+      noteEl.innerHTML = `<strong>${escapeHtmlSafe(preset.label)}</strong> (${escapeHtmlSafe(preset.size)} &bull; ${escapeHtmlSafe(preset.ram)}): ${escapeHtmlSafe(preset.note)} ${installed ? '<span style="color:#34d399;font-weight:700;">[Instalado]</span>' : ''}`;
+    } else {
+      noteEl.textContent = `Modelo selecionado: ${val}${installed ? ' [Instalado]' : ''}`;
+    }
+  }
+
+  const step1 = document.getElementById('ai-step1-badge');
+  const step2 = document.getElementById('ai-step2-badge');
+  const step3 = document.getElementById('ai-step3-badge');
+  const online = Boolean(aiStatusCache?.online);
+  if (step1) {
+    step1.style.color = online ? '#34d399' : '#fbbf24';
+    step1.textContent = online ? '✅ Ativo (:11434)' : '⚪ Desligado';
+  }
+  if (step2) {
+    step2.style.color = installed ? '#34d399' : (online ? '#38bdf8' : '#94a3b8');
+    step2.textContent = installed ? '✅ Instalado' : (online ? '⬇️ Pronto p/ baixar' : '⏳ Pendente');
+  }
+  if (step3) {
+    if (online && installed) {
+      step3.style.color = '#34d399';
+      step3.textContent = `🟢 ${val} + RAG`;
+    } else {
+      step3.style.color = '#fbbf24';
+      step3.textContent = '📚 RAG Local Ativo';
+    }
+  }
+}
+
+window.copyAiActivationCommand = async function() {
+  const cmdEl = document.getElementById('ai-one-liner-cmd');
+  const btn = document.getElementById('ai-copy-cmd-btn');
+  const text = cmdEl?.textContent || 'docker compose --profile ai up -d && docker exec -it nomad_brasil_ollama ollama pull qwen2.5:1.5b';
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) {
+      btn.textContent = '✅ Copiado!';
+      setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+    }
+  } catch {
+    prompt('Copie o comando abaixo:', text);
+  }
+};
+
+window.onAiModelChange = function() {
+  const select = document.getElementById('ai-model-select');
+  if (select) {
+    try { localStorage.setItem('nomad_ai_selected_model', select.value); } catch {}
+  }
+  updateAiModelNote();
+};
+
+window.refreshAiStatus = async function(manualTrigger = false) {
+  const badge = document.getElementById('ai-status-badge');
+  const select = document.getElementById('ai-model-select');
+  const refreshBtn = document.getElementById('ai-refresh-btn');
+  const feedback = document.getElementById('ai-pull-feedback');
+
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = '⏳ Verificando...';
+  }
+  if (manualTrigger && badge) {
+    badge.style.borderColor = 'rgba(56,189,248,0.55)';
+    badge.style.color = '#38bdf8';
+    badge.textContent = '⏳ Verificando Ollama...';
+  }
+
+  try {
+    const res = await fetch('/api/ai/status?t=' + Date.now(), { cache: 'no-store' });
+    const data = await res.json();
+    aiStatusCache = data;
+
+    if (select && Array.isArray(data.presets)) {
+      let savedModel = data.recommendedModel || 'qwen2.5:1.5b';
+      try {
+        savedModel = localStorage.getItem('nomad_ai_selected_model') || savedModel;
+      } catch {}
+
+      const installedNames = new Set((data.installedModels || []).map(m => m.name));
+      const seen = new Set();
+      select.innerHTML = '';
+
+      data.presets.forEach(p => {
+        seen.add(p.id);
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        const has = installedNames.has(p.id) || [...installedNames].some(n => n.startsWith(`${p.id}:`));
+        opt.textContent = `${p.id} — ${p.label} (${p.size})${has ? ' ✅' : ''}`;
+        select.appendChild(opt);
+      });
+
+      (data.installedModels || []).forEach(m => {
+        if (seen.has(m.name)) return;
+        const opt = document.createElement('option');
+        opt.value = m.name;
+        opt.textContent = `${m.name} (Instalado ✅)`;
+        select.appendChild(opt);
+      });
+
+      if ([...select.options].some(o => o.value === savedModel)) {
+        select.value = savedModel;
+      }
+    }
+
+    updateAiModelNote();
+
+    const count = Array.isArray(data.installedModels) ? data.installedModels.length : 0;
+    if (badge) {
+      if (data.online && count > 0) {
+        badge.style.borderColor = 'rgba(16,185,129,0.55)';
+        badge.style.color = '#34d399';
+        badge.textContent = `🟢 Ollama Ativo (${count} modelo${count > 1 ? 's' : ''})`;
+      } else if (data.online) {
+        badge.style.borderColor = 'rgba(56,189,248,0.55)';
+        badge.style.color = '#38bdf8';
+        badge.textContent = '🔵 Ollama Ligado (0 modelos — clique em Baixar)';
+      } else {
+        badge.style.borderColor = 'rgba(245,158,11,0.5)';
+        badge.style.color = '#fbbf24';
+        badge.textContent = '🟡 Modo RAG Local (Ollama desligado)';
+      }
+    }
+    if (manualTrigger && feedback) {
+      const now = new Date().toLocaleTimeString('pt-BR');
+      if (data.online) {
+        feedback.style.color = '#34d399';
+        feedback.textContent = `🔎 Verificado às ${now}: Ollama ativo em ${data.endpoint} (${count} modelo(s) instalado(s)).`;
+      } else {
+        feedback.style.color = '#fbbf24';
+        feedback.textContent = `🔎 Verificado às ${now}: Motor Ollama não detectado na porta 11434 (dê 2 cliques em ativar-ia-nomad.bat). Modo RAG Local segue ativo.`;
+      }
+    }
+  } catch {
+    if (badge) {
+      badge.style.borderColor = 'rgba(245,158,11,0.5)';
+      badge.style.color = '#fbbf24';
+      badge.textContent = '🟡 Modo RAG Local';
+    }
+    if (manualTrigger && feedback) {
+      feedback.style.color = '#fca5a5';
+      feedback.textContent = '❌ Não foi possível consultar /api/ai/status agora.';
+    }
+  } finally {
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = '🔄 Verificar IA';
+    }
+  }
+};
+
+window.pullSelectedAiModel = async function() {
+  const select = document.getElementById('ai-model-select');
+  const feedback = document.getElementById('ai-pull-feedback');
+  const btn = document.getElementById('ai-pull-btn');
+  const progWrap = document.getElementById('ai-pull-progress-wrap');
+  const progBar = document.getElementById('ai-pull-progress-bar');
+  const model = select?.value || 'qwen2.5:1.5b';
+
+  if (btn) btn.disabled = true;
+  if (progWrap) progWrap.style.display = 'block';
+  if (progBar) progBar.style.width = '5%';
+  if (feedback) {
+    feedback.style.color = '#38bdf8';
+    feedback.textContent = `⏳ Iniciando download de "${model}" no Ollama...`;
+  }
+
+  try {
+    const res = await fetch('/api/ai/pull', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Falha ao iniciar download do modelo');
+    }
+
+    // Poll /api/ai/pull-status while background download streams progress
+    let finished = false;
+    while (!finished) {
+      await new Promise(r => setTimeout(r, 900));
+      const stRes = await fetch('/api/ai/pull-status');
+      const stJson = await stRes.json().catch(() => ({}));
+      const pull = stJson?.pull || {};
+      if (pull.error) throw new Error(pull.error);
+
+      if (progBar && typeof pull.percent === 'number') {
+        progBar.style.width = `${Math.max(5, pull.percent)}%`;
+      }
+      if (feedback) {
+        const sizeInfo = pull.totalMb > 0 ? ` (${pull.completedMb} / ${pull.totalMb} MB — ${pull.percent}%)` : '';
+        feedback.textContent = `⏳ ${pull.phase || 'Baixando...'}${sizeInfo}`;
+      }
+      if (!pull.active && pull.done) {
+        finished = true;
+        if (progBar) progBar.style.width = '100%';
+        if (feedback) {
+          feedback.style.color = '#34d399';
+          feedback.textContent = `✅ Modelo "${model}" baixado e pronto para uso 100% offline!`;
+        }
+      } else if (!pull.active && !pull.done) {
+        finished = true;
+      }
+    }
+    await window.refreshAiStatus();
+  } catch (err) {
+    if (progWrap) progWrap.style.display = 'none';
+    if (feedback) {
+      feedback.style.color = '#fca5a5';
+      feedback.textContent = `❌ ${err.message || err}`;
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+function appendAiChatBubble({ role, text, metaLabel, sources }) {
+  const box = document.getElementById('ai-chat-messages');
+  if (!box) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'metric-card';
+  if (role === 'user') {
+    wrap.style.borderLeft = '3px solid #38bdf8';
+    wrap.style.background = 'rgba(14, 116, 144, 0.14)';
+  } else {
+    wrap.style.borderLeft = '3px solid var(--accent-green)';
+  }
+
+  const header = document.createElement('div');
+  header.className = 'flex items-center justify-between gap-2 mb-1';
+  header.innerHTML = `
+    <span class="text-xs font-bold" style="color:${role === 'user' ? '#38bdf8' : '#34d399'};">${role === 'user' ? '👤 Operador' : '🤖 NOMAD IA'}</span>
+    ${metaLabel ? `<span class="text-[11px] font-mono text-gray-400">${escapeHtmlSafe(metaLabel)}</span>` : ''}
+  `;
+  wrap.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'text-xs text-gray-200';
+  body.style.lineHeight = '1.55';
+  body.innerHTML = formatAiPlainMarkup(text);
+  wrap.appendChild(body);
+
+  if (Array.isArray(sources) && sources.length > 0) {
+    const srcWrap = document.createElement('div');
+    srcWrap.style.marginTop = '0.6rem';
+    srcWrap.style.paddingTop = '0.5rem';
+    srcWrap.style.borderTop = '1px solid rgba(255,255,255,0.08)';
+    srcWrap.style.display = 'flex';
+    srcWrap.style.flexWrap = 'wrap';
+    srcWrap.style.gap = '0.35rem';
+    srcWrap.style.alignItems = 'center';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'text-[11px] text-gray-400 font-bold';
+    lbl.textContent = 'Fontes locais:';
+    srcWrap.appendChild(lbl);
+
+    sources.forEach(s => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip-btn';
+      chip.style.fontSize = '11px';
+      chip.style.padding = '0.18rem 0.5rem';
+      chip.textContent = `${s.module}: ${s.title}`;
+      chip.title = s.snippet || s.title;
+      chip.addEventListener('click', () => {
+        if (s.tab) switchTab(s.tab);
+      });
+      srcWrap.appendChild(chip);
+    });
+    wrap.appendChild(srcWrap);
+  }
+
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
+  return wrap;
+}
+
+window.askAiQuick = function(promptText) {
+  const input = document.getElementById('ai-chat-input');
+  if (input) input.value = promptText;
+  window.sendAiChatMessage();
+};
+
+window.clearAiChat = function() {
+  aiChatHistory = [];
+  const box = document.getElementById('ai-chat-messages');
+  if (!box) return;
+  box.innerHTML = `
+    <div class="metric-card" style="border-left:3px solid var(--accent-green);">
+      <div class="text-xs font-bold text-emerald-400 mb-1">🤖 Assistente Tático NOMAD Brasil</div>
+      <div class="text-xs text-gray-200" style="line-height:1.5;">
+        Histórico limpo. Envie uma nova pergunta tática para consultar o modelo local e os protocolos verificados offline.
+      </div>
+    </div>
+  `;
+};
+
+window.sendAiChatMessage = async function() {
+  const input = document.getElementById('ai-chat-input');
+  const sendBtn = document.getElementById('ai-send-btn');
+  const select = document.getElementById('ai-model-select');
+  const ragCheck = document.getElementById('ai-rag-checkbox');
+  const text = (input?.value || '').trim();
+  if (!text) return;
+
+  const model = select?.value || 'qwen2.5:1.5b';
+  const useLocalRag = ragCheck ? ragCheck.checked : true;
+
+  if (input) input.value = '';
+  appendAiChatBubble({ role: 'user', text });
+
+  const box = document.getElementById('ai-chat-messages');
+  const loadingBubble = appendAiChatBubble({
+    role: 'assistant',
+    text: '⏳ Consultando base local verificada e motor de IA...',
+    metaLabel: model
+  });
+
+  if (sendBtn) sendBtn.disabled = true;
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        model,
+        useLocalRag,
+        history: aiChatHistory
+      })
+    });
+    const data = await res.json();
+    if (loadingBubble && box?.contains(loadingBubble)) box.removeChild(loadingBubble);
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Erro ao consultar assistente');
+    }
+
+    const engineLabel = data.engine === 'ollama'
+      ? `Ollama • ${data.model}`
+      : 'RAG Local Verificado';
+
+    appendAiChatBubble({
+      role: 'assistant',
+      text: data.answer,
+      metaLabel: engineLabel,
+      sources: data.sources || []
+    });
+
+    aiChatHistory.push({ role: 'user', content: text });
+    aiChatHistory.push({ role: 'assistant', content: String(data.answer || '').slice(0, 1200) });
+    if (aiChatHistory.length > 8) aiChatHistory = aiChatHistory.slice(-8);
+  } catch (err) {
+    if (loadingBubble && box?.contains(loadingBubble)) box.removeChild(loadingBubble);
+    appendAiChatBubble({
+      role: 'assistant',
+      text: `❌ Falha na consulta: ${err.message || err}`,
+      metaLabel: 'Erro'
+    });
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
   initNightVisionMode();
@@ -7236,6 +7634,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.renderTcccCardsList();
   window.loadSupplyInventory();
   window.loadEncryptedVaultState();
+  window.refreshAiStatus();
   setInterval(() => {
     if (getSavedTcccCards().length > 0) window.renderTcccCardsList();
   }, 60000);

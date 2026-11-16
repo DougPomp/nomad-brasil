@@ -1765,6 +1765,227 @@ function decodeHtmlEntities(str) {
     .trim();
 }
 
+const AI_DEFAULT_MODEL = (process.env.OLLAMA_MODEL || 'qwen2.5:1.5b').trim();
+const AI_MODEL_PRESETS = [
+  {
+    id: 'qwen2.5:1.5b',
+    label: 'Qwen 2.5 1.5B (Recomendado)',
+    size: '~1,0 GB',
+    ram: '2 GB+ RAM',
+    note: 'Melhor equilíbrio em português e velocidade em CPU / Raspberry Pi.'
+  },
+  {
+    id: 'llama3.2:1b',
+    label: 'Llama 3.2 1B (Ultra-leve)',
+    size: '~700 MB',
+    ram: '1,5 GB+ RAM',
+    note: 'Máxima velocidade em notebooks antigos e respostas curtas.'
+  },
+  {
+    id: 'gemma3:1b',
+    label: 'Gemma 3 1B (Compacto)',
+    size: '~815 MB',
+    ram: '1,5 GB+ RAM',
+    note: 'Modelo compacto Google com bom português para resumos.'
+  },
+  {
+    id: 'phi4-mini',
+    label: 'Phi-4 Mini 3.8B (Raciocínio)',
+    size: '~2,5 GB',
+    ram: '4 GB+ RAM',
+    note: 'Janela de contexto ampla para cálculos, rotas e planejamento.'
+  },
+  {
+    id: 'gemma3:4b',
+    label: 'Gemma 3 4B (Avançado PT-BR)',
+    size: '~3,3 GB',
+    ram: '6 GB+ RAM',
+    note: 'Alta qualidade em português para desktops e notebooks 8 GB+.'
+  }
+];
+
+const OLLAMA_INTERNAL_BASES = [...new Set([
+  process.env.OLLAMA_URL,
+  'http://nomad_brasil_ollama:11434',
+  'http://host.docker.internal:11434',
+  'http://127.0.0.1:11434'
+].map(u => String(u || '').trim().replace(/\/+$/, '')).filter(Boolean))];
+
+const AI_STOPWORDS = new Set([
+  'como', 'para', 'com', 'que', 'qual', 'quais', 'quem', 'onde', 'quando',
+  'uma', 'uns', 'umas', 'por', 'dos', 'das', 'nos', 'nas', 'nao', 'sim',
+  'sobre', 'fazer', 'usar', 'pode', 'posso', 'preciso', 'tem', 'esta', 'este'
+]);
+
+async function detectActiveOllama() {
+  const probes = await Promise.all(OLLAMA_INTERNAL_BASES.map(async (baseUrl) => {
+    try {
+      const r = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(900) });
+      if (!r.ok) return null;
+      const json = await r.json();
+      const models = Array.isArray(json?.models)
+        ? json.models.map(m => ({
+            name: String(m.name || m.model || ''),
+            sizeBytes: Number(m.size || 0)
+          })).filter(m => m.name)
+        : [];
+      return { online: true, baseUrl, models };
+    } catch {
+      return null;
+    }
+  }));
+  const firstOnline = probes.find(Boolean);
+  return firstOnline || { online: false, baseUrl: null, models: [] };
+}
+
+function tokenizeAiQuery(text) {
+  const norm = normalizeStr(text || '');
+  const parts = norm.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const tokens = parts.filter(t => t.length >= 2 && !AI_STOPWORDS.has(t));
+  return { norm, tokens: tokens.length > 0 ? [...new Set(tokens)] : parts.filter(Boolean) };
+}
+
+function buildKnowledgeDocuments(includeInventory = true) {
+  const docs = [];
+
+  for (const item of emergencies) {
+    const steps = Array.isArray(item.steps) ? item.steps.join(' ') : '';
+    const text = [item.category, item.summary, steps, item.phone ? `Telefone: ${item.phone}` : '', item.notes]
+      .filter(Boolean).join('\n');
+    docs.push({ tab: 'emergencies', module: 'Primeiros Socorros', title: item.title || item.id, text });
+  }
+
+  for (const man of survivalManuals) {
+    const secs = Array.isArray(man.sections)
+      ? man.sections.map(s => `${s.heading || ''}: ${s.content || ''}`).join('\n')
+      : '';
+    docs.push({ tab: 'survival', module: 'Manuais de Campo', title: man.title || man.id, text: `${man.category || ''}\n${secs}` });
+  }
+
+  for (const band of (radioData.bands || [])) {
+    const chans = Array.isArray(band.channels)
+      ? band.channels.map(c => `${c.channel} (${c.freq} ${c.mode}): ${c.usage}`).join('\n')
+      : '';
+    docs.push({ tab: 'telecom', module: 'Rádio & Frequências', title: band.name, text: `${band.description || ''}\n${chans}` });
+  }
+
+  if (Array.isArray(radioData.q_code) && radioData.q_code.length > 0) {
+    const qText = radioData.q_code.map(q => `${q.code}: ${q.meaning} (Ex: ${q.example})`).join('\n');
+    docs.push({ tab: 'comms', module: 'Código Q & ICAO', title: 'Códigos Q Oficiais de Rádio', text: qText });
+  }
+
+  for (const ant of (radioData.antennas || [])) {
+    const exText = Array.isArray(ant.examples) ? ant.examples.map(e => `${e.band}: ${e.total_length}`).join(' | ') : '';
+    docs.push({
+      tab: 'telecom',
+      module: 'Antenas de Campo',
+      title: ant.name,
+      text: [ant.description, ant.formula, exText, ant.instructions].filter(Boolean).join('\n')
+    });
+  }
+
+  for (const ani of venomousAnimals) {
+    const sym = Array.isArray(ani.symptoms) ? ani.symptoms.join('; ') : '';
+    const aid = Array.isArray(ani.firstAid) ? ani.firstAid.join(' ') : '';
+    docs.push({
+      tab: 'venomous',
+      module: 'Animais Peçonhentos',
+      title: ani.name,
+      text: `Veneno: ${ani.venomType || ''} | Soro: ${ani.antivenom || ''} | Habitat: ${ani.habitat || ''}\nCaracterísticas: ${ani.characteristics || ''}\nSintomas: ${sym}\nPrimeiros Socorros: ${aid}`
+    });
+  }
+
+  for (const plant of pancPlants) {
+    docs.push({
+      tab: 'plants',
+      module: 'Plantas & PANC',
+      title: plant.name,
+      text: `Identificação: ${plant.identification || ''}\nPartes comestíveis: ${plant.edibleParts || ''}\nPreparo: ${plant.preparation || ''}\nAlertas: ${plant.warnings || ''}\nUso medicinal: ${plant.medicinal || ''}`
+    });
+  }
+
+  if (includeInventory) {
+    const items = readSupplyInventory();
+    if (items.length > 0) {
+      const todayMs = Date.now();
+      const lines = items.slice(0, 40).map(it => {
+        let expNote = 'sem validade';
+        if (it.expiryDate) {
+          const days = Math.ceil((new Date(`${it.expiryDate}T12:00:00`).getTime() - todayMs) / 86400000);
+          expNote = days < 0 ? `VENCIDO (${it.expiryDate})` : (days <= 60 ? `vence em ${days}d (${it.expiryDate})` : `validade ${it.expiryDate}`);
+        }
+        return `${it.name} [${it.category}]: ${it.qty} ${it.unit}${it.kcalTotal ? `, ${it.kcalTotal} kcal` : ''}, ${expNote}`;
+      });
+      docs.push({
+        tab: 'rationing',
+        module: 'Estoque Real PEPS',
+        title: `Inventário Atual da Base (${items.length} itens)`,
+        text: `estoque inventario dispensa farmacia peps validade calorias agua suprimentos\n${lines.join('\n')}`
+      });
+    }
+  }
+
+  return docs;
+}
+
+function searchLocalKnowledgeBase(query, { includeInventory = true, limit = 5 } = {}) {
+  const { norm, tokens } = tokenizeAiQuery(query);
+  if (!norm) return [];
+  const docs = buildKnowledgeDocuments(includeInventory);
+  const scored = [];
+
+  for (const doc of docs) {
+    const titleNorm = normalizeStr(doc.title);
+    const bodyNorm = normalizeStr(`${doc.module} ${doc.text}`);
+    let score = 0;
+
+    if (norm.length >= 4 && titleNorm.includes(norm)) score += 20;
+    if (norm.length >= 4 && bodyNorm.includes(norm)) score += 10;
+
+    for (const tk of tokens) {
+      if (titleNorm.includes(tk)) score += 8;
+      if (bodyNorm.includes(tk)) score += 3;
+    }
+
+    if (score > 0) {
+      const cleanSnippet = String(doc.text || '').replace(/\s+/g, ' ').trim().slice(0, 260);
+      scored.push({
+        tab: doc.tab,
+        module: doc.module,
+        title: doc.title,
+        snippet: cleanSnippet,
+        text: String(doc.text || '').slice(0, 1400),
+        score
+      });
+    }
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit);
+}
+
+function findInstalledOllamaModel(requestedModel, installedModels) {
+  const target = String(requestedModel || AI_DEFAULT_MODEL).trim();
+  const names = (installedModels || []).map(m => m.name);
+  if (names.includes(target)) return target;
+  if (!target.includes(':') && names.includes(`${target}:latest`)) return `${target}:latest`;
+  const prefix = names.find(n => n.startsWith(`${target}:`) || n === target.split(':')[0]);
+  return prefix || null;
+}
+
+function buildFallbackRagAnswer(query, docs, aiOnline, requestedModel) {
+  const intro = aiOnline
+    ? `⚠️ O servidor Ollama local está ativo, mas o modelo **${requestedModel}** ainda não foi baixado. Clique em "Baixar Modelo" ou rode \`ollama pull ${requestedModel}\`. Enquanto isso, veja os dados verificados na base offline do NOMAD Brasil:`
+    : `📚 **Modo RAG Local (Sem LLM conectado):** O container de IA (\`nomad_brasil_ollama\`) está desligado, mas localizei estes protocolos verificados na base 100% offline do NOMAD Brasil:`;
+
+  if (!docs || docs.length === 0) {
+    return `${intro}\n\nNão encontrei referência exata para "${query}" nos guias JSON compactos. Tente buscar termos mais diretos (ex.: "hipoclorito", "jararaca", "PX canal 9", "rcp", "estoque") ou consulte a aba **Wikipédia Offline**.`;
+  }
+
+  const sections = docs.slice(0, 3).map((d, i) => `**${i + 1}. [${d.module}] ${d.title}**\n${d.text.slice(0, 650)}`);
+  return `${intro}\n\n${sections.join('\n\n')}`;
+}
+
 const KIWIX_INTERNAL_BASES = [
   'http://nomad_brasil_kiwix:8080',
   'http://host.docker.internal:8090',
@@ -2103,6 +2324,252 @@ const server = http.createServer((req, res) => {
     }).catch(() => {
       res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: false, error: 'JSON inválido' }));
+    });
+    return;
+  }
+
+  // 1.18 API: Local Offline AI Assistant (Ollama + Verified NOMAD RAG)
+  if (pathname === '/api/ai/status' && req.method === 'GET') {
+    detectActiveOllama().then((info) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        online: info.online,
+        endpoint: info.baseUrl,
+        recommendedModel: AI_DEFAULT_MODEL,
+        installedModels: info.models,
+        presets: AI_MODEL_PRESETS
+      }));
+    }).catch(() => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        online: false,
+        endpoint: null,
+        recommendedModel: AI_DEFAULT_MODEL,
+        installedModels: [],
+        presets: AI_MODEL_PRESETS
+      }));
+    });
+    return;
+  }
+
+  if (pathname === '/api/ai/pull-status' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: true, pull: globalThis.__nomadAiPullState || { active: false, model: '', phase: '', percent: 0, completedMb: 0, totalMb: 0, done: false, error: '' } }));
+    return;
+  }
+
+  if (pathname === '/api/ai/pull' && req.method === 'POST') {
+    readJsonRequestBody(req).then(async (body) => {
+      const targetModel = String(body?.model || AI_DEFAULT_MODEL).trim();
+      if (!targetModel) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'Nome do modelo obrigatório' }));
+        return;
+      }
+      const info = await detectActiveOllama();
+      if (!info.online || !info.baseUrl) {
+        res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'Ollama desligado. Execute "ativar-ia-nomad.bat" (Windows) ou "docker compose --profile ai up -d".' }));
+        return;
+      }
+      const curState = globalThis.__nomadAiPullState;
+      if (curState?.active) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, started: true, pull: curState }));
+        return;
+      }
+
+      const pullState = {
+        active: true,
+        model: targetModel,
+        phase: 'Conectando ao Ollama...',
+        percent: 0,
+        completedMb: 0,
+        totalMb: 0,
+        done: false,
+        error: ''
+      };
+      globalThis.__nomadAiPullState = pullState;
+
+      // Return immediately and stream NDJSON progress from Ollama in background
+      res.writeHead(202, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, started: true, model: targetModel, pull: pullState }));
+
+      (async () => {
+        try {
+          const pullRes = await fetch(`${info.baseUrl}/api/pull`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: targetModel, stream: true }),
+            signal: AbortSignal.timeout(900000)
+          });
+          if (!pullRes.ok || !pullRes.body) {
+            const errJson = await pullRes.json().catch(() => ({}));
+            throw new Error(errJson?.error || `HTTP ${pullRes.status} ao baixar modelo`);
+          }
+          const reader = pullRes.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = '';
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop() || '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
+              try {
+                const evt = JSON.parse(trimmed);
+                if (evt.error) throw new Error(evt.error);
+                if (evt.status) pullState.phase = String(evt.status);
+                const total = Number(evt.total || 0);
+                const completed = Number(evt.completed || 0);
+                if (total > 0) {
+                  pullState.totalMb = Math.round((total / 1048576) * 10) / 10;
+                  pullState.completedMb = Math.round((completed / 1048576) * 10) / 10;
+                  pullState.percent = Math.min(100, Math.max(0, Math.round((completed / total) * 100)));
+                }
+              } catch (parseErr) {
+                if (parseErr?.message && !String(parseErr.message).includes('JSON')) throw parseErr;
+              }
+            }
+          }
+          pullState.active = false;
+          pullState.done = true;
+          pullState.percent = 100;
+          pullState.phase = 'Concluído';
+        } catch (err) {
+          pullState.active = false;
+          pullState.done = false;
+          pullState.error = err?.message || 'Erro no download do modelo';
+        }
+      })();
+    }).catch((err) => {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: err?.message || 'Erro ao iniciar download do modelo' }));
+    });
+    return;
+  }
+
+  if (pathname === '/api/ai/chat' && req.method === 'POST') {
+    readJsonRequestBody(req).then(async (body) => {
+      const message = String(body?.message || '').trim().slice(0, 3000);
+      if (!message) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'Pergunta obrigatória' }));
+        return;
+      }
+      const requestedModel = String(body?.model || AI_DEFAULT_MODEL).trim();
+      const useLocalRag = body?.useLocalRag !== false;
+
+      let sources = useLocalRag ? searchLocalKnowledgeBase(message, { includeInventory: true, limit: 5 }) : [];
+      if (useLocalRag && sources.length < 2) {
+        try {
+          const zims = listInstalledZims().slice(0, 3);
+          const { tokens } = tokenizeAiQuery(message);
+          const term = tokens.slice(0, 3).join(' ');
+          if (term && zims.length > 0) {
+            const sugHits = await Promise.all(zims.map(async (b) => {
+              const raw = await fetchKiwixServerText(`/suggest?content=${encodeURIComponent(b.book)}&term=${encodeURIComponent(term)}`);
+              if (!raw) return null;
+              const arr = JSON.parse(raw);
+              if (!Array.isArray(arr) || arr.length === 0) return null;
+              const topTitle = decodeHtmlEntities(arr[0].value || arr[0].label || '');
+              if (!topTitle) return null;
+              return {
+                tab: 'wiki',
+                module: `Kiwix (${b.title})`,
+                title: topTitle,
+                snippet: `Artigo disponível offline no acervo ${b.title}.`,
+                text: `Artigo offline relacionado encontrado no Kiwix (${b.title}): ${topTitle}.`,
+                score: 1
+              };
+            }));
+            sugHits.filter(Boolean).slice(0, 2).forEach(h => sources.push(h));
+          }
+        } catch {}
+      }
+
+      const info = await detectActiveOllama();
+      const installedName = info.online ? findInstalledOllamaModel(requestedModel, info.models) : null;
+
+      if (info.online && info.baseUrl && installedName) {
+        const ragContext = sources.length > 0
+          ? sources.map((s, i) => `[Fonte ${i + 1} - ${s.module}: ${s.title}]\n${s.text}`).join('\n\n')
+          : 'Nenhum protocolo exato encontrado nos JSONs locais para este termo.';
+
+        const systemPrompt = [
+          'Você é o Assistente Tático Offline do NOMAD Brasil.',
+          'Responda SEMPRE em português do Brasil claro, objetivo, estruturado em passos curtos e práticos.',
+          'Priorize estritamente os fatos, frequências, dosagens e protocolos presentes no CONTEXTO LOCAL VERIFICADO abaixo.',
+          'Nunca invente doses médicas, soros antiveneno ou frequências. Se o contexto não trouxer o dado exato, diga o que falta com honestidade e recomende abrir a aba correspondente no portal.',
+          '',
+          'CONTEXTO LOCAL VERIFICADO DO NOMAD BRASIL:',
+          ragContext
+        ].join('\n');
+
+        const safeHistory = Array.isArray(body?.history)
+          ? body.history
+              .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+              .slice(-6)
+              .map(m => ({ role: m.role, content: String(m.content).slice(0, 1200) }))
+          : [];
+
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...safeHistory,
+          { role: 'user', content: message }
+        ];
+
+        try {
+          const llmRes = await fetch(`${info.baseUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: installedName,
+              messages,
+              stream: false,
+              keep_alive: '10m',
+              options: { temperature: 0.2, num_ctx: 4096 }
+            }),
+            signal: AbortSignal.timeout(45000)
+          });
+          if (llmRes.ok) {
+            const llmJson = await llmRes.json();
+            const answer = String(llmJson?.message?.content || llmJson?.response || '').trim();
+            if (answer) {
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({
+                ok: true,
+                engine: 'ollama',
+                aiOnline: true,
+                model: installedName,
+                answer,
+                sources: sources.map(({ tab, module, title, snippet }) => ({ tab, module, title, snippet }))
+              }));
+              return;
+            }
+          }
+        } catch {}
+      }
+
+      const fallbackAnswer = buildFallbackRagAnswer(message, sources, info.online, requestedModel);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        engine: 'rag_fallback',
+        aiOnline: info.online,
+        modelMissing: Boolean(info.online && !installedName),
+        model: requestedModel,
+        answer: fallbackAnswer,
+        sources: sources.map(({ tab, module, title, snippet }) => ({ tab, module, title, snippet }))
+      }));
+    }).catch(() => {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Requisição inválida para /api/ai/chat' }));
     });
     return;
   }
