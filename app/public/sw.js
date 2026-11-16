@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomad-brasil-v11';
+const CACHE_NAME = 'nomad-brasil-v12';
 const OFFLINE_URLS = [
   '/',
   '/index.html',
@@ -79,6 +79,7 @@ self.addEventListener('fetch', (event) => {
   if (
     url.pathname.startsWith('/api/streets') ||
     url.pathname === '/api/waypoints' ||
+    url.pathname === '/api/camp-board' ||
     url.pathname === '/api/nearby-support' ||
     url.pathname === '/api/maps/prefetch-city' ||
     url.pathname.startsWith('/api/kiwix/') ||

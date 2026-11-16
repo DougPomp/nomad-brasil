@@ -1708,11 +1708,22 @@
             <div class="grid-2" style="margin-top: 1rem;">
               <div class="metric-card">
                 <h4 style="color: #60a5fa; margin-bottom: 0.35rem;">📚 Estante Multi-ZIM, Wikivoyage &amp; Saúde</h4>
-                <p style="font-size: 0.82rem; color: var(--text-secondary);">Catálogo automático dos 11+ arquivos <code>.zim</code> no Kiwix (<code>/api/kiwix/books</code> e <code>/api/kiwix/resolve?category=</code>), guia turístico offline por município (Wikivoyage PT) e busca médica rápida em manuais clínicos/NHS.</p>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Catálogo automático dos 11+ arquivos <code>.zim</code> no Kiwix (<code>/api/kiwix/books</code>, <code>/api/kiwix/search</code> e <code>/api/kiwix/resolve?category=</code>), busca simultânea em todos os acervos com snippet e atalhos clínicos.</p>
               </div>
               <div class="metric-card">
                 <h4 style="color: #a78bfa; margin-bottom: 0.35rem;">📐 Azimute, Corredor 5 km, LAN QR &amp; Dossiê A4</h4>
-                <p style="font-size: 0.82rem; color: var(--text-secondary);">Parada intermediária (<code>viaLat</code>/<code>viaLng</code>) e POIs no corredor da rota (5 km), régua com azimute real/magnético e horizonte rádio, efemérides solar/lunar, modal LAN com QR Code SVG offline e impressão de dossiê A4.</p>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Parada intermediária (<code>viaLat</code>/<code>viaLng</code>) e POIs no corredor (5 km), régua azimute/rádio, efemérides solar/lunar, modal LAN com QR Code SVG offline e impressão de dossiê A4.</p>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 1rem;">
+              <div class="metric-card">
+                <h4 style="color: #f472b6; margin-bottom: 0.35rem;">📋 Mural LAN, GPX/KML &amp; Anéis de Perímetro</h4>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Quadro compartilhado na rede local (<code>/api/camp-board</code>), importador visual de trilhas <code>.gpx</code> e <code>.kml</code> no mapa offline e anéis geodésicos de raio tático (2/5/10/25 km).</p>
+              </div>
+              <div class="metric-card">
+                <h4 style="color: #f87171; margin-bottom: 0.35rem;">🔴 Visão Noturna, Rastro GPS &amp; Ficha TCCC</h4>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">Filtro monocromático vermelho noturno, gravador de rastro GPS contínuo (<em>Breadcrumb</em> com exportação GPX) e prontuário de triagem TCCC com alerta de torniquete e impressão A4.</p>
               </div>
             </div>
 
@@ -1758,7 +1769,9 @@
                       <tr><td><code>GET /api/route</code></td><td>OSRM + Cache + A* + <code>viaLat/Lng</code> + <code>corridorSupport</code></td></tr>
                       <tr><td><code>GET /api/route/gpx</code></td><td>Exportação GPX com <code>&lt;wpt&gt;</code> da parada Via</td></tr>
                       <tr><td><code>GET /api/kiwix/books</code></td><td>Catálogo JSON dos <code>.zim</code> instalados</td></tr>
+                      <tr><td><code>GET /api/kiwix/search</code></td><td>Busca unificada simultânea Multi-ZIM</td></tr>
                       <tr><td><code>GET /api/kiwix/resolve</code></td><td>Ponte por <code>?book=</code> ou <code>?category=</code> (:8090)</td></tr>
+                      <tr><td><code>GET/POST/DELETE /api/camp-board</code></td><td>Mural de avisos compartilhado na LAN</td></tr>
                     </tbody>
                   </table>
                 </div>

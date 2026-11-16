@@ -2284,3 +2284,13 @@ select option:checked, select option:hover {
   letter-spacing: -0.02em;
 }
 
+/* Red Tactical Night Vision Filter (preserves dark-adapted scotopic vision) */
+html.night-vision-mode {
+  filter: sepia(100%) saturate(450%) hue-rotate(315deg) brightness(0.78) contrast(1.12);
+}
+.night-vision-toggle-btn.active {
+  background: rgba(239, 68, 68, 0.24) !important;
+  border-color: rgba(239, 68, 68, 0.7) !important;
+  color: #fca5a5 !important;
+}
+

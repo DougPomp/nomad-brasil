@@ -1644,6 +1644,52 @@ function readJsonRequestBody(req, maxBytes = 2 * 1024 * 1024) {
   });
 }
 
+const campBoardFile = path.join(STORAGE_PATH, 'camp_board.json');
+
+function readCampBoard() {
+  if (!fs.existsSync(campBoardFile)) return [];
+  try {
+    const parsed = JSON.parse(fs.readFileSync(campBoardFile, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCampBoard(entries) {
+  fs.mkdirSync(path.dirname(campBoardFile), { recursive: true });
+  fs.writeFileSync(campBoardFile, JSON.stringify(entries, null, 2), 'utf8');
+}
+
+function decodeHtmlEntities(str) {
+  return String(str || '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;|&apos;/gi, "'")
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const KIWIX_INTERNAL_BASES = [
+  'http://nomad_brasil_kiwix:8080',
+  'http://host.docker.internal:8090',
+  'http://127.0.0.1:8090'
+];
+
+async function fetchKiwixServerText(relPath) {
+  for (const base of KIWIX_INTERNAL_BASES) {
+    try {
+      const r = await fetch(`${base}${relPath}`, { signal: AbortSignal.timeout(2500) });
+      if (r.ok) return await r.text();
+    } catch {}
+  }
+  return null;
+}
+
 const server = http.createServer((req, res) => {
   const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = decodeURIComponent(urlObj.pathname);
@@ -1678,6 +1724,7 @@ const server = http.createServer((req, res) => {
       : 0;
     const detailTilesCachedCount = countFilesRecursive(path.join(STORAGE_PATH, 'maps', 'detail_tiles_cache'), '.pbf');
     const zims = listInstalledZims();
+    const campBoardEntries = readCampBoard();
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -1697,6 +1744,7 @@ const server = http.createServer((req, res) => {
         routesCachedCount,
         detailTilesCachedCount,
         zimFilesCount: zims.length,
+        campBoardCount: campBoardEntries.length,
         primaryZimBook: zims[0]?.book || 'wikipedia_pt_all_maxi_2026-05'
       },
       port: PORT,
@@ -1749,6 +1797,65 @@ const server = http.createServer((req, res) => {
     }
   }
 
+  // 1.15 API: Shared LAN Camp Board / Operational Log
+  if (pathname === '/api/camp-board') {
+    if (req.method === 'GET') {
+      const entries = readCampBoard();
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, count: entries.length, entries }));
+      return;
+    }
+    if (req.method === 'POST') {
+      readJsonRequestBody(req).then((body) => {
+        const msg = String(body?.message || '').trim();
+        if (!msg) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, error: 'Mensagem obrigatória' }));
+          return;
+        }
+        const validCats = new Set(['alert', 'qth', 'supply', 'radio', 'log']);
+        const catRaw = String(body?.category || 'log').trim().toLowerCase();
+        const latRaw = body?.lat;
+        const lngRaw = body?.lng;
+        const lat = (latRaw !== null && latRaw !== undefined && latRaw !== '' && !isNaN(Number(latRaw))) ? Number(latRaw) : null;
+        const lng = (lngRaw !== null && lngRaw !== undefined && lngRaw !== '' && !isNaN(Number(lngRaw))) ? Number(lngRaw) : null;
+
+        const entry = {
+          id: `cb_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          author: String(body?.author || 'Operador').trim().slice(0, 40) || 'Operador',
+          category: validCats.has(catRaw) ? catRaw : 'log',
+          message: msg.slice(0, 500),
+          lat,
+          lng,
+          createdAt: new Date().toISOString()
+        };
+        const entries = readCampBoard();
+        entries.unshift(entry);
+        const trimmed = entries.slice(0, 100);
+        writeCampBoard(trimmed);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, entry, count: trimmed.length }));
+      }).catch(() => {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'JSON inválido' }));
+      });
+      return;
+    }
+    if (req.method === 'DELETE') {
+      const targetId = (urlObj.searchParams.get('id') || '').trim();
+      let entries = readCampBoard();
+      if (targetId === 'all') {
+        entries = [];
+      } else if (targetId) {
+        entries = entries.filter(e => e.id !== targetId);
+      }
+      writeCampBoard(entries);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, count: entries.length }));
+      return;
+    }
+  }
+
   // 1.2 API: Offline Kiwix URL Resolver & Bookshelf
   if (pathname === '/api/kiwix/resolve') {
     const q = (urlObj.searchParams.get('q') || '').trim();
@@ -1796,6 +1903,94 @@ const server = http.createServer((req, res) => {
       port: 8090,
       books: zims
     }));
+    return;
+  }
+
+  if (pathname === '/api/kiwix/search') {
+    const q = (urlObj.searchParams.get('q') || '').trim();
+    const catFilter = (urlObj.searchParams.get('category') || '').trim().toLowerCase();
+    if (!q) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, query: '', total: 0, results: [] }));
+      return;
+    }
+
+    (async () => {
+      const hostHeader = (req.headers.host || 'localhost').split(':')[0];
+      let zims = listInstalledZims();
+      if (catFilter && catFilter !== 'all') {
+        zims = zims.filter(z => z.category === catFilter);
+      }
+      // Prioritize a balanced mix across top categories (Wikipedia, Medicine, Travel, Books, NHS/FAS/CDC)
+      const selectedBooks = zims.slice(0, 8);
+
+      const perBookResults = await Promise.all(selectedBooks.map(async (b) => {
+        const items = [];
+        const searchHtml = await fetchKiwixServerText(`/search?content=${encodeURIComponent(b.book)}&pattern=${encodeURIComponent(q)}&pageLength=4`);
+        if (searchHtml) {
+          const liRegex = /<li>[\s\S]*?<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>(?:[\s\S]*?<cite>([\s\S]*?)<\/cite>)?[\s\S]*?<\/li>/gi;
+          let m;
+          while ((m = liRegex.exec(searchHtml)) !== null && items.length < 4) {
+            const rawHref = m[1];
+            if (!rawHref || rawHref.startsWith('#')) continue;
+            const title = decodeHtmlEntities(m[2]);
+            if (!title) continue;
+            const snippet = decodeHtmlEntities(m[3] || '');
+            const prefix = `/content/${b.book}/`;
+            let relPath = rawHref.startsWith(prefix) ? rawHref.slice(prefix.length) : rawHref.replace(/^\/+/, '');
+            try { relPath = decodeURIComponent(relPath); } catch {}
+            items.push({
+              book: b.book,
+              bookTitle: b.title,
+              category: b.category,
+              icon: b.icon,
+              title,
+              path: relPath,
+              articleUrl: `http://${hostHeader}:8090${rawHref}`,
+              snippet: snippet.slice(0, 220)
+            });
+          }
+        }
+        if (items.length === 0) {
+          const suggestJson = await fetchKiwixServerText(`/suggest?content=${encodeURIComponent(b.book)}&term=${encodeURIComponent(q)}`);
+          if (suggestJson) {
+            try {
+              const sug = JSON.parse(suggestJson);
+              if (Array.isArray(sug)) {
+                for (const s of sug.slice(0, 3)) {
+                  const title = decodeHtmlEntities(s.value || s.label || '');
+                  const relPath = String(s.path || s.value || '').trim();
+                  if (!title || !relPath) continue;
+                  items.push({
+                    book: b.book,
+                    bookTitle: b.title,
+                    category: b.category,
+                    icon: b.icon,
+                    title,
+                    path: relPath,
+                    articleUrl: `http://${hostHeader}:8090/content/${encodeURIComponent(b.book)}/${encodeURIComponent(relPath)}`,
+                    snippet: ''
+                  });
+                }
+              }
+            } catch {}
+          }
+        }
+        return items;
+      }));
+
+      const flattened = perBookResults.flat();
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        query: q,
+        total: flattened.length,
+        results: flattened
+      }));
+    })().catch(() => {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Falha ao consultar Kiwix Multi-ZIM', results: [] }));
+    });
     return;
   }
 

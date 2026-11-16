@@ -169,6 +169,10 @@ async function loadData() {
     window.nomadStatusData = statusData;
     window.nomadPrimaryZimBook = (statusData.datasets && statusData.datasets.primaryZimBook) || 'wikipedia_pt_all_maxi_2026-05';
     window.nomadLanIps = Array.isArray(statusData.lanIps) ? statusData.lanIps : [];
+    const cbBadge = document.getElementById('camp-board-badge');
+    if (cbBadge && statusData.datasets && typeof statusData.datasets.campBoardCount === 'number') {
+      cbBadge.textContent = String(statusData.datasets.campBoardCount);
+    }
     renderStatusSummaryFromData(statusData);
     if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
 
@@ -514,6 +518,7 @@ function initMap() {
 
     mapInstance.on('load', () => {
       ensureStreetHighlightLayer();
+      if (typeof renderGpsBreadcrumbTrack === 'function') renderGpsBreadcrumbTrack(false);
     });
 
     // Render POIs & User Waypoints once map is ready
@@ -534,6 +539,12 @@ function initMap() {
       // If Tactical Measure tool is active
       if (typeof tacticalMeasureActive !== 'undefined' && tacticalMeasureActive) {
         addTacticalMeasurePoint(lat, lng);
+        return;
+      }
+
+      // If Tactical Range Rings tool is active
+      if (typeof rangeRingsPickActive !== 'undefined' && rangeRingsPickActive) {
+        renderRangeRingsAt(lat, lng, 'Ponto Selecionado');
         return;
       }
 
@@ -2252,30 +2263,218 @@ window.exportWaypointsJson = function() {
   a.click();
 };
 
-window.handleImportWaypoints = function(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+let importedTrackMarkers = [];
+let importedTrackCoords = [];
 
+window.clearImportedTrack = function() {
+  importedTrackCoords = [];
+  importedTrackMarkers.forEach(m => m.remove());
+  importedTrackMarkers = [];
+  if (mapInstance && mapInstance.getSource('imported-track-source')) {
+    mapInstance.getSource('imported-track-source').setData({ type: 'FeatureCollection', features: [] });
+  }
+  const summaryEl = document.getElementById('imported-track-summary');
+  if (summaryEl) {
+    summaryEl.style.display = 'none';
+    summaryEl.innerHTML = '';
+  }
+  const clearBtn = document.getElementById('btn-clear-imported-track');
+  if (clearBtn) clearBtn.style.display = 'none';
+};
+
+function renderImportedTrackOnMap(coords, label, wptsAdded) {
+  if (!mapInstance) {
+    initMap();
+    setTimeout(() => renderImportedTrackOnMap(coords, label, wptsAdded), 350);
+    return;
+  }
+  if (!mapInstance.getSource('imported-track-source')) {
+    mapInstance.addSource('imported-track-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    });
+    mapInstance.addLayer({
+      id: 'imported-track-layer',
+      type: 'line',
+      source: 'imported-track-source',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': '#e879f9',
+        'line-width': 4,
+        'line-opacity': 0.9
+      }
+    });
+  }
+
+  importedTrackMarkers.forEach(m => m.remove());
+  importedTrackMarkers = [];
+  importedTrackCoords = coords;
+
+  mapInstance.getSource('imported-track-source').setData({
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: coords }
+    }]
+  });
+
+  if (typeof maplibregl !== 'undefined' && coords.length >= 1) {
+    const mkStart = document.createElement('div');
+    mkStart.style.cssText = 'background:#c026d3;color:#fff;border:2px solid #fff;border-radius:50%;width:22px;height:22px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;';
+    mkStart.textContent = 'I';
+    importedTrackMarkers.push(
+      new maplibregl.Marker({ element: mkStart })
+        .setLngLat(coords[0])
+        .setPopup(new maplibregl.Popup({ offset: 14 }).setHTML(`<strong>Início da Trilha:</strong> ${escapeHtmlSafe(label)}`))
+        .addTo(mapInstance)
+    );
+
+    const mkEnd = document.createElement('div');
+    mkEnd.style.cssText = 'background:#701a75;color:#fff;border:2px solid #fff;border-radius:50%;width:22px;height:22px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;';
+    mkEnd.textContent = 'F';
+    importedTrackMarkers.push(
+      new maplibregl.Marker({ element: mkEnd })
+        .setLngLat(coords[coords.length - 1])
+        .setPopup(new maplibregl.Popup({ offset: 14 }).setHTML(`<strong>Fim da Trilha:</strong> ${escapeHtmlSafe(label)}`))
+        .addTo(mapInstance)
+    );
+  }
+
+  let totalKm = 0;
+  for (let i = 1; i < coords.length; i++) {
+    totalKm += getDistanceFromLatLonInKm(coords[i - 1][1], coords[i - 1][0], coords[i][1], coords[i][0]);
+  }
+
+  const summaryEl = document.getElementById('imported-track-summary');
+  if (summaryEl) {
+    summaryEl.style.display = 'flex';
+    summaryEl.innerHTML = `
+      <div class="text-xs font-bold text-fuchsia-300">📂 Trilha: ${escapeHtmlSafe(label)}</div>
+      <div class="text-xs text-gray-300">Extensão: <strong class="font-mono text-white">${totalKm.toFixed(2)} km</strong> &bull; ${coords.length} vértices${wptsAdded > 0 ? ` &bull; +${wptsAdded} waypoints` : ''}</div>
+    `;
+  }
+  const clearBtn = document.getElementById('btn-clear-imported-track');
+  if (clearBtn) clearBtn.style.display = 'inline-flex';
+
+  const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
+  mapInstance.fitBounds(bounds, { padding: { top: 80, bottom: 80, left: 400, right: 80 }, maxZoom: 15, duration: 1200 });
+}
+
+function parseAndImportGeoFile(content, filename) {
+  const lower = String(filename || '').toLowerCase();
+  if (lower.endsWith('.json')) {
+    const parsed = JSON.parse(content);
+    const arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.waypoints) ? parsed.waypoints : []);
+    const valid = arr.filter(w => w && !isNaN(Number(w.lat)) && !isNaN(Number(w.lng)));
+    if (valid.length === 0) throw new Error('Nenhum marcador válido encontrado neste JSON.');
+    userWaypoints = [...userWaypoints, ...valid];
+    saveUserWaypointsToStorage();
+    return { wptsAdded: valid.length, trackCoords: [] };
+  }
+
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(content, 'application/xml');
+  if (xml.querySelector('parsererror')) {
+    throw new Error('XML GPX/KML malformado.');
+  }
+
+  const importedWpts = [];
+  const trackCoords = [];
+
+  if (lower.endsWith('.gpx')) {
+    xml.querySelectorAll('wpt').forEach((w, idx) => {
+      const lat = parseFloat(w.getAttribute('lat'));
+      const lng = parseFloat(w.getAttribute('lon'));
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const name = (w.querySelector('name')?.textContent || `Ponto GPX ${idx + 1}`).trim();
+        importedWpts.push({
+          id: `wpt_gpx_${Date.now()}_${idx}`,
+          name: name.slice(0, 120),
+          category: 'rendezvous',
+          lat,
+          lng,
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
+    const pts = xml.querySelectorAll('trkpt, rtept');
+    pts.forEach(p => {
+      const lat = parseFloat(p.getAttribute('lat'));
+      const lng = parseFloat(p.getAttribute('lon'));
+      if (!isNaN(lat) && !isNaN(lng)) trackCoords.push([lng, lat]);
+    });
+  } else if (lower.endsWith('.kml')) {
+    const parseCoordStr = (str) => String(str || '').trim().split(/\s+/).map(tok => {
+      const parts = tok.split(',').map(Number);
+      return (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) ? [parts[0], parts[1]] : null;
+    }).filter(Boolean);
+
+    xml.querySelectorAll('Placemark').forEach((pm, idx) => {
+      const pmName = (pm.querySelector('name')?.textContent || `Ponto KML ${idx + 1}`).trim();
+      const ptEl = pm.querySelector('Point > coordinates');
+      if (ptEl) {
+        const coords = parseCoordStr(ptEl.textContent);
+        if (coords.length > 0) {
+          importedWpts.push({
+            id: `wpt_kml_${Date.now()}_${idx}`,
+            name: pmName.slice(0, 120),
+            category: 'rendezvous',
+            lat: coords[0][1],
+            lng: coords[0][0],
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+      pm.querySelectorAll('LineString > coordinates').forEach(ls => {
+        const linePts = parseCoordStr(ls.textContent);
+        linePts.forEach(c => trackCoords.push(c));
+      });
+    });
+    if (trackCoords.length === 0) {
+      xml.querySelectorAll('LineString > coordinates').forEach(ls => {
+        parseCoordStr(ls.textContent).forEach(c => trackCoords.push(c));
+      });
+    }
+  } else {
+    throw new Error('Use arquivos .gpx, .kml ou .json.');
+  }
+
+  if (importedWpts.length > 0) {
+    userWaypoints = [...userWaypoints, ...importedWpts];
+    saveUserWaypointsToStorage();
+  }
+  if (trackCoords.length >= 2) {
+    renderImportedTrackOnMap(trackCoords, filename, importedWpts.length);
+  } else if (importedWpts.length > 0 && mapInstance) {
+    flyToCoords(importedWpts[0].lat, importedWpts[0].lng, importedWpts[0].name, 13);
+  }
+  return { wptsAdded: importedWpts.length, trackCoords };
+}
+
+window.handleImportTrackOrWaypoints = function(event) {
+  const file = event && event.target && event.target.files ? event.target.files[0] : null;
+  if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const content = e.target.result;
-      if (file.name.endsWith('.json')) {
-        const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-          userWaypoints = [...userWaypoints, ...parsed];
-          saveUserWaypointsToStorage();
-          alert(`${parsed.length} marcadores importados com sucesso!`);
-        }
+      const result = parseAndImportGeoFile(e.target.result, file.name);
+      if (result.trackCoords.length < 2 && result.wptsAdded === 0) {
+        alert('Nenhuma trilha ou marcador válido encontrado no arquivo.');
+      } else if (result.trackCoords.length >= 2 && result.wptsAdded === 0) {
+        if (currentTab !== 'map') switchTab('map');
       } else {
-        alert('Formato de importação: utilize arquivos .json');
+        alert(`Importação concluída: ${result.trackCoords.length} pontos de trilha e ${result.wptsAdded} marcadores.`);
       }
     } catch (err) {
-      alert('Erro ao processar arquivo: ' + err.message);
+      alert('Erro ao importar arquivo: ' + (err.message || err));
+    } finally {
+      if (event && event.target) event.target.value = '';
     }
   };
   reader.readAsText(file);
 };
+
+window.handleImportWaypoints = window.handleImportTrackOrWaypoints;
 
 /* ========================================================
    MODULE 3: TACTICAL RATIONING & FOOD SUPPLY CALCULATOR
@@ -4808,12 +5007,14 @@ window.exportFullTacticalBackup = function() {
 
   const payload = {
     app: 'nomad-brasil',
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     waypoints: Array.isArray(userWaypoints) ? userWaypoints : [],
     pef: safeParse('nomad_pef_data_v1'),
     bob: safeParse('nomad_bob_checked_state_v1'),
-    pace: safeParse('nomad_pace_plan_v1')
+    pace: safeParse('nomad_pace_plan_v1'),
+    tccc: safeParse('nomad_tccc_cards_v1') || [],
+    breadcrumb: safeParse('nomad_gps_breadcrumb_v1') || []
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -4830,7 +5031,7 @@ window.exportFullTacticalBackup = function() {
   const msgEl = document.getElementById('backup-status-message');
   if (msgEl) {
     msgEl.className = 'text-xs text-emerald-400 mt-3';
-    msgEl.textContent = `✅ Backup exportado (${payload.waypoints.length} waypoints, PEF, BOB e PACE).`;
+    msgEl.textContent = `✅ Backup exportado (${payload.waypoints.length} waypoints, PEF, BOB, PACE, ${payload.tccc.length} fichas TCCC).`;
   }
 };
 
@@ -4873,8 +5074,20 @@ window.importFullTacticalBackup = function(event) {
         restoredSections.push('PACE');
       }
 
+      if (Array.isArray(parsed.tccc)) {
+        localStorage.setItem('nomad_tccc_cards_v1', JSON.stringify(parsed.tccc));
+        if (typeof window.renderTcccCardsList === 'function') window.renderTcccCardsList();
+        restoredSections.push(`Fichas TCCC (${parsed.tccc.length})`);
+      }
+
+      if (Array.isArray(parsed.breadcrumb)) {
+        localStorage.setItem('nomad_gps_breadcrumb_v1', JSON.stringify(parsed.breadcrumb));
+        if (typeof window.reloadGpsBreadcrumbFromStorage === 'function') window.reloadGpsBreadcrumbFromStorage();
+        restoredSections.push(`Rastro (${parsed.breadcrumb.length} pts)`);
+      }
+
       if (restoredSections.length === 0) {
-        throw new Error('Nenhum bloco reconhecido (waypoints, pef, bob, pace) encontrado neste arquivo.');
+        throw new Error('Nenhum bloco reconhecido (waypoints, pef, bob, pace, tccc) encontrado neste arquivo.');
       }
 
       if (msgEl) {
@@ -5132,7 +5345,10 @@ window.toggleTacticalMeasure = function(force) {
   const hud = document.getElementById('tactical-measure-hud');
   if (btn) btn.classList.toggle('active', tacticalMeasureActive);
   if (hud) hud.style.display = tacticalMeasureActive ? 'block' : 'none';
-  if (tacticalMeasureActive && typeof cancelMapPick === 'function') cancelMapPick();
+  if (tacticalMeasureActive) {
+    if (typeof rangeRingsPickActive !== 'undefined' && rangeRingsPickActive) window.toggleRangeRingsTool(false);
+    if (typeof cancelMapPick === 'function') cancelMapPick();
+  }
   if (mapInstance && mapInstance.getCanvas()) {
     mapInstance.getCanvas().style.cursor = tacticalMeasureActive ? 'crosshair' : '';
   }
@@ -5688,6 +5904,708 @@ window.printCurrentRouteDossier = function() {
   }
 };
 
+// =====================================================================
+// 38. MURAL DE OPERAÇÕES COMPARTILHADO NA REDE LOCAL (CAMP BOARD LAN)
+// =====================================================================
+
+const CAMP_BOARD_CAT_META = {
+  alert: { label: '🚨 ALERTA', color: '#ef4444' },
+  qth: { label: '📍 QTH / POSIÇÃO', color: '#38bdf8' },
+  supply: { label: '💧 SUPRIMENTOS', color: '#34d399' },
+  radio: { label: '📻 RÁDIO / QAP', color: '#c084fc' },
+  log: { label: '📝 LOG TURNO', color: '#fbbf24' }
+};
+
+window.openCampBoardModal = function() {
+  const modal = document.getElementById('camp-board-modal');
+  if (modal) modal.style.display = 'flex';
+  try {
+    const savedAuthor = localStorage.getItem('nomad_cb_author_v1');
+    const authorInput = document.getElementById('cb-author-input');
+    if (savedAuthor && authorInput && !authorInput.value) authorInput.value = savedAuthor;
+  } catch {}
+  window.loadCampBoardEntries();
+};
+
+window.closeCampBoardModal = function() {
+  const modal = document.getElementById('camp-board-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.setCampBoardCoordsFromMap = function() {
+  if (!mapInstance) {
+    alert('Abra o mapa antes de capturar o centro atual.');
+    return;
+  }
+  const c = mapInstance.getCenter();
+  const latIn = document.getElementById('cb-lat-input');
+  const lngIn = document.getElementById('cb-lng-input');
+  if (latIn) latIn.value = c.lat.toFixed(5);
+  if (lngIn) lngIn.value = c.lng.toFixed(5);
+};
+
+window.loadCampBoardEntries = async function() {
+  const listEl = document.getElementById('camp-board-list');
+  const badgeEl = document.getElementById('camp-board-badge');
+  try {
+    const res = await fetch('/api/camp-board');
+    const data = await res.json();
+    const entries = Array.isArray(data.entries) ? data.entries : [];
+    if (badgeEl) badgeEl.textContent = String(entries.length);
+    if (!listEl) return;
+    if (entries.length === 0) {
+      listEl.innerHTML = '<div class="text-xs text-gray-500 text-center py-4">Nenhum aviso publicado no mural LAN até o momento.</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    entries.forEach(entry => {
+      const meta = CAMP_BOARD_CAT_META[entry.category] || CAMP_BOARD_CAT_META.log;
+      const card = document.createElement('div');
+      card.style.cssText = `background:rgba(15,20,26,0.92);border:1px solid var(--border);border-left:4px solid ${meta.color};border-radius:8px;padding:0.6rem 0.75rem;`;
+      const when = entry.createdAt ? new Date(entry.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+      const hasCoords = typeof entry.lat === 'number' && typeof entry.lng === 'number';
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.25rem;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:10px;font-weight:800;color:${meta.color};">${meta.label}</span>
+            <strong class="text-xs text-white">${escapeHtmlSafe(entry.author || 'Operador')}</strong>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span class="text-[11px] font-mono text-gray-400">${escapeHtmlSafe(when)}</span>
+            <button type="button" data-cb-del="${escapeHtmlSafe(entry.id)}" class="text-xs text-red-400" style="background:none;border:none;cursor:pointer;" title="Remover aviso">🗑️</button>
+          </div>
+        </div>
+        <div class="text-xs text-gray-200" style="white-space:pre-wrap;line-height:1.45;">${escapeHtmlSafe(entry.message)}</div>
+        ${hasCoords ? `<div style="margin-top:0.4rem;"><button type="button" data-cb-fly="1" class="chip-btn" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#38bdf8;border-color:rgba(56,189,248,0.4);">📍 Ver no Mapa (${entry.lat.toFixed(4)}, ${entry.lng.toFixed(4)})</button></div>` : ''}
+      `;
+      card.querySelector('[data-cb-del]')?.addEventListener('click', () => window.deleteCampBoardEntry(entry.id));
+      if (hasCoords) {
+        card.querySelector('[data-cb-fly]')?.addEventListener('click', () => {
+          window.closeCampBoardModal();
+          switchTab('map');
+          flyToCoords(entry.lat, entry.lng, `${entry.author}: ${entry.message.slice(0, 40)}`, 14);
+        });
+      }
+      listEl.appendChild(card);
+    });
+  } catch (e) {
+    if (listEl) listEl.innerHTML = '<div class="text-xs text-red-400 text-center py-3">Falha ao carregar avisos de /api/camp-board.</div>';
+  }
+};
+
+window.postCampBoardEntry = async function() {
+  const authorEl = document.getElementById('cb-author-input');
+  const catEl = document.getElementById('cb-cat-select');
+  const msgEl = document.getElementById('cb-msg-input');
+  const latEl = document.getElementById('cb-lat-input');
+  const lngEl = document.getElementById('cb-lng-input');
+
+  const author = (authorEl?.value || '').trim() || 'Operador';
+  const category = catEl?.value || 'log';
+  const message = (msgEl?.value || '').trim();
+  if (!message) {
+    alert('Digite uma mensagem antes de publicar no Mural LAN.');
+    return;
+  }
+  try { localStorage.setItem('nomad_cb_author_v1', author); } catch {}
+
+  try {
+    const res = await fetch('/api/camp-board', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        author,
+        category,
+        message,
+        lat: latEl?.value || null,
+        lng: lngEl?.value || null
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Erro ao publicar');
+    if (msgEl) msgEl.value = '';
+    await window.loadCampBoardEntries();
+  } catch (e) {
+    alert('Erro ao publicar no Mural LAN: ' + (e.message || e));
+  }
+};
+
+window.deleteCampBoardEntry = async function(id) {
+  try {
+    await fetch(`/api/camp-board?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await window.loadCampBoardEntries();
+  } catch {}
+};
+
+window.clearAllCampBoardEntries = async function() {
+  if (!confirm('Limpar todos os avisos do Mural LAN?')) return;
+  try {
+    await fetch('/api/camp-board?id=all', { method: 'DELETE' });
+    await window.loadCampBoardEntries();
+  } catch {}
+};
+
+// =====================================================================
+// 39. ANÉIS DE RAIO & PERÍMETRO TÁTICO NO MAPA (2 / 5 / 10 / 25 KM)
+// =====================================================================
+
+let rangeRingsPickActive = false;
+let rangeRingsCenterMarker = null;
+
+function createGeodesicCircleRing(lng, lat, radiusKm, steps = 64) {
+  const coords = [];
+  const rad = Math.PI / 180;
+  const latRad = lat * rad;
+  const dLat = (radiusKm / 6371.0) / rad;
+  const dLng = (radiusKm / (6371.0 * Math.max(0.15, Math.cos(latRad)))) / rad;
+  for (let i = 0; i <= steps; i++) {
+    const theta = (i / steps) * 2 * Math.PI;
+    coords.push([lng + dLng * Math.cos(theta), lat + dLat * Math.sin(theta)]);
+  }
+  return coords;
+}
+
+function ensureRangeRingsLayer() {
+  if (!mapInstance) return;
+  if (!mapInstance.getSource('range-rings-source')) {
+    mapInstance.addSource('range-rings-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    });
+    mapInstance.addLayer({
+      id: 'range-rings-fill',
+      type: 'fill',
+      source: 'range-rings-source',
+      paint: {
+        'fill-color': '#f59e0b',
+        'fill-opacity': 0.06
+      }
+    });
+    mapInstance.addLayer({
+      id: 'range-rings-line',
+      type: 'line',
+      source: 'range-rings-source',
+      paint: {
+        'line-color': ['get', 'color'],
+        'line-width': 2.2,
+        'line-dasharray': [2, 1.4],
+        'line-opacity': 0.9
+      }
+    });
+  }
+}
+
+window.toggleRangeRingsTool = function(force) {
+  rangeRingsPickActive = typeof force === 'boolean' ? force : !rangeRingsPickActive;
+  const btn = document.getElementById('btn-toggle-range-rings');
+  const hud = document.getElementById('range-rings-hud');
+  if (btn) btn.classList.toggle('active', rangeRingsPickActive);
+  if (hud) hud.style.display = rangeRingsPickActive ? 'block' : 'none';
+  if (rangeRingsPickActive) {
+    if (typeof toggleTacticalMeasure === 'function' && tacticalMeasureActive) toggleTacticalMeasure(false);
+    if (typeof cancelMapPick === 'function') cancelMapPick();
+    if (mapInstance && mapInstance.getCanvas()) mapInstance.getCanvas().style.cursor = 'crosshair';
+  } else {
+    if (mapInstance && mapInstance.getCanvas()) mapInstance.getCanvas().style.cursor = '';
+  }
+};
+
+window.clearRangeRings = function() {
+  if (mapInstance && mapInstance.getSource('range-rings-source')) {
+    mapInstance.getSource('range-rings-source').setData({ type: 'FeatureCollection', features: [] });
+  }
+  if (rangeRingsCenterMarker) {
+    rangeRingsCenterMarker.remove();
+    rangeRingsCenterMarker = null;
+  }
+  const statsEl = document.getElementById('range-rings-stats');
+  if (statsEl) {
+    statsEl.innerHTML = '<div>Clique no mapa ou use o centro atual para traçar anéis de 2, 5, 10 e 25 km.</div>';
+  }
+};
+
+window.renderRangeRingsAt = async function(lat, lng, label = 'Centro Tático') {
+  if (!mapInstance) {
+    initMap();
+    setTimeout(() => renderRangeRingsAt(lat, lng, label), 350);
+    return;
+  }
+  ensureRangeRingsLayer();
+  const radii = [2, 5, 10, 25];
+  const customKm = parseFloat(document.getElementById('range-ring-custom-km')?.value);
+  if (!isNaN(customKm) && customKm >= 0.5 && customKm <= 200 && !radii.includes(customKm)) {
+    radii.push(customKm);
+  }
+  radii.sort((a, b) => a - b);
+
+  const colors = ['#22d3ee', '#34d399', '#fbbf24', '#f87171', '#e879f9'];
+  const features = radii.map((r, i) => ({
+    type: 'Feature',
+    properties: { radiusKm: r, color: colors[i % colors.length] },
+    geometry: {
+      type: 'Polygon',
+      coordinates: [createGeodesicCircleRing(lng, lat, r)]
+    }
+  }));
+
+  if (mapInstance.getSource('range-rings-source')) {
+    mapInstance.getSource('range-rings-source').setData({ type: 'FeatureCollection', features });
+  }
+
+  if (rangeRingsCenterMarker) rangeRingsCenterMarker.remove();
+  if (typeof maplibregl !== 'undefined') {
+    const el = document.createElement('div');
+    el.style.cssText = 'background:#f59e0b;color:#090d10;border:2px solid #fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(245,158,11,0.8);';
+    el.textContent = '⭕';
+    rangeRingsCenterMarker = new maplibregl.Marker({ element: el })
+      .setLngLat([lng, lat])
+      .setPopup(new maplibregl.Popup({ offset: 14 }).setHTML(`<strong>${escapeHtmlSafe(label)}</strong><br><span style="font-size:11px;">Anéis: ${radii.join(', ')} km</span>`))
+      .addTo(mapInstance);
+  }
+
+  const maxR = radii[radii.length - 1];
+  let citiesInside = 0;
+  if (Array.isArray(citiesList)) {
+    citiesList.forEach(c => {
+      if (getDistanceFromLatLonInKm(lat, lng, c.lat, c.lng) <= maxR) citiesInside++;
+    });
+  }
+
+  let supportCount = 0;
+  if (Array.isArray(poisData)) {
+    supportCount = poisData.filter(p => getDistanceFromLatLonInKm(lat, lng, p.lat, p.lng) <= maxR).length;
+  }
+  try {
+    const res = await fetch(`/api/nearby-support?lat=${lat}&lng=${lng}&radiusKm=${Math.min(80, Math.round(maxR))}&category=all`);
+    if (res.ok) {
+      const items = await res.json();
+      if (Array.isArray(items)) supportCount = Math.max(supportCount, items.length);
+    }
+  } catch {}
+
+  const hud = document.getElementById('range-rings-hud');
+  if (hud) hud.style.display = 'block';
+  const btn = document.getElementById('btn-toggle-range-rings');
+  if (btn) btn.classList.add('active');
+
+  const statsEl = document.getElementById('range-rings-stats');
+  if (statsEl) {
+    statsEl.innerHTML = `
+      <div><strong>Centro:</strong> ${escapeHtmlSafe(label)} (<span class="font-mono text-amber-300">${lat.toFixed(4)}, ${lng.toFixed(4)}</span>)</div>
+      <div><strong>Anéis:</strong> <span class="font-mono text-cyan-300">${radii.map(r => r + ' km').join(' • ')}</span></div>
+      <div><strong>Perímetro (${maxR} km):</strong> ${citiesInside} município(s) &bull; ${supportCount} ponto(s) de socorro</div>
+    `;
+  }
+};
+
+window.drawRangeRingsAtCenter = function() {
+  if (!mapInstance) return;
+  const c = mapInstance.getCenter();
+  window.renderRangeRingsAt(c.lat, c.lng, 'Centro do Mapa');
+};
+
+window.drawRangeRingsForSelectedCity = function() {
+  if (!currentSelectedCity) return;
+  switchTab('map');
+  setTimeout(() => {
+    window.renderRangeRingsAt(currentSelectedCity.lat, currentSelectedCity.lng, `${currentSelectedCity.name}/${currentSelectedCity.state}`);
+    if (mapInstance) mapInstance.flyTo({ center: [currentSelectedCity.lng, currentSelectedCity.lat], zoom: 10.2, duration: 900 });
+  }, 150);
+};
+
+// =====================================================================
+// 40. BUSCA UNIFICADA MULTI-ZIM (/api/kiwix/search)
+// =====================================================================
+
+window.searchAcrossAllKiwixBooks = async function() {
+  const input = document.getElementById('kiwix-search-input');
+  const box = document.getElementById('kiwix-unified-results');
+  const q = input ? input.value.trim() : '';
+  if (!q) {
+    alert('Digite um termo para pesquisar em todos os arquivos .zim do Kiwix.');
+    return;
+  }
+  if (!box) return;
+  box.style.display = 'block';
+  box.innerHTML = '<div class="text-xs text-cyan-400 py-2">🔎 Pesquisando simultaneamente nos acervos ZIM offline...</div>';
+
+  try {
+    const res = await fetch(`/api/kiwix/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const results = Array.isArray(data.results) ? data.results : [];
+    if (results.length === 0) {
+      box.innerHTML = '<div class="text-xs text-gray-400 py-2">Nenhum artigo encontrado nos livros ZIM consultados. Tente sinônimo em PT/EN ou pesquise direto na Estante (:8090).</div>';
+      return;
+    }
+
+    box.innerHTML = `<div class="flex items-center justify-between mb-1.5"><span class="text-[11px] font-bold text-emerald-400">${results.length} resultado(s) Multi-ZIM para "${escapeHtmlSafe(q)}"</span><button type="button" onclick="document.getElementById('kiwix-unified-results').style.display='none'" class="text-xs text-gray-400" style="background:none;border:none;cursor:pointer;">✕ Fechar</button></div>`;
+    results.forEach(item => {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:0.45rem 0.55rem;border:1px solid var(--border);border-radius:6px;margin-bottom:0.35rem;cursor:pointer;background:rgba(15,20,26,0.85);';
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.4rem;">
+          <strong class="text-xs text-white">${escapeHtmlSafe(item.title)}</strong>
+          <span class="chip-btn" style="font-size:10px;padding:0.12rem 0.45rem;">${escapeHtmlSafe(item.icon || '📕')} ${escapeHtmlSafe(item.bookTitle)}</span>
+        </div>
+        ${item.snippet ? `<div style="font-size:11px;color:#94a3b8;margin-top:3px;">${escapeHtmlSafe(item.snippet)}</div>` : ''}
+      `;
+      row.addEventListener('click', () => window.openUnifiedKiwixResult(item.book, item.path));
+      box.appendChild(row);
+    });
+  } catch (e) {
+    box.innerHTML = '<div class="text-xs text-red-400 py-2">Falha ao consultar busca Multi-ZIM (/api/kiwix/search).</div>';
+  }
+};
+
+window.openUnifiedKiwixResult = function(book, articlePath) {
+  window.setActiveKiwixBookState(book);
+  const iframe = document.getElementById('kiwix-iframe');
+  const base = window.getKiwixBaseUrl();
+  if (iframe) {
+    const encodedPath = String(articlePath || '').split('/').map(seg => encodeURIComponent(seg)).join('/');
+    iframe.setAttribute('src', `${base}/content/${encodeURIComponent(book)}/${encodedPath}`);
+  }
+  const box = document.getElementById('kiwix-unified-results');
+  if (box) box.style.display = 'none';
+};
+
+// =====================================================================
+// 41. MODO VISÃO NOTURNA VERMELHA + RASTRO GPS BREADCRUMB
+// =====================================================================
+
+function applyNightVisionState(enabled) {
+  document.documentElement.classList.toggle('night-vision-mode', enabled);
+  document.querySelectorAll('.night-vision-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', enabled);
+  });
+}
+
+window.toggleNightVisionMode = function(force) {
+  const next = typeof force === 'boolean' ? force : !document.documentElement.classList.contains('night-vision-mode');
+  applyNightVisionState(next);
+  try { localStorage.setItem('nomad_night_vision_v1', next ? '1' : '0'); } catch {}
+};
+
+function initNightVisionMode() {
+  try {
+    const saved = localStorage.getItem('nomad_night_vision_v1') === '1';
+    applyNightVisionState(saved);
+  } catch {}
+}
+
+let gpsBreadcrumbPoints = [];
+let gpsWatchId = null;
+
+window.reloadGpsBreadcrumbFromStorage = function() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('nomad_gps_breadcrumb_v1') || '[]');
+    gpsBreadcrumbPoints = Array.isArray(parsed)
+      ? parsed.filter(p => p && typeof p.lat === 'number' && typeof p.lng === 'number')
+      : [];
+  } catch {
+    gpsBreadcrumbPoints = [];
+  }
+  renderGpsBreadcrumbTrack(false);
+};
+
+function saveGpsBreadcrumbToStorage() {
+  try { localStorage.setItem('nomad_gps_breadcrumb_v1', JSON.stringify(gpsBreadcrumbPoints)); } catch {}
+}
+
+function renderGpsBreadcrumbTrack(fitToBounds = false) {
+  const statsEl = document.getElementById('gps-breadcrumb-stats');
+  let totalKm = 0;
+  for (let i = 1; i < gpsBreadcrumbPoints.length; i++) {
+    totalKm += getDistanceFromLatLonInKm(
+      gpsBreadcrumbPoints[i - 1].lat, gpsBreadcrumbPoints[i - 1].lng,
+      gpsBreadcrumbPoints[i].lat, gpsBreadcrumbPoints[i].lng
+    );
+  }
+  if (statsEl) {
+    if (gpsBreadcrumbPoints.length === 0) {
+      statsEl.innerHTML = `<div>Nenhum ponto gravado. ${gpsWatchId !== null ? '<span class="text-emerald-400">GPS ativo aguardando sinal...</span>' : 'Ative o GPS Vivo ou adicione o centro do mapa.'}</div>`;
+    } else {
+      const last = gpsBreadcrumbPoints[gpsBreadcrumbPoints.length - 1];
+      statsEl.innerHTML = `
+        <div><strong>Pontos gravados:</strong> <span class="font-mono text-cyan-300">${gpsBreadcrumbPoints.length}</span> &bull; <strong>Distância:</strong> <span class="font-mono text-emerald-400">${totalKm.toFixed(2)} km</span></div>
+        <div class="text-[11px] font-mono text-gray-400">Último: ${last.lat.toFixed(5)}, ${last.lng.toFixed(5)}</div>
+      `;
+    }
+  }
+
+  if (!mapInstance) return;
+  if (!mapInstance.getSource('gps-breadcrumb-source')) {
+    mapInstance.addSource('gps-breadcrumb-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    });
+    mapInstance.addLayer({
+      id: 'gps-breadcrumb-layer',
+      type: 'line',
+      source: 'gps-breadcrumb-source',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#22d3ee', 'line-width': 3.5, 'line-opacity': 0.92 }
+    });
+  }
+
+  const coords = gpsBreadcrumbPoints.map(p => [p.lng, p.lat]);
+  const features = coords.length >= 2
+    ? [{ type: 'Feature', geometry: { type: 'LineString', coordinates: coords } }]
+    : [];
+  mapInstance.getSource('gps-breadcrumb-source').setData({ type: 'FeatureCollection', features });
+
+  if (fitToBounds && coords.length >= 2 && typeof maplibregl !== 'undefined') {
+    const b = coords.reduce((acc, c) => acc.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
+    mapInstance.fitBounds(b, { padding: 80, maxZoom: 16 });
+  }
+}
+
+window.toggleGpsBreadcrumbHud = function(force) {
+  const hud = document.getElementById('gps-breadcrumb-hud');
+  const btn = document.getElementById('btn-toggle-gps-breadcrumb');
+  if (!hud) return;
+  const show = typeof force === 'boolean' ? force : hud.style.display === 'none';
+  hud.style.display = show ? 'block' : 'none';
+  if (btn) btn.classList.toggle('active', show || gpsWatchId !== null);
+  renderGpsBreadcrumbTrack(false);
+};
+
+window.toggleGpsWatch = function() {
+  const toggleBtn = document.getElementById('btn-gps-watch-toggle');
+  if (gpsWatchId !== null) {
+    if (navigator.geolocation) navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+    if (toggleBtn) toggleBtn.textContent = '▶️ GPS Vivo';
+    renderGpsBreadcrumbTrack(false);
+    return;
+  }
+  if (!navigator.geolocation) {
+    alert('Geolocalização não suportada neste navegador. Use o botão "➕ Ponto Centro".');
+    return;
+  }
+  gpsWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const last = gpsBreadcrumbPoints[gpsBreadcrumbPoints.length - 1];
+      if (!last || getDistanceFromLatLonInKm(last.lat, last.lng, lat, lng) >= 0.015) {
+        gpsBreadcrumbPoints.push({ lat, lng, ts: new Date().toISOString() });
+        saveGpsBreadcrumbToStorage();
+        renderGpsBreadcrumbTrack(false);
+      }
+      if (mapInstance) mapInstance.panTo([lng, lat]);
+    },
+    (err) => {
+      alert('Aviso de GPS: ' + err.message);
+      gpsWatchId = null;
+      if (toggleBtn) toggleBtn.textContent = '▶️ GPS Vivo';
+      renderGpsBreadcrumbTrack(false);
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+  if (toggleBtn) toggleBtn.textContent = '⏹️ Parar GPS';
+  renderGpsBreadcrumbTrack(false);
+};
+
+window.appendMapCenterToBreadcrumb = function() {
+  if (!mapInstance) return;
+  const c = mapInstance.getCenter();
+  gpsBreadcrumbPoints.push({ lat: Number(c.lat.toFixed(6)), lng: Number(c.lng.toFixed(6)), ts: new Date().toISOString() });
+  saveGpsBreadcrumbToStorage();
+  renderGpsBreadcrumbTrack(false);
+};
+
+window.clearGpsBreadcrumb = function() {
+  if (gpsBreadcrumbPoints.length > 0 && !confirm('Limpar todo o rastro GPS gravado?')) return;
+  gpsBreadcrumbPoints = [];
+  saveGpsBreadcrumbToStorage();
+  renderGpsBreadcrumbTrack(false);
+};
+
+window.exportGpsBreadcrumbGpx = function() {
+  if (gpsBreadcrumbPoints.length < 2) {
+    alert('Grave pelo menos 2 pontos antes de exportar o rastro para GPX.');
+    return;
+  }
+  const trkpts = gpsBreadcrumbPoints
+    .map(p => `      <trkpt lat="${p.lat}" lon="${p.lng}"><time>${p.ts}</time></trkpt>`)
+    .join('\n');
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="NOMAD Brasil Breadcrumb" xmlns="http://www.topografix.com/GPX/1/1">\n  <trk>\n    <name>Rastro GPS NOMAD Brasil</name>\n    <trkseg>\n${trkpts}\n    </trkseg>\n  </trk>\n</gpx>`;
+  const blob = new Blob([gpx], { type: 'application/gpx+xml;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `rastro_gps_nomad_${new Date().toISOString().slice(0, 10)}.gpx`;
+  a.click();
+};
+
+// =====================================================================
+// 42. FICHA DE ATENDIMENTO DE CAMPO & CARTÃO DE TRIAGEM TCCC
+// =====================================================================
+
+function getSavedTcccCards() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('nomad_tccc_cards_v1') || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTcccCardsArray(cards) {
+  try { localStorage.setItem('nomad_tccc_cards_v1', JSON.stringify(cards)); } catch {}
+}
+
+window.setTcccTourniquetNow = function() {
+  const inEl = document.getElementById('tccc-tq-time');
+  if (!inEl) return;
+  const now = new Date();
+  inEl.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+};
+
+window.resetTcccForm = function() {
+  ['tccc-patient-name', 'tccc-tq-time', 'tccc-pulse', 'tccc-bp', 'tccc-rr', 'tccc-spo2', 'tccc-injuries', 'tccc-treatments'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const tqSel = document.getElementById('tccc-tq-Select');
+  if (tqSel) tqSel.value = 'Não aplicado';
+  const avpuSel = document.getElementById('tccc-avpu');
+  if (avpuSel) avpuSel.value = 'A - Alerta';
+};
+
+function readTcccFormValues() {
+  return {
+    id: `tccc_${Date.now()}`,
+    patientName: (document.getElementById('tccc-patient-name')?.value || '').trim() || 'Paciente sem identificação',
+    avpu: document.getElementById('tccc-avpu')?.value || 'A - Alerta',
+    tourniquetSite: document.getElementById('tccc-tq-Select')?.value || 'Não aplicado',
+    tourniquetTime: (document.getElementById('tccc-tq-time')?.value || '').trim(),
+    pulse: (document.getElementById('tccc-pulse')?.value || '').trim(),
+    bp: (document.getElementById('tccc-bp')?.value || '').trim(),
+    rr: (document.getElementById('tccc-rr')?.value || '').trim(),
+    spo2: (document.getElementById('tccc-spo2')?.value || '').trim(),
+    injuries: (document.getElementById('tccc-injuries')?.value || '').trim(),
+    treatments: (document.getElementById('tccc-treatments')?.value || '').trim(),
+    createdAt: new Date().toISOString()
+  };
+}
+
+function calcTourniquetElapsedNote(tqSite, tqTimeStr) {
+  if (!tqSite || tqSite === 'Não aplicado' || !tqTimeStr || !/^\d{2}:\d{2}$/.test(tqTimeStr)) return '';
+  const [hh, mm] = tqTimeStr.split(':').map(Number);
+  const now = new Date();
+  const applied = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0);
+  if (applied.getTime() > now.getTime()) applied.setDate(applied.getDate() - 1);
+  const diffMin = Math.max(0, Math.round((now.getTime() - applied.getTime()) / 60000));
+  const urgent = diffMin >= 120 ? ' 🚨 CRÍTICO (>= 2h)' : (diffMin >= 60 ? ' ⚠️ Atenção (>= 1h)' : '');
+  return `⏱️ Torniquete em ${tqSite} às ${tqTimeStr} (${diffMin} min${urgent})`;
+}
+
+window.renderTcccCardsList = function() {
+  const listEl = document.getElementById('tccc-cards-list');
+  if (!listEl) return;
+  const cards = getSavedTcccCards();
+  if (cards.length === 0) {
+    listEl.innerHTML = '<div class="text-xs text-gray-500">Nenhuma ficha TCCC registrada neste dispositivo ainda.</div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  cards.forEach(c => {
+    const tqNote = calcTourniquetElapsedNote(c.tourniquetSite, c.tourniquetTime);
+    const when = c.createdAt ? new Date(c.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:rgba(15,20,26,0.92);border:1px solid var(--border);border-left:4px solid #ef4444;border-radius:8px;padding:0.65rem 0.85rem;';
+    box.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
+        <div class="text-xs"><strong class="text-white">${escapeHtmlSafe(c.patientName)}</strong> &bull; <span class="text-cyan-300 font-mono">${escapeHtmlSafe(c.avpu)}</span> &bull; <span class="text-gray-400 font-mono">${escapeHtmlSafe(when)}</span></div>
+        <div style="display:flex;gap:0.4rem;">
+          <button type="button" data-tccc-print class="chip-btn" style="font-size:0.7rem;padding:0.2rem 0.5rem;">🖨️ Imprimir</button>
+          <button type="button" data-tccc-del class="chip-btn" style="font-size:0.7rem;padding:0.2rem 0.5rem;color:#fca5a5;">🗑️</button>
+        </div>
+      </div>
+      ${tqNote ? `<div class="text-xs font-bold text-amber-300 mb-1">${escapeHtmlSafe(tqNote)}</div>` : ''}
+      <div class="text-xs font-mono text-gray-300 mb-1">Pulso: ${escapeHtmlSafe(c.pulse || '-')} bpm | PA: ${escapeHtmlSafe(c.bp || '-')} mmHg | FR: ${escapeHtmlSafe(c.rr || '-')} irpm | SpO2: ${escapeHtmlSafe(c.spo2 || '-')}%</div>
+      ${c.injuries ? `<div class="text-xs text-gray-300"><strong>Lesões:</strong> ${escapeHtmlSafe(c.injuries)}</div>` : ''}
+      ${c.treatments ? `<div class="text-xs text-emerald-300"><strong>Condutas:</strong> ${escapeHtmlSafe(c.treatments)}</div>` : ''}
+    `;
+    box.querySelector('[data-tccc-print]')?.addEventListener('click', () => window.printTcccCardObj(c));
+    box.querySelector('[data-tccc-del]')?.addEventListener('click', () => {
+      const updated = getSavedTcccCards().filter(item => item.id !== c.id);
+      saveTcccCardsArray(updated);
+      window.renderTcccCardsList();
+    });
+    listEl.appendChild(box);
+  });
+};
+
+window.saveTcccCard = function() {
+  const card = readTcccFormValues();
+  const cards = getSavedTcccCards();
+  cards.unshift(card);
+  saveTcccCardsArray(cards.slice(0, 30));
+  window.renderTcccCardsList();
+};
+
+window.printTcccCardObj = function(c) {
+  const tqNote = calcTourniquetElapsedNote(c.tourniquetSite, c.tourniquetTime) || `${c.tourniquetSite} ${c.tourniquetTime || ''}`;
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cartão de Triagem TCCC — NOMAD Brasil</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #0f172a; font-size: 12px; padding: 16px; }
+    h1 { font-size: 18px; border-bottom: 3px solid #dc2626; padding-bottom: 4px; margin: 0 0 8px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #94a3b8; padding: 6px 8px; text-align: left; }
+    th { background: #fee2e2; width: 28%; }
+    .tq { background: #fef3c7; border: 2px solid #d97706; padding: 8px; font-weight: bold; margin: 8px 0; }
+    @media print { .no-print { display: none; } body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="margin-bottom:10px;"><button onclick="window.print()" style="padding:8px 14px;background:#dc2626;color:#fff;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">🖨️ Imprimir Ficha TCCC</button></div>
+  <h1>CARTÃO DE ATENDIMENTO DE CAMPO &amp; TRIAGEM TCCC — NOMAD BRASIL</h1>
+  <div><strong>Data/Hora Registro:</strong> ${escapeHtmlSafe(new Date(c.createdAt || Date.now()).toLocaleString('pt-BR'))}</div>
+  ${c.tourniquetSite && c.tourniquetSite !== 'Não aplicado' ? `<div class="tq">⚠️ ALERTA DE TORNIQUETE: ${escapeHtmlSafe(tqNote)}</div>` : ''}
+  <table>
+    <tr><th>Identificação / Tipo Sang.</th><td>${escapeHtmlSafe(c.patientName)}</td></tr>
+    <tr><th>Consciência (AVPU)</th><td>${escapeHtmlSafe(c.avpu)}</td></tr>
+    <tr><th>Torniquete</th><td>${escapeHtmlSafe(c.tourniquetSite)} ${c.tourniquetTime ? `às ${escapeHtmlSafe(c.tourniquetTime)}` : ''}</td></tr>
+    <tr><th>Sinais Vitais</th><td>Pulso: ${escapeHtmlSafe(c.pulse || '-')} bpm &bull; PA: ${escapeHtmlSafe(c.bp || '-')} mmHg &bull; FR: ${escapeHtmlSafe(c.rr || '-')} irpm &bull; SpO2: ${escapeHtmlSafe(c.spo2 || '-')}%</td></tr>
+    <tr><th>Lesões / Mecanismo</th><td>${escapeHtmlSafe(c.injuries || '-')}</td></tr>
+    <tr><th>Condutas / Medicações / Alergias</th><td>${escapeHtmlSafe(c.treatments || '-')}</td></tr>
+  </table>
+</body>
+</html>`;
+  const win = window.open('', '_blank', 'width=850,height=700');
+  if (win) {
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  } else {
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ficha_tccc_${Date.now()}.html`;
+    a.click();
+  }
+};
+
+window.printCurrentOrLastTcccCard = function() {
+  const nameVal = (document.getElementById('tccc-patient-name')?.value || '').trim();
+  const cards = getSavedTcccCards();
+  const cardToPrint = nameVal ? readTcccFormValues() : (cards[0] || readTcccFormValues());
+  window.printTcccCardObj(cardToPrint);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
+  initNightVisionMode();
+  window.reloadGpsBreadcrumbFromStorage();
+  window.renderTcccCardsList();
+  setInterval(() => {
+    if (getSavedTcccCards().length > 0) window.renderTcccCardsList();
+  }, 60000);
 });

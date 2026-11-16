@@ -21,11 +21,11 @@
 O **NOMAD Brasil** é uma plataforma *open source* criada para prover infraestrutura crítica de informação durante apagões prolongados, catástrofes climáticas, colapso de redes ou operações de campo em áreas remotas do território nacional.
 
 O sistema integra em uma interface tática ultra-rápida em *dark mode*:
-- **🗺️ Cartografia Vetorial Offline & Detalhe Urbano (`z=14` / Zoom 18):** Cobertura do Brasil inteiro via PMTiles (1,57 GB) com MapLibre GL JS sem depender de serviços externos, pré-carregamento em 1 clique das vias residenciais de qualquer cidade (`z=14`), cache persistente em disco, **régua tática** (distância, azimute real/magnético `-21°`, marcha e horizonte VHF/UHF) e geocodificação reversa offline (Decimal, DMS, UTM e efemérides solar/lunar).
+- **🗺️ Cartografia Vetorial Offline & Detalhe Urbano (`z=14` / Zoom 18):** Cobertura do Brasil inteiro via PMTiles (1,57 GB) com MapLibre GL JS sem depender de serviços externos, pré-carregamento em 1 clique das vias residenciais de qualquer cidade (`z=14`), cache persistente em disco, **régua tática** (distância, azimute real/magnético `-21°`, marcha e horizonte VHF/UHF), **anéis geodésicos de raio (2/5/10/25 km)**, **rastro GPS em tempo real (Breadcrumb)**, **filtro de Visão Noturna vermelha** e geocodificação reversa offline (Decimal, DMS, UTM e efemérides solar/lunar).
 - **📍 Todos os 5.571 Municípios do IBGE + 416 mil+ Logradouros (SQLite FTS5):** Busca híbrida instantânea de cidades, ruas, avenidas, rodovias (`ref`) e POIs com sinônimos brasileiros (`Av`/`Avenida`, `Dr`/`Doutor`, `15`/`XV`), Radar de Socorro próximo (`🚑 Socorro`), prioridade por proximidade e auto-aprendizado em SQLite.
-- **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline):** Roteamento por rua ou município com **parada intermediária (`Via`)**, OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, **POIs de apoio no corredor (5 km)**, exportação **GPX** e **Dossiê Tático A4 imprimível**.
-- **📚 Estante Multi-ZIM Kiwix Integrada (11+ Acervos / 23+ GB):** Wikipédia PT, Wikivoyage PT, Wikibooks PT, Wikipédia Médica PT, NHS Medicines, CDC, FAS Military Medicine e Zimgit servidos na porta 8090 com catálogo `/api/kiwix/books`, atalho Wikivoyage por município e busca médica rápida na aba de Emergências.
-- **📡 Modo Acampamento / Rede Local (LAN QR Code) & Backup Portátil:** Modal de conexão em rede local com detecção de IPs + gerador de QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `BOB` e `PACE`).
+- **🚗 Rotas Táticas Quádruplas (OSRM + Grafo A\* MVT Offline) + Importador GPX/KML:** Roteamento por rua ou município com **parada intermediária (`Via`)**, OSRM online, cache permanente em disco, **grafo A\* curva a curva 100% offline sobre tiles MVT locais (até 30 km)**, **POIs de apoio no corredor (5 km)**, importação de trilhas `.gpx`/`.kml`, exportação **GPX** e **Dossiê Tático A4 imprimível**.
+- **📚 Estante Multi-ZIM Kiwix Integrada (11+ Acervos / 23+ GB):** Wikipédia PT, Wikivoyage PT, Wikibooks PT, Wikipédia Médica PT, NHS Medicines, CDC, FAS Military Medicine e Zimgit servidos na porta 8090 com catálogo `/api/kiwix/books`, **busca unificada simultânea `/api/kiwix/search`**, atalho Wikivoyage por município e busca médica + **Ficha de Triagem TCCC (MARCHE)** imprimível na aba de Emergências.
+- **📡 Modo Acampamento / Rede Local (Mural LAN + QR Code) & Backup Portátil:** **Mural de Operações compartilhado na LAN** (`/api/camp-board` em `storage/camp_board.json`), modal de conexão em rede local com QR Code SVG 100% offline, sincronização automática dos marcadores pessoais (`storage/user_waypoints.json`) e backup completo em `.JSON` (`Waypoints`, `PEF`, `BOB`, `PACE`, `TCCC` e `Breadcrumb`).
 - **🛠️ 56 Módulos Especializados:** Guias interativos, calculadoras técnicas e protocolos operacionais para todas as dimensões de sobrevivência e autossuficiência.
 
 ---
@@ -33,10 +33,10 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 ## 🛡️ Arsenal de Módulos (56 Ferramentas)
 
 ### 1. 🗺️ Cartografia, Navegação & Deslocamento
-1. **Mapas Nacionais em Nível de Ruas (`z=14` sob Demanda & Zoom 18):** Visualizador vetorial acelerado por GPU com camada de relevo, estradas, edificações, pré-carregamento urbano em lote (`z=14`) e destaque visual da rua selecionada.
-2. **Busca Híbrida + Geocodificação Reversa Offline + Efemérides:** Motor local `brazil-streets.sqlite` com sinônimos brasileiros, inspeção de qualquer ponto do mapa com coordenadas **Decimal / DMS / UTM**, cálculo astronômico offline de **nascer/pôr do sol, crepúsculo civil e fase lunar**, além da **Régua Tática (`📐 Medir`)** com azimute real/magnético e horizonte de linha de visada para rádio.
-3. **Planejador de Rotas & Evacuação (OSRM + Grafo A\* Offline + Via + Dossiê A4):** Autocomplete de ruas/cidades com parada intermediária (`Via`), cálculo offline curva a curva sobre tiles MVT locais em deslocamentos curtos, **POIs de segurança ao longo de 5 km do corredor**, estimativa de combustível/água/calorias, exportação GPX e **impressão de Dossiê Tático A4**.
-4. **Radar de Socorro Próximo, Waypoints Persistentes & LAN QR:** Escaneamento instantâneo de hospitais, bombeiros/SAMU, PRF, postos e fontes de água em raios de `10`, `25` ou `50 km`, marcadores salvos no servidor (`user_waypoints.json`), backup completo em `.JSON` e compartilhamento rápido via QR Code na rede local.
+1. **Mapas Nacionais em Nível de Ruas (`z=14` sob Demanda & Zoom 18 + Visão Noturna + Breadcrumb):** Visualizador vetorial acelerado por GPU com camada de relevo, estradas, edificações, pré-carregamento urbano em lote (`z=14`), filtro monocromático vermelho noturno e gravação contínua de rastro GPS (`🛰️ Rastro`) exportável em `.gpx`.
+2. **Busca Híbrida + Geocodificação Reversa Offline + Efemérides + Anéis de Raio:** Motor local `brazil-streets.sqlite` com sinônimos brasileiros, inspeção de qualquer ponto do mapa (**Decimal / DMS / UTM**), cálculo astronômico offline (**alvorada/crepúsculo, sol e fase lunar**), **Régua Tática (`📐 Medir`)** e **Anéis Geodésicos de Perímetro (`⭕ Raios` 2/5/10/25 km)**.
+3. **Planejador de Rotas & Evacuação (OSRM + Grafo A\* Offline + Via + GPX/KML + Dossiê A4):** Autocomplete de ruas/cidades com parada intermediária (`Via`), cálculo offline curva a curva sobre tiles MVT locais, **POIs de segurança ao longo de 5 km do corredor**, **importador visual de trilhas `.gpx`/`.kml`**, exportação GPX e **impressão de Dossiê Tático A4**.
+4. **Radar de Socorro Próximo, Waypoints Persistentes, Mural LAN & QR Code:** Escaneamento instantâneo de hospitais, bombeiros/SAMU, PRF, postos e água em raios de `10`, `25` ou `50 km`, marcadores salvos no servidor (`user_waypoints.json`), **Mural compartilhado na LAN (`camp_board.json`)**, backup completo em `.JSON` e QR Code offline.
 5. **Bússola Digital & Orientação Natural:** Rumo magnético, orientação solar por sombra de vareta e método analógico do relógio.
 6. **Navegação Celeste (Hemisfério Sul):** Localização do Sul verdadeiro pelo Cruzeiro do Sul e constelação de Órion.
 7. **Topografia de Expedição & Triangulação:** Leitura de cartas topográficas, cálculo de declividade e triangulação com bússola.
@@ -45,7 +45,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 
 ### 2. 🩹 Primeiros Socorros & Atendimento Pré-Hospitalar (APH)
 10. **Protocolos Imediatos de Suporte Básico:** Guias passo a passo para RCP (Parada Cardíaca), Manobra de Heimlich, Queimaduras e Convulsões.
-11. **Trauma Grave — Protocolo TCCC / MARCHE:** Aplicação de torniquete tático, curativo compressivo israelense, selo de tórax valvulado e combate à hipotermia.
+11. **Trauma Grave — Protocolo TCCC / MARCHE & Ficha de Triagem:** Aplicação de torniquete tático, curativo compressivo israelense, selo de tórax valvulado, combate à hipotermia e **Ficha de Atendimento de Campo TCCC** com cronômetro de torniquete, sinais vitais e impressão A4 para resgate.
 12. **Animais Peçonhentos do Brasil:** Identificação visual, tipo de veneno (crotálico, botrópico, elapídico) e soro antiofídico correspondente para Jararaca, Cascavel, Surucucu, Coral, Escorpiões e Aranhas.
 13. **Fraturas, Luxações & Tração Óssea:** Protocolo de redução e alinhamento com talas rígidas e tração cutânea com teste obrigatório de **PMS** (Pulso, Motricidade, Sensibilidade).
 14. **Suturas & Tratamento de Feridas na Mata:** Técnicas de assepsia de campo, aproximação com tiras adesivas, pontos simples e curativos com mel puro.
@@ -168,16 +168,16 @@ nomad-brasil/
 │   │   ├── survival.json       # Manuais técnicos de resiliência e campo
 │   │   └── routes_cache/       # Cache permanente em disco de todas as rotas traçadas
 │   └── public/
-│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, régua tática e modal LAN QR
-│       ├── styles.css          # Design system com sidebar tática e controles escuros
-│       ├── app.js              # Mapas, reversa, prefetch z=14, socorro, rotas + Via, régua azimute/rádio, efemérides, QR SVG e dossiê A4
-│       ├── sw.js               # Service Worker PWA (v11) para operação offline e Network-First nas APIs
+│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, Mural LAN, TCCC e Visão Noturna
+│       ├── styles.css          # Design system com sidebar tática, controles escuros e filtro de visão noturna
+│       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, Multi-ZIM search, QR SVG, TCCC e A4
+│       ├── sw.js               # Service Worker PWA (v12) para operação offline e Network-First nas APIs
 │       ├── banner.svg          # Banner vetorizado da marca
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
 │   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v12)
+│   ├── sw.js                   # Service Worker do GitHub Pages (v13)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -188,6 +188,7 @@ nomad-brasil/
 │   │   ├── detail_tiles_cache/         # Cache persistente em disco de tiles vetoriais z=14 (.pbf)
 │   │   └── basemaps-assets/fonts/      # Glyphs Noto Sans locais
 │   ├── user_waypoints.json             # Marcadores pessoais sincronizados automaticamente no servidor
+│   ├── camp_board.json                 # Mural de operações compartilhado na rede local (Camp Board LAN)
 │   └── zim/                            # Biblioteca Multi-ZIM (Wikipédia, Wikivoyage, Wikibooks, Medicina, NHS, CDC, FAS)
 │       ├── *.zim                       # 11+ acervos enciclopédicos e médicos offline
 │       └── kiwix-library.xml           # Catálogo XML gerado
@@ -248,16 +249,18 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 
 | Método & Rota | Descrição Operacional |
 | :--- | :--- |
-| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`), `primaryZimBook`, porta ativa (`port`) e interfaces locais (`lanIps`). |
+| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`), avisos no Mural LAN (`campBoardCount`), `primaryZimBook`, porta ativa (`port`) e interfaces locais (`lanIps`). |
 | `GET /api/cities` | Lista e filtra os 5.571 municípios brasileiros por nome, UF, região, código IBGE e prefixo DDD. |
 | `GET /api/streets` | Busca híbrida de ruas, avenidas, rodovias (`ref`) e POIs em SQLite FTS5 com sinônimos brasileiros, prioridade por proximidade e auto-aprendizado online opcional (`Photon`/`Nominatim`). |
 | `GET /api/streets/reverse` | Geocodificação reversa offline (`?lat=...&lng=...`) sobre tiles MVT locais (`z=13`/`z=14`) retornando a via mais próxima, distância em metros, município e POIs próximos. |
 | `GET /api/nearby-support` | Radar de apoio próximo (`?lat=...&lng=...&radiusKm=25&category=all`) combinando base estratégica (`pois.json`) e POIs extraídos do mapa vetorial no SQLite. |
 | `GET / POST /api/maps/prefetch-city` | Pré-carrega em lote os tiles vetoriais `z=14` ao redor de uma cidade e indexa automaticamente todas as vias residenciais no `brazil-streets.sqlite`. |
 | `GET / POST /api/waypoints` | Lê e persiste em disco (`storage/user_waypoints.json`) os marcadores táticos pessoais do mapa. |
+| `GET / POST / DELETE /api/camp-board` | Mural de operações compartilhado na LAN (`storage/camp_board.json`) para alertas, QTH, suprimentos, rádio QAP e log de turno entre dispositivos conectados. |
 | `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com suporte a parada intermediária (`viaLat`/`viaLng`/`viaLabel`), quádruplo fallback (OSRM -> cache -> A\* MVT `forceOfflineGraph=1` -> corredor tático) e lista `corridorSupport` (POIs dentro de 5 km). |
 | `GET /api/route/gpx` | Exporta qualquer rota calculada (incluindo waypoint `<wpt>` de parada intermediária `viaLat`/`viaLng`) em arquivo `.gpx` padrão para Garmin e OsmAnd. |
 | `GET /api/kiwix/books` | Catálogo estruturado dos livros `.zim` instalados em `storage/zim/` com metadados de tamanho, idioma, categoria (`wikipedia`, `travel`, `medicine`, `books`) e ícone. |
+| `GET /api/kiwix/search` | Busca unificada simultânea (`?q=...&category=...`) nos principais `.zim` servidos pelo Kiwix (`:8090`), retornando resultados com título, livro e snippet. |
 | `GET /api/kiwix/resolve` | Resolve URLs diretas de artigo e busca para o leitor Kiwix (`:8090`), aceitando seleção por `?book=` ou `?category=` (`wikipedia`, `travel`, `medicine`, `books`). |
 
 ---
