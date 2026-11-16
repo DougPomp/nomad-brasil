@@ -338,6 +338,7 @@
         <div class="sidebar-meta" style="flex-wrap:wrap;gap:0.4rem;">
           <button type="button" onclick="openLanConnectModal()" class="text-cyan-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">📡 LAN</button>
           <button type="button" onclick="openCampBoardModal()" class="text-amber-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;">📋 Mural</button>
+          <button type="button" onclick="openEncryptedVaultSection()" class="text-purple-400 font-bold" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;" title="Abrir Cofre Criptografado AES-256-GCM">🔐 Cofre</button>
           <button type="button" onclick="toggleNightVisionMode()" class="night-vision-toggle-btn font-bold text-red-400" style="background:none;border:none;padding:0;cursor:pointer;font-size:inherit;" title="Filtro vermelho para preservar adaptação noturna">🔴 Noturno</button>
           <a href="http://localhost:8090" id="kiwix-sidebar-link" target="_blank" class="text-emerald-400 font-bold">Kiwix :8090 ↗</a>
         </div>
@@ -496,6 +497,9 @@
               </button>
               <button type="button" onclick="openCampBoardModal()" class="chip-btn" style="padding:0.25rem 0.65rem;font-size:0.72rem;border-color:rgba(245,158,11,0.45);color:#fbbf24;">
                 📋 Mural LAN (<span id="camp-board-badge">0</span>)
+              </button>
+              <button type="button" onclick="openEncryptedVaultSection()" class="chip-btn" style="padding:0.25rem 0.65rem;font-size:0.72rem;border-color:rgba(168,85,247,0.45);color:#c084fc;">
+                🔐 Cofre AES-256
               </button>
               <button type="button" id="btn-night-vision" onclick="toggleNightVisionMode()" class="chip-btn night-vision-toggle-btn" style="padding:0.25rem 0.65rem;font-size:0.72rem;border-color:rgba(239,68,68,0.4);color:#fca5a5;">
                 🔴 Visão Noturna
@@ -2415,6 +2419,64 @@
                 <div class="text-sm font-bold text-emerald-400 mt-1" id="pef-status-summary">
                   Preencha os campos para manter o plano ativo na memória local
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Encrypted Family Vault (AES-256-GCM + PBKDF2-SHA256 Offline) -->
+          <div class="tactical-card mt-4" id="encrypted-vault-card" style="margin-top: 1.25rem; border-left: 3px solid #a855f7;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.65rem;margin-bottom:0.85rem;">
+              <div>
+                <div class="section-heading" style="margin-bottom:0.2rem;">
+                  <span>🔐</span> Cofre Criptografado de Dados Críticos da Família (AES-256-GCM Offline)
+                </div>
+                <div class="text-xs text-gray-400">Os dados ficam cifrados em <code>AES-256-GCM</code> com derivação <code>PBKDF2-SHA256</code> (100.000 iterações) em disco e também no backup <code>.JSON</code>.</div>
+              </div>
+              <span class="card-tag font-mono" id="vault-status-badge" style="background:rgba(148,163,184,0.16);color:#cbd5e1;">⚪ Cofre Vazio</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0.55rem;margin-bottom:0.65rem;">
+              <div>
+                <label class="block text-xs text-gray-400 font-bold mb-1" for="vault-password-input">SENHA MESTRE DO COFRE</label>
+                <input type="password" id="vault-password-input" class="route-input font-mono" placeholder="Digite a Senha Mestre..." autocomplete="off">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 font-bold mb-1" for="vault-password-confirm">CONFIRMAR SENHA (AO CRIAR / ALTERAR)</label>
+                <input type="password" id="vault-password-confirm" class="route-input font-mono" placeholder="Repita apenas se estiver criando ou trocando a senha" autocomplete="off">
+              </div>
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:0.45rem;margin-bottom:0.65rem;">
+              <button type="button" class="chip-btn chip-highlight" onclick="unlockEncryptedVault()">🔓 Desbloquear / Abrir Editor</button>
+              <button type="button" class="btn-export-gpx" style="width:auto;padding:0.45rem 0.95rem;" onclick="saveAndEncryptVault()">💾 Criptografar &amp; Salvar</button>
+              <button type="button" class="chip-btn" onclick="lockEncryptedVault()">🔒 Trancar</button>
+              <button type="button" class="chip-btn" style="color:#fca5a5;" onclick="deleteEncryptedVault()">🗑️ Apagar Cofre</button>
+            </div>
+
+            <div id="vault-feedback-msg" class="text-xs text-gray-400 mb-3"></div>
+
+            <div id="vault-unlocked-editor" style="display:none;">
+              <div class="grid-2" style="gap:0.65rem;margin-bottom:0.65rem;">
+                <div>
+                  <label class="block text-xs text-purple-300 font-bold mb-1" for="vault-docs">📄 Documentos, RG/CPF/Passaportes, Apólices, Contas &amp; Chaves</label>
+                  <textarea id="vault-docs" class="route-input" rows="3" style="width:100%;resize:vertical;" placeholder="Ex: RG, Passaportes, números de apólices, chaves de carteiras/cofre físico..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs text-red-300 font-bold mb-1" for="vault-medical">🩺 Dados Médicos Críticos, Tipos Sanguíneos &amp; Alergias Severas</label>
+                  <textarea id="vault-medical" class="route-input" rows="3" style="width:100%;resize:vertical;" placeholder="Ex: João (O-, alergia a penicilina), Maria (A+, insulina contínua)..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs text-emerald-300 font-bold mb-1" for="vault-refuge">🏕️ Coordenadas do Abrigo Secundário, Cache Enterrado &amp; Senha da Base</label>
+                  <textarea id="vault-refuge" class="route-input" rows="3" style="width:100%;resize:vertical;" placeholder="Ex: -23.1234, -46.5678 • Cadeado portão: 4921 • Caixa estanque atrás da pedra..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs text-cyan-300 font-bold mb-1" for="vault-comms">📻 Frequências Privadas, Senha / Contra-Senha Familiar &amp; Indicativos</label>
+                  <textarea id="vault-comms" class="route-input" rows="3" style="width:100%;resize:vertical;" placeholder="Ex: Canal reserva 146.580 MHz • Senha: Sol / Contra-senha: Horizonte..."></textarea>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs text-amber-300 font-bold mb-1" for="vault-notes">🗒️ Outras Instruções Sensíveis &amp; Inventário de Valor</label>
+                <textarea id="vault-notes" class="route-input" rows="2" style="width:100%;resize:vertical;" placeholder="Reserva em espécie/ouro, contatos reservados, instruções de contingência..."></textarea>
               </div>
             </div>
           </div>
@@ -5447,6 +5509,6 @@
 
   </div>
 
-  <script src="/app.js?v=6.0"></script>
+  <script src="/app.js?v=7.0"></script>
 </body>
 </html>

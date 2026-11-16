@@ -1965,6 +1965,7 @@
                       <tr><td><code>GET /api/kiwix/resolve</code></td><td>Ponte por <code>?book=</code> ou <code>?category=</code> (:8090)</td></tr>
                       <tr><td><code>GET/POST/DELETE /api/camp-board</code></td><td>Mural de avisos compartilhado na LAN</td></tr>
                       <tr><td><code>GET/POST/DELETE /api/inventory</code></td><td>Inventário real da base com validade PEPS</td></tr>
+                      <tr><td><code>GET/POST/DELETE /api/vault</code></td><td>Cofre criptografado AES-256-GCM (PBKDF2 100k)</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -2393,6 +2394,61 @@
                 </div>
                 <div id="online-pef-status" style="font-size: 0.75rem; color: #34d399; font-weight: bold; margin-top: 0.5rem;">
                   ✅ Dados salvos automaticamente no navegador
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card" style="margin-top: 1.25rem; border-left: 3px solid #a855f7; gap: 0.7rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <h3 style="color: #fff; font-size: 0.96rem; margin: 0;">🔐 Cofre Criptografado da Família (AES-256-GCM WebCrypto Offline)</h3>
+                  <div style="font-size: 0.78rem; color: var(--text-muted);">Cifra documentos, alergias críticas, coordenadas de refúgio e senhas no navegador com PBKDF2-SHA256 (100.000 iterações) + AES-256-GCM.</div>
+                </div>
+                <span class="protocol-badge font-mono" id="on-vault-status" style="background: rgba(148,163,184,0.18); color: #cbd5e1;">⚪ Cofre Vazio</span>
+              </div>
+
+              <div class="grid-2" style="gap: 0.65rem;">
+                <div>
+                  <span class="stat-label">SENHA MESTRE</span>
+                  <input type="password" id="on-vault-pass" class="route-input font-mono" placeholder="Digite a Senha Mestre..." autocomplete="off">
+                </div>
+                <div>
+                  <span class="stat-label">CONFIRMAR SENHA (AO CRIAR / ALTERAR)</span>
+                  <input type="password" id="on-vault-pass-confirm" class="route-input font-mono" placeholder="Repita ao criar ou trocar a senha" autocomplete="off">
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+                <button type="button" class="chip-btn chip-highlight" onclick="unlockOnlineVault()">🔓 Desbloquear / Abrir</button>
+                <button type="button" class="btn-sidebar-action primary" style="width: auto; border: none; cursor: pointer; padding: 0.5rem 0.95rem;" onclick="saveOnlineVault()">💾 Criptografar &amp; Salvar</button>
+                <button type="button" class="chip-btn" onclick="lockOnlineVault()">🔒 Trancar</button>
+                <button type="button" class="chip-btn" style="color: #fca5a5;" onclick="deleteOnlineVault()">🗑️ Apagar</button>
+              </div>
+
+              <div id="on-vault-msg" style="font-size: 0.76rem; color: var(--text-muted);"></div>
+
+              <div id="on-vault-editor" style="display: none; flex-direction: column; gap: 0.6rem;">
+                <div class="grid-2" style="gap: 0.65rem;">
+                  <div>
+                    <span class="stat-label">📄 DOCUMENTOS, APÓLICES &amp; CHAVES</span>
+                    <textarea id="on-vault-docs" class="route-input" rows="2" style="width: 100%; resize: vertical;"></textarea>
+                  </div>
+                  <div>
+                    <span class="stat-label">🩺 DADOS MÉDICOS, SANGUE &amp; ALERGIAS</span>
+                    <textarea id="on-vault-medical" class="route-input" rows="2" style="width: 100%; resize: vertical;"></textarea>
+                  </div>
+                  <div>
+                    <span class="stat-label">🏕️ COORDENADAS DE ABRIGO &amp; CACHES</span>
+                    <textarea id="on-vault-refuge" class="route-input" rows="2" style="width: 100%; resize: vertical;"></textarea>
+                  </div>
+                  <div>
+                    <span class="stat-label">📻 FREQUÊNCIAS PRIVADAS &amp; CONTRA-SENHA</span>
+                    <textarea id="on-vault-comms" class="route-input" rows="2" style="width: 100%; resize: vertical;"></textarea>
+                  </div>
+                </div>
+                <div>
+                  <span class="stat-label">🗒️ OUTRAS INSTRUÇÕES SENSÍVEIS</span>
+                  <textarea id="on-vault-notes" class="route-input" rows="2" style="width: 100%; resize: vertical;"></textarea>
                 </div>
               </div>
             </div>
@@ -5532,6 +5588,144 @@
       });
     }
 
+    let onlineVaultEnvelope = null;
+    let onlineVaultUnlocked = false;
+
+    function onBytesToB64(u8) {
+      let s = '';
+      for (let i = 0; i < u8.length; i += 0x8000) {
+        s += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+      }
+      return btoa(s);
+    }
+
+    function onB64ToBytes(b64) {
+      const bin = atob(String(b64 || ''));
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return u8;
+    }
+
+    async function onDeriveVaultKey(password, salt, iter, usage) {
+      const base = await window.crypto.subtle.importKey('raw', new TextEncoder().encode(String(password)), { name: 'PBKDF2' }, false, ['deriveKey']);
+      return window.crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter || 100000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, usage);
+    }
+
+    function updateOnlineVaultUi() {
+      const st = document.getElementById('on-vault-status');
+      const ed = document.getElementById('on-vault-editor');
+      if (ed) ed.style.display = onlineVaultUnlocked ? 'flex' : 'none';
+      if (!st) return;
+      if (onlineVaultUnlocked) {
+        st.textContent = '🔓 Cofre Aberto';
+        st.style.background = 'rgba(16,185,129,0.18)';
+        st.style.color = '#34d399';
+      } else if (onlineVaultEnvelope && onlineVaultEnvelope.ct) {
+        st.textContent = '🔒 Protegido (AES-256)';
+        st.style.background = 'rgba(168,85,247,0.18)';
+        st.style.color = '#c084fc';
+      } else {
+        st.textContent = '⚪ Cofre Vazio';
+        st.style.background = 'rgba(148,163,184,0.18)';
+        st.style.color = '#cbd5e1';
+      }
+    }
+
+    function initOnlineVaultState() {
+      try {
+        const raw = JSON.parse(localStorage.getItem('nomad_encrypted_vault_v1') || 'null');
+        if (raw && raw.ct) onlineVaultEnvelope = raw;
+      } catch (e) {}
+      updateOnlineVaultUi();
+    }
+
+    async function unlockOnlineVault() {
+      const msgEl = document.getElementById('on-vault-msg');
+      const pass = document.getElementById('on-vault-pass')?.value || '';
+      if (!onlineVaultEnvelope || !onlineVaultEnvelope.ct) {
+        onlineVaultUnlocked = true;
+        updateOnlineVaultUi();
+        if (msgEl) { msgEl.style.color = '#fbbf24'; msgEl.textContent = '🆕 Novo cofre aberto. Preencha, defina uma Senha Mestre e salve.'; }
+        return;
+      }
+      if (!pass) {
+        if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = 'Informe a Senha Mestre.'; }
+        return;
+      }
+      try {
+        const key = await onDeriveVaultKey(pass, onB64ToBytes(onlineVaultEnvelope.salt), onlineVaultEnvelope.iter || 100000, ['decrypt']);
+        const dec = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv: onB64ToBytes(onlineVaultEnvelope.iv) }, key, onB64ToBytes(onlineVaultEnvelope.ct));
+        const plain = JSON.parse(new TextDecoder().decode(dec));
+        document.getElementById('on-vault-docs').value = plain.docs || '';
+        document.getElementById('on-vault-medical').value = plain.medical || '';
+        document.getElementById('on-vault-refuge').value = plain.refuge || '';
+        document.getElementById('on-vault-comms').value = plain.comms || '';
+        document.getElementById('on-vault-notes').value = plain.notes || '';
+        onlineVaultUnlocked = true;
+        updateOnlineVaultUi();
+        if (msgEl) { msgEl.style.color = '#34d399'; msgEl.textContent = '🔓 Cofre descriptografado localmente via WebCrypto AES-256-GCM.'; }
+      } catch (e) {
+        if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = '❌ Senha Mestre incorreta ou dados inválidos.'; }
+      }
+    }
+
+    async function saveOnlineVault() {
+      const msgEl = document.getElementById('on-vault-msg');
+      if (!onlineVaultUnlocked) {
+        if (msgEl) { msgEl.style.color = '#fbbf24'; msgEl.textContent = 'Desbloqueie o cofre antes de salvar.'; }
+        return;
+      }
+      const pass = document.getElementById('on-vault-pass')?.value || '';
+      const conf = document.getElementById('on-vault-pass-confirm')?.value || '';
+      if (pass.length < 4) {
+        if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = 'Senha Mestre deve ter ao menos 4 caracteres.'; }
+        return;
+      }
+      if ((!onlineVaultEnvelope || conf) && conf !== pass) {
+        if (msgEl) { msgEl.style.color = '#f87171'; msgEl.textContent = 'Confirmação de senha não confere.'; }
+        return;
+      }
+      const plain = {
+        docs: document.getElementById('on-vault-docs')?.value || '',
+        medical: document.getElementById('on-vault-medical')?.value || '',
+        refuge: document.getElementById('on-vault-refuge')?.value || '',
+        comms: document.getElementById('on-vault-comms')?.value || '',
+        notes: document.getElementById('on-vault-notes')?.value || ''
+      };
+      const salt = window.crypto.getRandomValues(new Uint8Array(16));
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const key = await onDeriveVaultKey(pass, salt, 100000, ['encrypt']);
+      const ct = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(plain)));
+      onlineVaultEnvelope = {
+        v: 1, alg: 'AES-256-GCM', kdf: 'PBKDF2-SHA256', iter: 100000,
+        salt: onBytesToB64(salt), iv: onBytesToB64(iv), ct: onBytesToB64(new Uint8Array(ct)),
+        updatedAt: new Date().toISOString()
+      };
+      try { localStorage.setItem('nomad_encrypted_vault_v1', JSON.stringify(onlineVaultEnvelope)); } catch (e) {}
+      updateOnlineVaultUi();
+      if (msgEl) { msgEl.style.color = '#34d399'; msgEl.textContent = '🔐 Cofre cifrado com AES-256-GCM e salvo no navegador.'; }
+    }
+
+    function lockOnlineVault() {
+      onlineVaultUnlocked = false;
+      ['on-vault-pass', 'on-vault-pass-confirm', 'on-vault-docs', 'on-vault-medical', 'on-vault-refuge', 'on-vault-comms', 'on-vault-notes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      updateOnlineVaultUi();
+      const msgEl = document.getElementById('on-vault-msg');
+      if (msgEl) { msgEl.style.color = 'var(--text-muted)'; msgEl.textContent = '🔒 Cofre trancado.'; }
+    }
+
+    function deleteOnlineVault() {
+      onlineVaultEnvelope = null;
+      lockOnlineVault();
+      try { localStorage.removeItem('nomad_encrypted_vault_v1'); } catch (e) {}
+      updateOnlineVaultUi();
+      const msgEl = document.getElementById('on-vault-msg');
+      if (msgEl) { msgEl.style.color = '#fbbf24'; msgEl.textContent = '🗑️ Cofre removido.'; }
+    }
+
     function exportOnlineFullBackup() {
       const safeParse = (key) => {
         try {
@@ -5555,7 +5749,8 @@
         bob: storedBobState || safeParse('nomad_bob_checked_state_v1') || {},
         pace: paceData,
         tccc: getOnlineTcccCards(),
-        inventory: getOnlineInventoryItems()
+        inventory: getOnlineInventoryItems(),
+        encryptedVault: safeParse('nomad_encrypted_vault_v1') || null
       };
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -5618,6 +5813,13 @@
             saveOnlineInventoryItems(parsed.inventory);
             restored.push(`Estoque (${parsed.inventory.length})`);
           }
+          if (parsed.encryptedVault && typeof parsed.encryptedVault === 'object' && parsed.encryptedVault.ct) {
+            localStorage.setItem('nomad_encrypted_vault_v1', JSON.stringify(parsed.encryptedVault));
+            onlineVaultEnvelope = parsed.encryptedVault;
+            onlineVaultUnlocked = false;
+            updateOnlineVaultUi();
+            restored.push('Cofre AES-256');
+          }
 
           if (restored.length === 0) throw new Error('Nenhum dado compatível encontrado neste JSON.');
 
@@ -5668,6 +5870,7 @@
     initOnlineNightVision();
     renderOnlineTcccList();
     renderOnlineInventory();
+    initOnlineVaultState();
   </script>
 </body>
 </html>

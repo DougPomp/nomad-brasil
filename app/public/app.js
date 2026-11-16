@@ -122,6 +122,7 @@ function switchTab(tabId) {
   }
   if (tabId === 'pef') {
     loadPefData();
+    if (typeof window.loadEncryptedVaultState === 'function') window.loadEncryptedVaultState();
   }
   if (tabId === 'march') {
     calculateMarch();
@@ -5037,7 +5038,8 @@ window.exportFullTacticalBackup = function() {
     breadcrumb: safeParse('nomad_gps_breadcrumb_v1') || [],
     inventory: typeof supplyInventoryItems !== 'undefined' && Array.isArray(supplyInventoryItems)
       ? supplyInventoryItems
-      : (safeParse('nomad_supply_inventory_v1') || [])
+      : (safeParse('nomad_supply_inventory_v1') || []),
+    encryptedVault: safeParse('nomad_encrypted_vault_v1') || null
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -5115,6 +5117,14 @@ window.importFullTacticalBackup = function(event) {
           window.restoreSupplyInventoryFromBackup(parsed.inventory);
         }
         restoredSections.push(`Estoque (${parsed.inventory.length})`);
+      }
+
+      if (parsed.encryptedVault && typeof parsed.encryptedVault === 'object' && parsed.encryptedVault.ct) {
+        localStorage.setItem('nomad_encrypted_vault_v1', JSON.stringify(parsed.encryptedVault));
+        if (typeof window.restoreEncryptedVaultFromBackup === 'function') {
+          window.restoreEncryptedVaultFromBackup(parsed.encryptedVault);
+        }
+        restoredSections.push('Cofre AES-256');
       }
 
       if (restoredSections.length === 0) {
@@ -6955,12 +6965,277 @@ window.renderSupplyInventory = function() {
   });
 };
 
+// =====================================================================
+// 44. COFRE CRIPTOGRAFADO DA FAMÍLIA (AES-256-GCM + PBKDF2-SHA256)
+// =====================================================================
+
+let currentVaultEnvelope = null;
+let currentVaultUnlocked = false;
+
+function bytesToBase64(uint8) {
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < uint8.length; i += chunk) {
+    bin += String.fromCharCode(...uint8.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+function base64ToBytes(b64) {
+  const bin = atob(String(b64 || ''));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function deriveWebCryptoAesKey(password, saltBytes, iter = 100000, usage = ['encrypt', 'decrypt']) {
+  const enc = new TextEncoder();
+  const baseKey = await window.crypto.subtle.importKey(
+    'raw',
+    enc.encode(String(password)),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  return window.crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: saltBytes, iterations: iter, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    usage
+  );
+}
+
+async function encryptVaultClientOrServer(plainObj, password) {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle && window.crypto.getRandomValues) {
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveWebCryptoAesKey(password, salt, 100000, ['encrypt']);
+    const pt = new TextEncoder().encode(JSON.stringify(plainObj || {}));
+    const ctBuf = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, pt);
+    return {
+      v: 1,
+      alg: 'AES-256-GCM',
+      kdf: 'PBKDF2-SHA256',
+      iter: 100000,
+      salt: bytesToBase64(salt),
+      iv: bytesToBase64(iv),
+      ct: bytesToBase64(new Uint8Array(ctBuf)),
+      updatedAt: new Date().toISOString()
+    };
+  }
+  const res = await fetch('/api/vault/crypto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'encrypt', password, data: plainObj, save: false })
+  });
+  const out = await res.json();
+  if (!res.ok || !out.ok || !out.envelope) throw new Error(out.error || 'Falha na criptografia');
+  return out.envelope;
+}
+
+async function decryptVaultClientOrServer(envelope, password) {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    const salt = base64ToBytes(envelope.salt);
+    const iv = base64ToBytes(envelope.iv);
+    const ctBytes = base64ToBytes(envelope.ct);
+    const iter = Number(envelope.iter) || 100000;
+    const key = await deriveWebCryptoAesKey(password, salt, iter, ['decrypt']);
+    const decBuf = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ctBytes);
+    return JSON.parse(new TextDecoder().decode(decBuf));
+  }
+  const res = await fetch('/api/vault/crypto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'decrypt', password, envelope })
+  });
+  const out = await res.json();
+  if (!res.ok || !out.ok) throw new Error(out.error || 'Senha Mestre incorreta');
+  return out.data || {};
+}
+
+function setVaultFeedback(msg, tone = 'muted') {
+  const el = document.getElementById('vault-feedback-msg');
+  if (!el) return;
+  const clsMap = {
+    ok: 'text-xs text-emerald-400 mb-3 font-bold',
+    err: 'text-xs text-red-400 mb-3 font-bold',
+    warn: 'text-xs text-amber-400 mb-3 font-bold',
+    muted: 'text-xs text-gray-400 mb-3'
+  };
+  el.className = clsMap[tone] || clsMap.muted;
+  el.textContent = msg;
+}
+
+function updateVaultStatusUi() {
+  const badge = document.getElementById('vault-status-badge');
+  const editor = document.getElementById('vault-unlocked-editor');
+  if (editor) editor.style.display = currentVaultUnlocked ? 'block' : 'none';
+  if (!badge) return;
+  if (currentVaultUnlocked) {
+    badge.textContent = '🔓 Cofre Desbloqueado';
+    badge.style.background = 'rgba(16,185,129,0.18)';
+    badge.style.color = '#34d399';
+  } else if (currentVaultEnvelope && currentVaultEnvelope.ct) {
+    badge.textContent = '🔒 Cofre Protegido (AES-256)';
+    badge.style.background = 'rgba(168,85,247,0.18)';
+    badge.style.color = '#c084fc';
+  } else {
+    badge.textContent = '⚪ Cofre Vazio';
+    badge.style.background = 'rgba(148,163,184,0.16)';
+    badge.style.color = '#cbd5e1';
+  }
+}
+
+window.openEncryptedVaultSection = function() {
+  switchTab('pef');
+  setTimeout(() => {
+    document.getElementById('encrypted-vault-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('vault-password-input')?.focus();
+  }, 120);
+};
+
+window.loadEncryptedVaultState = async function() {
+  try {
+    const localEnv = JSON.parse(localStorage.getItem('nomad_encrypted_vault_v1') || 'null');
+    if (localEnv && localEnv.ct) currentVaultEnvelope = localEnv;
+  } catch {}
+  try {
+    const res = await fetch('/api/vault');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.hasVault && data.envelope && data.envelope.ct) {
+        currentVaultEnvelope = data.envelope;
+        try { localStorage.setItem('nomad_encrypted_vault_v1', JSON.stringify(currentVaultEnvelope)); } catch {}
+      } else if (data && data.hasVault === false && currentVaultEnvelope && currentVaultEnvelope.ct) {
+        await fetch('/api/vault', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ envelope: currentVaultEnvelope })
+        }).catch(() => {});
+      }
+    }
+  } catch {}
+  updateVaultStatusUi();
+};
+
+window.restoreEncryptedVaultFromBackup = async function(envelope) {
+  currentVaultEnvelope = envelope;
+  currentVaultUnlocked = false;
+  updateVaultStatusUi();
+  setVaultFeedback('🔒 Cofre criptografado restaurado do backup. Digite a Senha Mestre e clique em Desbloquear.', 'ok');
+  try {
+    await fetch('/api/vault', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ envelope })
+    });
+  } catch {}
+};
+
+window.unlockEncryptedVault = async function() {
+  const passIn = document.getElementById('vault-password-input');
+  const password = passIn ? passIn.value : '';
+
+  if (!currentVaultEnvelope || !currentVaultEnvelope.ct) {
+    currentVaultUnlocked = true;
+    updateVaultStatusUi();
+    setVaultFeedback('🆕 Novo cofre aberto. Preencha os campos sensíveis, defina sua Senha Mestre acima e clique em "Criptografar & Salvar".', 'warn');
+    document.getElementById('vault-docs')?.focus();
+    return;
+  }
+
+  if (!password) {
+    setVaultFeedback('Informe a Senha Mestre para desbloquear o cofre criptografado.', 'err');
+    passIn?.focus();
+    return;
+  }
+
+  try {
+    const plain = await decryptVaultClientOrServer(currentVaultEnvelope, password);
+    document.getElementById('vault-docs').value = plain.docs || '';
+    document.getElementById('vault-medical').value = plain.medical || '';
+    document.getElementById('vault-refuge').value = plain.refuge || '';
+    document.getElementById('vault-comms').value = plain.comms || '';
+    document.getElementById('vault-notes').value = plain.notes || '';
+    currentVaultUnlocked = true;
+    updateVaultStatusUi();
+    const dt = currentVaultEnvelope.updatedAt ? new Date(currentVaultEnvelope.updatedAt).toLocaleString('pt-BR') : '';
+    setVaultFeedback(`🔓 Cofre descriptografado localmente com sucesso${dt ? ' (último salvamento: ' + dt + ')' : ''}.`, 'ok');
+  } catch {
+    setVaultFeedback('❌ Senha Mestre incorreta ou arquivo do cofre corrompido.', 'err');
+  }
+};
+
+window.saveAndEncryptVault = async function() {
+  if (!currentVaultUnlocked) {
+    setVaultFeedback('Desbloqueie o cofre antes de editar e salvar.', 'warn');
+    return;
+  }
+  const pass = document.getElementById('vault-password-input')?.value || '';
+  const confirmPass = document.getElementById('vault-password-confirm')?.value || '';
+  if (pass.length < 4) {
+    setVaultFeedback('Defina uma Senha Mestre com pelo menos 4 caracteres.', 'err');
+    document.getElementById('vault-password-input')?.focus();
+    return;
+  }
+  if ((!currentVaultEnvelope || confirmPass) && confirmPass !== pass) {
+    setVaultFeedback('A confirmação da Senha Mestre não confere.', 'err');
+    document.getElementById('vault-password-confirm')?.focus();
+    return;
+  }
+
+  const plainObj = {
+    docs: document.getElementById('vault-docs')?.value || '',
+    medical: document.getElementById('vault-medical')?.value || '',
+    refuge: document.getElementById('vault-refuge')?.value || '',
+    comms: document.getElementById('vault-comms')?.value || '',
+    notes: document.getElementById('vault-notes')?.value || ''
+  };
+
+  try {
+    const env = await encryptVaultClientOrServer(plainObj, pass);
+    currentVaultEnvelope = env;
+    try { localStorage.setItem('nomad_encrypted_vault_v1', JSON.stringify(env)); } catch {}
+    await fetch('/api/vault', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ envelope: env })
+    }).catch(() => {});
+    updateVaultStatusUi();
+    setVaultFeedback('🔐 Dados criptografados com AES-256-GCM e salvos em disco com segurança!', 'ok');
+  } catch (err) {
+    setVaultFeedback('❌ Erro ao criptografar cofre: ' + (err.message || err), 'err');
+  }
+};
+
+window.lockEncryptedVault = function() {
+  currentVaultUnlocked = false;
+  ['vault-password-input', 'vault-password-confirm', 'vault-docs', 'vault-medical', 'vault-refuge', 'vault-comms', 'vault-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  updateVaultStatusUi();
+  setVaultFeedback('🔒 Cofre trancado e campos limpos da memória da tela.', 'muted');
+};
+
+window.deleteEncryptedVault = async function() {
+  if (!confirm('Apagar permanentemente o cofre criptografado deste navegador e do servidor?')) return;
+  currentVaultEnvelope = null;
+  window.lockEncryptedVault();
+  try { localStorage.removeItem('nomad_encrypted_vault_v1'); } catch {}
+  try { await fetch('/api/vault', { method: 'DELETE' }); } catch {}
+  updateVaultStatusUi();
+  setVaultFeedback('🗑️ Cofre criptografado removido.', 'warn');
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
   initNightVisionMode();
   window.reloadGpsBreadcrumbFromStorage();
   window.renderTcccCardsList();
   window.loadSupplyInventory();
+  window.loadEncryptedVaultState();
   setInterval(() => {
     if (getSavedTcccCards().length > 0) window.renderTcccCardsList();
   }, 60000);

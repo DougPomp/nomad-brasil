@@ -79,7 +79,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 36. **Baterias 18650 & Geradores Alternativos:** Recuperação de células de lítio, montagem de packs balanceados e geradores mecânicos.
 37. **Gasogênio a Lenha (Wood Gas):** Fabricação de gasificador térmico para converter biomassa florestal em combustível de motores a pistão.
 38. **Checklist de Mochila 72 Horas (BOB):** Inventário dinâmico dividido nas 7 linhas de resiliência com pesagem total em tempo real.
-39. **Plano de Emergência Familiar (PEF):** Definição de rotas primárias de fuga, pontos de encontro (dentro/fora do bairro) e senhas familiares.
+39. **Plano de Emergência Familiar (PEF) & Cofre Criptografado AES-256-GCM:** Definição de rotas primárias de fuga, pontos de encontro, senhas familiares e **Cofre Criptografado da Família** (`AES-256-GCM` + `PBKDF2-SHA256` 100.000 iterações via `/api/vault` e `storage/encrypted_vault.json`) para proteger documentos, dados médicos críticos, coordenadas de abrigo e frequências privadas — permanecendo cifrado também dentro do backup `.JSON`.
 40. **Fogo em Condições Severas & Fogueira Dakota:** Técnicas de pederneira com fungo de árvore, fogo de atrito e buraco Dakota (chama invisível sem fumaça).
 41. **Construção de Abrigos & Bioconstrução:** Técnicas de pau-a-pique, adobe, superadobe e abrigos rápidos de lona e folhagens.
 42. **Manual Tático de Nós & Amarrações:** Nós de salvamento (Ás de Guia), tração (Caminhoneiro), junção (Nó de Escota) e pioneirias com bambu.
@@ -173,16 +173,16 @@ nomad-brasil/
 │   │   ├── survival.json       # Manuais técnicos de resiliência e campo
 │   │   └── routes_cache/       # Cache permanente em disco de todas as rotas traçadas
 │   └── public/
-│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, Mural LAN, Estoque PEPS, TCCC e Visão Noturna
+│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, Mural LAN, Estoque PEPS, Cofre AES-256, TCCC e Visão Noturna
 │       ├── styles.css          # Design system com sidebar tática, controles escuros e filtro de visão noturna
-│       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, Multi-ZIM, estoque PEPS, QR SVG, TCCC e A4
-│       ├── sw.js               # Service Worker PWA (v13) para operação offline e Network-First nas APIs
+│       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, Multi-ZIM, estoque PEPS, cofre AES-256, QR SVG, TCCC e A4
+│       ├── sw.js               # Service Worker PWA (v14) para operação offline e Network-First nas APIs
 │       ├── banner.svg          # Banner vetorizado da marca
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
-│   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Estoque PEPS + TCCC + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v16)
+│   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Estoque PEPS + Cofre AES-256 + TCCC + Dossiê A4
+│   ├── sw.js                   # Service Worker do GitHub Pages (v17)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -195,6 +195,7 @@ nomad-brasil/
 │   ├── user_waypoints.json             # Marcadores pessoais sincronizados automaticamente no servidor
 │   ├── camp_board.json                 # Mural de operações compartilhado na rede local (Camp Board LAN)
 │   ├── supply_inventory.json           # Inventário real de suprimentos e farmácia da base com controle de validade (PEPS)
+│   ├── encrypted_vault.json            # Cofre criptografado da família (AES-256-GCM + PBKDF2-SHA256)
 │   └── zim/                            # Biblioteca Multi-ZIM (Wikipédia, Wikivoyage, Wikibooks, Medicina, NHS, CDC, FAS)
 │       ├── *.zim                       # 11+ acervos enciclopédicos e médicos offline
 │       └── kiwix-library.xml           # Catálogo XML gerado
@@ -257,7 +258,7 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 
 | Método & Rota | Descrição Operacional |
 | :--- | :--- |
-| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`), avisos no Mural LAN (`campBoardCount`), itens em estoque (`supplyInventoryCount`), `primaryZimBook`, porta ativa (`port`) e interfaces locais (`lanIps`). |
+| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`), avisos no Mural LAN (`campBoardCount`), itens em estoque (`supplyInventoryCount`), status do cofre (`vaultConfigured`), `primaryZimBook`, porta ativa (`port`) e interfaces locais (`lanIps`). |
 | `GET /api/cities` | Lista e filtra os 5.571 municípios brasileiros por nome, UF, região, código IBGE e prefixo DDD. |
 | `GET /api/streets` | Busca híbrida de ruas, avenidas, rodovias (`ref`) e POIs em SQLite FTS5 com sinônimos brasileiros, prioridade por proximidade e auto-aprendizado online opcional (`Photon`/`Nominatim`). |
 | `GET /api/streets/reverse` | Geocodificação reversa offline (`?lat=...&lng=...`) sobre tiles MVT locais (`z=13`/`z=14`) retornando a via mais próxima, distância em metros, município e POIs próximos. |
@@ -266,6 +267,8 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 | `GET / POST /api/waypoints` | Lê e persiste em disco (`storage/user_waypoints.json`) os marcadores táticos pessoais do mapa. |
 | `GET / POST / DELETE /api/camp-board` | Mural de operações compartilhado na LAN (`storage/camp_board.json`) para alertas, QTH, suprimentos, rádio QAP e log de turno entre dispositivos conectados. |
 | `GET / POST / DELETE /api/inventory` | Controle de estoque real da dispensa, farmácia e combustível da base (`storage/supply_inventory.json`) com alertas de validade PEPS (≤ 60 dias). |
+| `GET / POST / DELETE /api/vault` | Armazena e recupera o envelope criptografado da família (`storage/encrypted_vault.json`, cifrado em `AES-256-GCM` + `PBKDF2-SHA256`). |
+| `POST /api/vault/crypto` | Utilitário local de criptografia/descriptografia `AES-256-GCM` (usado automaticamente como fallback em acessos HTTP sem `crypto.subtle`). |
 | `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com suporte a parada intermediária (`viaLat`/`viaLng`/`viaLabel`), quádruplo fallback (OSRM -> cache -> A\* MVT `forceOfflineGraph=1` -> corredor tático) e lista `corridorSupport` (POIs dentro de 5 km). |
 | `GET /api/route/gpx` | Exporta qualquer rota calculada (incluindo waypoint `<wpt>` de parada intermediária `viaLat`/`viaLng`) em arquivo `.gpx` padrão para Garmin e OsmAnd. |
 | `GET /api/kiwix/books` | Catálogo estruturado dos livros `.zim` instalados em `storage/zim/` com metadados de tamanho, idioma, categoria (`wikipedia`, `travel`, `medicine`, `books`) e ícone. |

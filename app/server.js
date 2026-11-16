@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -1696,6 +1697,61 @@ function sanitizeInventoryItem(raw, fallbackId) {
   };
 }
 
+const encryptedVaultFile = path.join(STORAGE_PATH, 'encrypted_vault.json');
+
+function readEncryptedVault() {
+  if (!fs.existsSync(encryptedVaultFile)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(encryptedVaultFile, 'utf8'));
+    return (parsed && typeof parsed.ct === 'string' && typeof parsed.salt === 'string' && typeof parsed.iv === 'string') ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeEncryptedVault(envelope) {
+  fs.mkdirSync(path.dirname(encryptedVaultFile), { recursive: true });
+  fs.writeFileSync(encryptedVaultFile, JSON.stringify(envelope, null, 2), 'utf8');
+}
+
+function encryptVaultNode(plainObj, password) {
+  const salt = crypto.randomBytes(16);
+  const iv = crypto.randomBytes(12);
+  const key = crypto.pbkdf2Sync(String(password), salt, 100000, 32, 'sha256');
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const plaintext = Buffer.from(JSON.stringify(plainObj || {}), 'utf8');
+  const enc = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  const combined = Buffer.concat([enc, tag]);
+  return {
+    v: 1,
+    alg: 'AES-256-GCM',
+    kdf: 'PBKDF2-SHA256',
+    iter: 100000,
+    salt: salt.toString('base64'),
+    iv: iv.toString('base64'),
+    ct: combined.toString('base64'),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function decryptVaultNode(envelope, password) {
+  const salt = Buffer.from(String(envelope.salt || ''), 'base64');
+  const iv = Buffer.from(String(envelope.iv || ''), 'base64');
+  const combined = Buffer.from(String(envelope.ct || ''), 'base64');
+  if (salt.length < 8 || iv.length !== 12 || combined.length < 17) {
+    throw new Error('Envelope inválido');
+  }
+  const tag = combined.subarray(combined.length - 16);
+  const enc = combined.subarray(0, combined.length - 16);
+  const iter = Number(envelope.iter) || 100000;
+  const key = crypto.pbkdf2Sync(String(password), salt, iter, 32, 'sha256');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  const dec = Buffer.concat([decipher.update(enc), decipher.final()]);
+  return JSON.parse(dec.toString('utf8'));
+}
+
 function decodeHtmlEntities(str) {
   return String(str || '')
     .replace(/&nbsp;/gi, ' ')
@@ -1782,6 +1838,7 @@ const server = http.createServer((req, res) => {
         zimFilesCount: zims.length,
         campBoardCount: campBoardEntries.length,
         supplyInventoryCount: inventoryItems.length,
+        vaultConfigured: Boolean(readEncryptedVault()?.ct),
         primaryZimBook: zims[0]?.book || 'wikipedia_pt_all_maxi_2026-05'
       },
       port: PORT,
@@ -1959,6 +2016,95 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ ok: true, count: items.length, items }));
       return;
     }
+  }
+
+  // 1.17 API: Encrypted Family Vault (AES-256-GCM + PBKDF2-SHA256)
+  if (pathname === '/api/vault') {
+    if (req.method === 'GET') {
+      const env = readEncryptedVault();
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, hasVault: Boolean(env), envelope: env }));
+      return;
+    }
+    if (req.method === 'POST') {
+      readJsonRequestBody(req).then((body) => {
+        const candidate = (body && typeof body.envelope === 'object' && body.envelope) ? body.envelope : body;
+        if (!candidate || typeof candidate.ct !== 'string' || typeof candidate.salt !== 'string' || typeof candidate.iv !== 'string') {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, error: 'Envelope criptografado inválido' }));
+          return;
+        }
+        const envelope = {
+          v: Number(candidate.v) || 1,
+          alg: String(candidate.alg || 'AES-256-GCM'),
+          kdf: String(candidate.kdf || 'PBKDF2-SHA256'),
+          iter: Number(candidate.iter) || 100000,
+          salt: String(candidate.salt),
+          iv: String(candidate.iv),
+          ct: String(candidate.ct),
+          updatedAt: String(candidate.updatedAt || new Date().toISOString())
+        };
+        writeEncryptedVault(envelope);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, hasVault: true, envelope }));
+      }).catch(() => {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'JSON inválido' }));
+      });
+      return;
+    }
+    if (req.method === 'DELETE') {
+      try {
+        if (fs.existsSync(encryptedVaultFile)) fs.unlinkSync(encryptedVaultFile);
+      } catch {}
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, hasVault: false }));
+      return;
+    }
+  }
+
+  if (pathname === '/api/vault/crypto' && req.method === 'POST') {
+    readJsonRequestBody(req).then((body) => {
+      const action = String(body?.action || '').trim().toLowerCase();
+      const password = String(body?.password || '');
+      if (!password) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'Senha Mestre obrigatória' }));
+        return;
+      }
+      if (action === 'encrypt') {
+        const envelope = encryptVaultNode(body?.data || {}, password);
+        if (body?.save !== false) {
+          writeEncryptedVault(envelope);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, envelope }));
+        return;
+      }
+      if (action === 'decrypt') {
+        const targetEnv = (body?.envelope && typeof body.envelope === 'object') ? body.envelope : readEncryptedVault();
+        if (!targetEnv) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, error: 'Nenhum cofre salvo encontrado' }));
+          return;
+        }
+        try {
+          const data = decryptVaultNode(targetEnv, password);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true, data }));
+        } catch {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, error: 'Senha Mestre incorreta ou cofre inválido' }));
+        }
+        return;
+      }
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'Ação inválida (use encrypt ou decrypt)' }));
+    }).catch(() => {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'JSON inválido' }));
+    });
+    return;
   }
 
   // 1.2 API: Offline Kiwix URL Resolver & Bookshelf
