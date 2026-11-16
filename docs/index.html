@@ -1508,6 +1508,98 @@
                 <tbody id="rationing-tbody"></tbody>
               </table>
             </div>
+
+            <div class="metric-card" style="margin-top: 1.25rem; border-left: 3px solid var(--accent-green); gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <h3 style="color: #fff; font-size: 0.96rem; margin: 0;">📦 Controle de Estoque Real &amp; Alerta de Validade (PEPS)</h3>
+                  <div style="font-size: 0.78rem; color: var(--text-muted);">Compare água/calorias reais com sua meta planejada e acompanhe prazos de validade (&le; 60 dias).</div>
+                </div>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button type="button" class="chip-btn chip-highlight" onclick="seedOnlineInventoryFromBasket()">⚡ Importar Cesta Calculada</button>
+                  <button type="button" class="chip-btn" style="color: #fca5a5;" onclick="clearOnlineInventory()">🗑️ Limpar</button>
+                </div>
+              </div>
+
+              <div class="grid-3">
+                <div class="metric-card">
+                  <span class="metric-title">ÁGUA REAL VS. META</span>
+                  <span class="metric-value font-mono" style="color: #22d3ee; font-size: 0.95rem;" id="on-inv-water-status">0 L / 0 L (0%)</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">CALORIAS REAIS VS. META</span>
+                  <span class="metric-value font-mono" style="color: #fbbf24; font-size: 0.95rem;" id="on-inv-kcal-status">0 / 0 kcal (0%)</span>
+                </div>
+                <div class="metric-card">
+                  <span class="metric-title">VALIDADE PEPS (&le; 60D)</span>
+                  <span class="metric-value font-mono" style="font-size: 0.85rem; color: #cbd5e1;" id="on-inv-expiry-summary">🟢 0 OK • 🟡 0 • 🔴 0</span>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 0.5rem;">
+                <div>
+                  <span class="stat-label">ITEM / PRODUTO</span>
+                  <input type="text" id="on-inv-name" class="route-input" placeholder="Ex: Arroz 5kg, Água">
+                </div>
+                <div>
+                  <span class="stat-label">CATEGORIA</span>
+                  <select id="on-inv-cat" class="route-input">
+                    <option value="food">🍲 Alimentos</option>
+                    <option value="water">💧 Água</option>
+                    <option value="meds">💊 Farmácia</option>
+                    <option value="fuel">⛽ Combustível</option>
+                    <option value="energy">🔋 Energia</option>
+                    <option value="other">📦 Outros</option>
+                  </select>
+                </div>
+                <div>
+                  <span class="stat-label">QTD</span>
+                  <input type="number" id="on-inv-qty" class="route-input font-mono" value="1" min="0" step="0.5">
+                </div>
+                <div>
+                  <span class="stat-label">UNIDADE</span>
+                  <select id="on-inv-unit" class="route-input">
+                    <option value="kg">kg</option>
+                    <option value="L">L</option>
+                    <option value="un">un</option>
+                    <option value="latas">latas</option>
+                    <option value="cx">cx</option>
+                  </select>
+                </div>
+                <div>
+                  <span class="stat-label">KCAL TOTAIS</span>
+                  <input type="number" id="on-inv-kcal" class="route-input font-mono" value="0" min="0" step="100">
+                </div>
+                <div>
+                  <span class="stat-label">VALIDADE</span>
+                  <input type="date" id="on-inv-expiry" class="route-input font-mono">
+                </div>
+                <div>
+                  <span class="stat-label">LOCAL</span>
+                  <input type="text" id="on-inv-loc" class="route-input" placeholder="Dispensa A">
+                </div>
+              </div>
+
+              <div>
+                <button type="button" class="btn-sidebar-action primary" style="width: auto; border: none; cursor: pointer; padding: 0.5rem 0.95rem;" onclick="addOnlineInventoryItem()">➕ Adicionar Item</button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="tactical-table">
+                  <thead>
+                    <tr>
+                      <th>Item / Local</th>
+                      <th>Cat.</th>
+                      <th>Qtd</th>
+                      <th>Kcal</th>
+                      <th>Validade (PEPS)</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="on-inv-tbody"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1872,6 +1964,7 @@
                       <tr><td><code>GET /api/kiwix/search</code></td><td>Busca unificada simultânea Multi-ZIM</td></tr>
                       <tr><td><code>GET /api/kiwix/resolve</code></td><td>Ponte por <code>?book=</code> ou <code>?category=</code> (:8090)</td></tr>
                       <tr><td><code>GET/POST/DELETE /api/camp-board</code></td><td>Mural de avisos compartilhado na LAN</td></tr>
+                      <tr><td><code>GET/POST/DELETE /api/inventory</code></td><td>Inventário real da base com validade PEPS</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -3884,16 +3977,25 @@
         { name: 'Sal Refinado Iodado', factor: 0.012, unit: 'kg', life: 'Indeterminada' }
       ];
 
+      const computedOnline = food.map(f => {
+        const qtyNum = Number((f.factor * totalPeople * days).toFixed(f.unit === 'latas' ? 0 : 1));
+        const kcalPer = f.unit === 'latas' ? 250 : (f.unit === 'L' ? 8840 : (f.name.includes('Sal') ? 0 : 3500));
+        return { name: f.name, qty: qtyNum, unit: f.unit, kcalTotal: Math.round(qtyNum * kcalPer), life: f.life };
+      });
+      window.lastOnlineRationingTargets = { waterTotal, hygieneTotal, totalKcal, days, totalPeople };
+      window.lastOnlineRationingBasket = computedOnline;
+
       const tbody = document.getElementById('rationing-tbody');
       if (tbody) {
-        tbody.innerHTML = food.map(f => `
+        tbody.innerHTML = computedOnline.map(f => `
           <tr>
             <td style="color: #fff; font-weight: 700;">${f.name}</td>
-            <td style="color: #34d399; font-family: monospace; font-weight: 800;">${(f.factor * totalPeople * days).toFixed(f.unit === 'latas' ? 0 : 1)} ${f.unit}</td>
+            <td style="color: #34d399; font-family: monospace; font-weight: 800;">${f.qty} ${f.unit}</td>
             <td>${f.life}</td>
           </tr>
         `).join('');
       }
+      if (typeof renderOnlineInventory === 'function') renderOnlineInventory();
     }
 
     function calcDipoleOnline() {
@@ -5307,6 +5409,129 @@
       });
     }
 
+    function getOnlineInventoryItems() {
+      try {
+        const arr = JSON.parse(localStorage.getItem('nomad_supply_inventory_v1') || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) { return []; }
+    }
+
+    function saveOnlineInventoryItems(items) {
+      try { localStorage.setItem('nomad_supply_inventory_v1', JSON.stringify(items)); } catch (e) {}
+      renderOnlineInventory();
+    }
+
+    function computeOnlineExpiryStatus(expiryDateStr) {
+      const clean = String(expiryDateStr || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) return { code: 'none', label: '⚪ Indeterminada', color: '#94a3b8' };
+      const [y, m, d] = clean.split('-').map(Number);
+      const now = new Date();
+      const diff = Math.round((new Date(y, m - 1, d).getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86400000);
+      if (diff < 0) return { code: 'expired', label: `🔴 Vencido há ${Math.abs(diff)} d`, color: '#f87171' };
+      if (diff <= 60) return { code: 'warning', label: `🟡 Vence em ${diff} d — PEPS`, color: '#fbbf24' };
+      return { code: 'ok', label: `🟢 OK (${diff} d)`, color: '#34d399' };
+    }
+
+    function addOnlineInventoryItem() {
+      const nameEl = document.getElementById('on-inv-name');
+      const name = (nameEl?.value || '').trim();
+      if (!name) return;
+      const category = document.getElementById('on-inv-cat')?.value || 'food';
+      const qty = Math.max(0, Number(document.getElementById('on-inv-qty')?.value) || 0);
+      const unit = document.getElementById('on-inv-unit')?.value || 'un';
+      const kcalTotal = Math.max(0, Math.round(Number(document.getElementById('on-inv-kcal')?.value) || 0));
+      const expiryDate = (document.getElementById('on-inv-expiry')?.value || '').trim();
+      const location = (document.getElementById('on-inv-loc')?.value || '').trim();
+
+      const items = getOnlineInventoryItems();
+      const existing = items.find(i => i.name.toLowerCase() === name.toLowerCase() && i.category === category);
+      if (existing) {
+        Object.assign(existing, { qty, unit, kcalTotal, expiryDate, location });
+      } else {
+        items.unshift({ id: `inv_${Date.now()}`, name, category, qty, unit, kcalTotal, expiryDate, location });
+      }
+      if (nameEl) nameEl.value = '';
+      saveOnlineInventoryItems(items);
+    }
+
+    function seedOnlineInventoryFromBasket() {
+      const t = window.lastOnlineRationingTargets || { waterTotal: 0 };
+      const basket = Array.isArray(window.lastOnlineRationingBasket) ? window.lastOnlineRationingBasket : [];
+      const items = getOnlineInventoryItems();
+      const future = (months) => { const d = new Date(); d.setMonth(d.getMonth() + months); return d.toISOString().slice(0, 10); };
+      if (t.waterTotal > 0 && !items.some(i => i.category === 'water')) {
+        items.unshift({ id: `inv_w_${Date.now()}`, name: 'Água Potável Envasada', category: 'water', qty: t.waterTotal, unit: 'L', kcalTotal: 0, expiryDate: future(6), location: 'Reserva Base' });
+      }
+      basket.forEach((b, idx) => {
+        if (!items.some(i => i.name.toLowerCase() === b.name.toLowerCase())) {
+          items.push({ id: `inv_b_${idx}_${Date.now()}`, name: b.name, category: 'food', qty: b.qty, unit: b.unit, kcalTotal: b.kcalTotal, expiryDate: future(12), location: 'Dispensa' });
+        }
+      });
+      saveOnlineInventoryItems(items);
+    }
+
+    function adjustOnlineInventoryQty(id, delta) {
+      let items = getOnlineInventoryItems();
+      const idx = items.findIndex(i => i.id === id);
+      if (idx < 0) return;
+      const next = Math.round(Math.max(0, (Number(items[idx].qty) || 0) + delta) * 100) / 100;
+      if (next <= 0) items = items.filter(i => i.id !== id);
+      else {
+        if (items[idx].qty > 0 && items[idx].kcalTotal > 0) {
+          items[idx].kcalTotal = Math.max(0, Math.round((items[idx].kcalTotal / items[idx].qty) * next));
+        }
+        items[idx].qty = next;
+      }
+      saveOnlineInventoryItems(items);
+    }
+
+    function deleteOnlineInventoryItem(id) {
+      saveOnlineInventoryItems(getOnlineInventoryItems().filter(i => i.id !== id));
+    }
+
+    function clearOnlineInventory() {
+      saveOnlineInventoryItems([]);
+    }
+
+    function renderOnlineInventory() {
+      const items = getOnlineInventoryItems();
+      const targets = window.lastOnlineRationingTargets || { waterTotal: 0, totalKcal: 0 };
+      let realWater = 0; let realKcal = 0; let ok = 0; let warn = 0; let exp = 0;
+      items.forEach(i => {
+        if (i.category === 'water') realWater += Number(i.qty) || 0;
+        realKcal += Number(i.kcalTotal) || 0;
+        const st = computeOnlineExpiryStatus(i.expiryDate).code;
+        if (st === 'expired') exp++;
+        else if (st === 'warning') warn++;
+        else ok++;
+      });
+      const wPct = targets.waterTotal > 0 ? Math.min(100, Math.round((realWater / targets.waterTotal) * 100)) : 0;
+      const kPct = targets.totalKcal > 0 ? Math.min(100, Math.round((realKcal / targets.totalKcal) * 100)) : 0;
+      const wEl = document.getElementById('on-inv-water-status');
+      const kEl = document.getElementById('on-inv-kcal-status');
+      const eEl = document.getElementById('on-inv-expiry-summary');
+      if (wEl) wEl.textContent = `${Math.round(realWater)} L / ${targets.waterTotal} L (${wPct}%)`;
+      if (kEl) kEl.textContent = `${realKcal.toLocaleString('pt-BR')} / ${targets.totalKcal.toLocaleString('pt-BR')} kcal (${kPct}%)`;
+      if (eEl) eEl.textContent = `🟢 ${ok} OK • 🟡 ${warn} • 🔴 ${exp}`;
+
+      const tbody = document.getElementById('on-inv-tbody');
+      if (!tbody) return;
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="font-size:0.78rem;color:var(--text-muted);text-align:center;">Nenhum item cadastrado ainda.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      items.forEach(i => {
+        const st = computeOnlineExpiryStatus(i.expiryDate);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>${escapeOnlineHtml(i.name)}</strong>${i.location ? `<div style="font-size:0.7rem;color:var(--text-muted);">📍 ${escapeOnlineHtml(i.location)}</div>` : ''}</td><td><code>${escapeOnlineHtml(i.category)}</code></td><td class="font-mono" style="color:#34d399;font-weight:700;">${i.qty} ${escapeOnlineHtml(i.unit)}</td><td class="font-mono" style="color:#fbbf24;">${i.kcalTotal > 0 ? i.kcalTotal.toLocaleString('pt-BR') : '-'}</td><td style="color:${st.color};font-size:0.74rem;font-weight:700;">${escapeOnlineHtml(st.label)}</td><td><button type="button" class="chip-btn" style="font-size:0.68rem;padding:0.15rem 0.4rem;" data-oi-minus>-1</button> <button type="button" class="chip-btn" style="font-size:0.68rem;padding:0.15rem 0.4rem;" data-oi-plus>+1</button> <button type="button" class="chip-btn" style="font-size:0.68rem;padding:0.15rem 0.4rem;color:#fca5a5;" data-oi-del>🗑️</button></td>`;
+        tr.querySelector('[data-oi-minus]')?.addEventListener('click', () => adjustOnlineInventoryQty(i.id, -1));
+        tr.querySelector('[data-oi-plus]')?.addEventListener('click', () => adjustOnlineInventoryQty(i.id, 1));
+        tr.querySelector('[data-oi-del]')?.addEventListener('click', () => deleteOnlineInventoryItem(i.id));
+        tbody.appendChild(tr);
+      });
+    }
+
     function exportOnlineFullBackup() {
       const safeParse = (key) => {
         try {
@@ -5329,7 +5554,8 @@
         pef: pefData,
         bob: storedBobState || safeParse('nomad_bob_checked_state_v1') || {},
         pace: paceData,
-        tccc: getOnlineTcccCards()
+        tccc: getOnlineTcccCards(),
+        inventory: getOnlineInventoryItems()
       };
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -5388,6 +5614,10 @@
             renderOnlineTcccList();
             restored.push(`TCCC (${parsed.tccc.length})`);
           }
+          if (Array.isArray(parsed.inventory)) {
+            saveOnlineInventoryItems(parsed.inventory);
+            restored.push(`Estoque (${parsed.inventory.length})`);
+          }
 
           if (restored.length === 0) throw new Error('Nenhum dado compatível encontrado neste JSON.');
 
@@ -5437,6 +5667,7 @@
     calcOnlineTacticalMeasure();
     initOnlineNightVision();
     renderOnlineTcccList();
+    renderOnlineInventory();
   </script>
 </body>
 </html>

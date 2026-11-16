@@ -2556,21 +2556,41 @@ window.calculateRationing = function() {
     { name: 'Café em Pó / Chá Mate', perPersonDay: 0.015, unit: 'kg', kcalPerUnit: 0, shelfLife: '1 a 2 anos' }
   ];
 
+  const computedBasket = foodItems.map(item => {
+    const qtyNum = Number((item.perPersonDay * totalPeople * days).toFixed(item.unit.includes('latas') ? 0 : 1));
+    const totalItemKcal = Math.round(qtyNum * item.kcalPerUnit);
+    return {
+      name: item.name,
+      qty: qtyNum,
+      unit: item.unit.includes('latas') ? 'latas' : item.unit,
+      kcalTotal: totalItemKcal,
+      shelfLife: item.shelfLife
+    };
+  });
+  window.lastRationingTargets = {
+    totalDrinkingWater,
+    totalHygieneWater,
+    totalKcal,
+    days,
+    totalPeople
+  };
+  window.lastRationingFoodItems = computedBasket;
+
   const tbody = document.getElementById('rationing-table-body');
   if (tbody) {
-    tbody.innerHTML = foodItems.map(item => {
-      const qty = (item.perPersonDay * totalPeople * days).toFixed(item.unit.includes('latas') ? 0 : 1);
-      const totalItemKcal = Math.round(qty * item.kcalPerUnit);
+    tbody.innerHTML = foodItems.map((item, idx) => {
+      const c = computedBasket[idx];
       return `
         <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
           <td style="padding: 0.65rem 0.8rem; font-weight: 700; color: #fff;">${item.name}</td>
-          <td style="padding: 0.65rem 0.8rem; font-family: monospace; font-weight: 800; color: #34d399;">${qty} ${item.unit}</td>
-          <td style="padding: 0.65rem 0.8rem; font-family: monospace; color: #f59e0b;">${totalItemKcal > 0 ? totalItemKcal.toLocaleString('pt-BR') + ' kcal' : '-'}</td>
+          <td style="padding: 0.65rem 0.8rem; font-family: monospace; font-weight: 800; color: #34d399;">${c.qty} ${item.unit}</td>
+          <td style="padding: 0.65rem 0.8rem; font-family: monospace; color: #f59e0b;">${c.kcalTotal > 0 ? c.kcalTotal.toLocaleString('pt-BR') + ' kcal' : '-'}</td>
           <td style="padding: 0.65rem 0.8rem; color: #94a3b8;">${item.shelfLife}</td>
         </tr>
       `;
     }).join('');
   }
+  if (typeof window.renderSupplyInventory === 'function') window.renderSupplyInventory();
 };
 
 window.printRationingList = function() {
@@ -5014,7 +5034,10 @@ window.exportFullTacticalBackup = function() {
     bob: safeParse('nomad_bob_checked_state_v1'),
     pace: safeParse('nomad_pace_plan_v1'),
     tccc: safeParse('nomad_tccc_cards_v1') || [],
-    breadcrumb: safeParse('nomad_gps_breadcrumb_v1') || []
+    breadcrumb: safeParse('nomad_gps_breadcrumb_v1') || [],
+    inventory: typeof supplyInventoryItems !== 'undefined' && Array.isArray(supplyInventoryItems)
+      ? supplyInventoryItems
+      : (safeParse('nomad_supply_inventory_v1') || [])
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -5084,6 +5107,14 @@ window.importFullTacticalBackup = function(event) {
         localStorage.setItem('nomad_gps_breadcrumb_v1', JSON.stringify(parsed.breadcrumb));
         if (typeof window.reloadGpsBreadcrumbFromStorage === 'function') window.reloadGpsBreadcrumbFromStorage();
         restoredSections.push(`Rastro (${parsed.breadcrumb.length} pts)`);
+      }
+
+      if (Array.isArray(parsed.inventory)) {
+        localStorage.setItem('nomad_supply_inventory_v1', JSON.stringify(parsed.inventory));
+        if (typeof window.restoreSupplyInventoryFromBackup === 'function') {
+          window.restoreSupplyInventoryFromBackup(parsed.inventory);
+        }
+        restoredSections.push(`Estoque (${parsed.inventory.length})`);
       }
 
       if (restoredSections.length === 0) {
@@ -6600,11 +6631,336 @@ window.printCurrentOrLastTcccCard = function() {
   window.printTcccCardObj(cardToPrint);
 };
 
+// =====================================================================
+// 43. CONTROLE DE ESTOQUE REAL & ALERTA DE VALIDADE (DISPENSA / FARMÁCIA)
+// =====================================================================
+
+let supplyInventoryItems = [];
+let supplyInventoryFilter = 'all';
+
+const INVENTORY_CAT_META = {
+  water: { label: '💧 Água', color: '#22d3ee' },
+  food: { label: '🍲 Alimentos', color: '#34d399' },
+  meds: { label: '💊 Farmácia', color: '#f87171' },
+  fuel: { label: '⛽ Combustível', color: '#fbbf24' },
+  energy: { label: '🔋 Energia', color: '#a78bfa' },
+  other: { label: '📦 Outros', color: '#94a3b8' }
+};
+
+function computeExpiryStatus(expiryDateStr, nowDate = new Date()) {
+  const clean = String(expiryDateStr || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    return { code: 'none', daysLeft: null, label: '⚪ Indeterminada', color: '#94a3b8' };
+  }
+  const [y, m, d] = clean.split('-').map(Number);
+  const expMid = new Date(y, m - 1, d).getTime();
+  const todayMid = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
+  const daysLeft = Math.round((expMid - todayMid) / 86400000);
+  if (daysLeft < 0) {
+    return { code: 'expired', daysLeft, label: `🔴 Vencido há ${Math.abs(daysLeft)} d`, color: '#f87171' };
+  }
+  if (daysLeft <= 60) {
+    return { code: 'warning', daysLeft, label: `🟡 Vence em ${daysLeft} d — Rodízio PEPS`, color: '#fbbf24' };
+  }
+  return { code: 'ok', daysLeft, label: `🟢 OK (${daysLeft} d)`, color: '#34d399' };
+}
+
+function saveSupplyInventoryLocal() {
+  try { localStorage.setItem('nomad_supply_inventory_v1', JSON.stringify(supplyInventoryItems)); } catch {}
+}
+
+async function saveSupplyInventoryState(syncServer = true) {
+  saveSupplyInventoryLocal();
+  window.renderSupplyInventory();
+  if (!syncServer) return;
+  try {
+    const res = await fetch('/api/inventory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(supplyInventoryItems)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        supplyInventoryItems = data.items;
+        saveSupplyInventoryLocal();
+        window.renderSupplyInventory();
+      }
+    }
+  } catch {}
+}
+
+window.loadSupplyInventory = async function() {
+  try {
+    const localRaw = JSON.parse(localStorage.getItem('nomad_supply_inventory_v1') || '[]');
+    if (Array.isArray(localRaw)) supplyInventoryItems = localRaw;
+  } catch {}
+  try {
+    const res = await fetch('/api/inventory');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        if (data.items.length === 0 && supplyInventoryItems.length > 0) {
+          await saveSupplyInventoryState(true);
+          return;
+        }
+        supplyInventoryItems = data.items;
+        saveSupplyInventoryLocal();
+      }
+    }
+  } catch {}
+  window.renderSupplyInventory();
+};
+
+window.restoreSupplyInventoryFromBackup = function(arr) {
+  supplyInventoryItems = Array.isArray(arr) ? arr : [];
+  saveSupplyInventoryState(true);
+};
+
+window.addOrUpdateSupplyInventoryItem = async function() {
+  const nameEl = document.getElementById('inv-name');
+  const catEl = document.getElementById('inv-cat');
+  const qtyEl = document.getElementById('inv-qty');
+  const unitEl = document.getElementById('inv-unit');
+  const kcalEl = document.getElementById('inv-kcal');
+  const expiryEl = document.getElementById('inv-expiry');
+  const locEl = document.getElementById('inv-loc');
+
+  const name = (nameEl?.value || '').trim();
+  if (!name) {
+    alert('Informe o nome do item de estoque.');
+    nameEl?.focus();
+    return;
+  }
+  const category = catEl?.value || 'food';
+  const qty = Math.max(0, Number(qtyEl?.value) || 0);
+  const unit = (unitEl?.value || 'un').trim();
+  const kcalTotal = Math.max(0, Math.round(Number(kcalEl?.value) || 0));
+  const expiryDate = (expiryEl?.value || '').trim();
+  const location = (locEl?.value || '').trim();
+
+  const existing = supplyInventoryItems.find(it => it.name.toLowerCase() === name.toLowerCase() && it.category === category);
+  const itemObj = {
+    id: existing ? existing.id : `inv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    name,
+    category,
+    qty: Math.round(qty * 100) / 100,
+    unit,
+    kcalTotal,
+    expiryDate,
+    location,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (existing) {
+    if (itemObj.qty <= 0) {
+      supplyInventoryItems = supplyInventoryItems.filter(it => it.id !== existing.id);
+    } else {
+      Object.assign(existing, itemObj);
+    }
+  } else {
+    supplyInventoryItems.unshift(itemObj);
+  }
+
+  if (nameEl) nameEl.value = '';
+  if (kcalEl) kcalEl.value = '0';
+  if (locEl) locEl.value = '';
+  await saveSupplyInventoryState(true);
+};
+
+window.adjustSupplyInventoryQty = async function(id, delta) {
+  const idx = supplyInventoryItems.findIndex(it => it.id === id);
+  if (idx < 0) return;
+  const item = supplyInventoryItems[idx];
+  const nextQty = Math.round(Math.max(0, (Number(item.qty) || 0) + delta) * 100) / 100;
+  if (nextQty <= 0) {
+    await window.deleteSupplyInventoryItem(id);
+    return;
+  }
+  if (item.qty > 0 && item.kcalTotal > 0) {
+    item.kcalTotal = Math.max(0, Math.round((item.kcalTotal / item.qty) * nextQty));
+  }
+  item.qty = nextQty;
+  item.updatedAt = new Date().toISOString();
+  await saveSupplyInventoryState(true);
+};
+
+window.deleteSupplyInventoryItem = async function(id) {
+  supplyInventoryItems = supplyInventoryItems.filter(it => it.id !== id);
+  saveSupplyInventoryLocal();
+  window.renderSupplyInventory();
+  try {
+    await fetch(`/api/inventory?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+  } catch {}
+};
+
+window.clearAllSupplyInventory = async function() {
+  if (supplyInventoryItems.length > 0 && !confirm('Zerar todo o inventário real cadastrado da base?')) return;
+  supplyInventoryItems = [];
+  saveSupplyInventoryLocal();
+  window.renderSupplyInventory();
+  try {
+    await fetch('/api/inventory?id=all', { method: 'DELETE' });
+  } catch {}
+};
+
+window.seedInventoryFromBasket = async function() {
+  if (!window.lastRationingTargets || !Array.isArray(window.lastRationingFoodItems)) {
+    if (typeof window.calculateRationing === 'function') window.calculateRationing();
+  }
+  const targets = window.lastRationingTargets || { totalDrinkingWater: 0, totalKcal: 0, days: 15 };
+  const basket = Array.isArray(window.lastRationingFoodItems) ? window.lastRationingFoodItems : [];
+
+  const futureDate = (monthsAhead) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + monthsAhead);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const candidates = [];
+  if (targets.totalDrinkingWater > 0) {
+    candidates.push({
+      id: `inv_seed_water_${Date.now()}`,
+      name: 'Água Potável Envasada / Bombona',
+      category: 'water',
+      qty: targets.totalDrinkingWater,
+      unit: 'L',
+      kcalTotal: 0,
+      expiryDate: futureDate(6),
+      location: 'Reserva Base'
+    });
+  }
+  basket.forEach((f, idx) => {
+    const defaultMonths = f.name.includes('Sal') || f.name.includes('Açúcar') ? 36 : (f.name.includes('Sardinha') || f.name.includes('Arroz') ? 24 : 12);
+    candidates.push({
+      id: `inv_seed_${idx}_${Date.now()}`,
+      name: f.name,
+      category: 'food',
+      qty: f.qty,
+      unit: f.unit,
+      kcalTotal: f.kcalTotal,
+      expiryDate: futureDate(defaultMonths),
+      location: 'Dispensa Seca'
+    });
+  });
+
+  candidates.forEach(cand => {
+    const existing = supplyInventoryItems.find(it => it.name.toLowerCase() === cand.name.toLowerCase() && it.category === cand.category);
+    if (existing) {
+      existing.qty = cand.qty;
+      existing.kcalTotal = cand.kcalTotal;
+      existing.updatedAt = new Date().toISOString();
+    } else {
+      supplyInventoryItems.push({ ...cand, updatedAt: new Date().toISOString() });
+    }
+  });
+
+  await saveSupplyInventoryState(true);
+};
+
+window.filterSupplyInventory = function(filterKey) {
+  supplyInventoryFilter = filterKey || 'all';
+  document.querySelectorAll('.inv-filter-chip').forEach(btn => {
+    btn.classList.toggle('chip-highlight', btn.getAttribute('data-inv-filter') === supplyInventoryFilter);
+  });
+  window.renderSupplyInventory();
+};
+
+window.renderSupplyInventory = function() {
+  const targets = window.lastRationingTargets || { totalDrinkingWater: 0, totalKcal: 0 };
+  let realWaterL = 0;
+  let realKcal = 0;
+  let countOk = 0;
+  let countWarn = 0;
+  let countExp = 0;
+
+  supplyInventoryItems.forEach(item => {
+    const qty = Number(item.qty) || 0;
+    if (item.category === 'water') {
+      realWaterL += qty;
+    }
+    realKcal += Math.max(0, Number(item.kcalTotal) || 0);
+    const exp = computeExpiryStatus(item.expiryDate);
+    if (exp.code === 'expired') countExp++;
+    else if (exp.code === 'warning') countWarn++;
+    else if (exp.code === 'ok' || exp.code === 'none') countOk++;
+  });
+
+  const waterTarget = Math.max(0, Number(targets.totalDrinkingWater) || 0);
+  const waterPct = waterTarget > 0 ? Math.min(100, Math.round((realWaterL / waterTarget) * 100)) : 0;
+  const kcalTarget = Math.max(0, Number(targets.totalKcal) || 0);
+  const kcalPct = kcalTarget > 0 ? Math.min(100, Math.round((realKcal / kcalTarget) * 100)) : 0;
+
+  const waterEl = document.getElementById('inv-water-status');
+  const waterBar = document.getElementById('inv-water-bar');
+  if (waterEl) waterEl.textContent = `${Math.round(realWaterL)} L / ${waterTarget} L (${waterPct}%)`;
+  if (waterBar) waterBar.style.width = `${waterPct}%`;
+
+  const kcalEl = document.getElementById('inv-kcal-status');
+  const kcalBar = document.getElementById('inv-kcal-bar');
+  if (kcalEl) kcalEl.textContent = `${realKcal.toLocaleString('pt-BR')} / ${kcalTarget.toLocaleString('pt-BR')} kcal (${kcalPct}%)`;
+  if (kcalBar) kcalBar.style.width = `${kcalPct}%`;
+
+  const expSummaryEl = document.getElementById('inv-expiry-summary');
+  if (expSummaryEl) expSummaryEl.textContent = `🟢 ${countOk} em dia • 🟡 ${countWarn} rodízio • 🔴 ${countExp} vencido(s)`;
+
+  const tbody = document.getElementById('inv-items-tbody');
+  if (!tbody) return;
+
+  const filtered = supplyInventoryItems.filter(item => {
+    if (supplyInventoryFilter === 'all') return true;
+    if (supplyInventoryFilter === 'fuel') return item.category === 'fuel' || item.category === 'energy';
+    if (supplyInventoryFilter === 'expiring') {
+      const code = computeExpiryStatus(item.expiryDate).code;
+      return code === 'warning' || code === 'expired';
+    }
+    return item.category === supplyInventoryFilter;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-xs text-gray-400 text-center py-4">Nenhum item cadastrado neste filtro. Cadastre acima ou clique em "⚡ Importar Cesta Calculada".</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(item => {
+    const meta = INVENTORY_CAT_META[item.category] || INVENTORY_CAT_META.other;
+    const exp = computeExpiryStatus(item.expiryDate);
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+    tr.innerHTML = `
+      <td style="padding:0.55rem 0.7rem;">
+        <div style="font-weight:700;color:#fff;">${escapeHtmlSafe(item.name)}</div>
+        ${item.location ? `<div style="font-size:11px;color:#94a3b8;">📍 ${escapeHtmlSafe(item.location)}</div>` : ''}
+      </td>
+      <td style="padding:0.55rem 0.7rem;"><span class="chip-btn" style="font-size:11px;padding:0.15rem 0.45rem;border-color:${meta.color};color:${meta.color};">${meta.label}</span></td>
+      <td style="padding:0.55rem 0.7rem;font-family:monospace;font-weight:800;color:#34d399;">${Number(item.qty)} ${escapeHtmlSafe(item.unit)}</td>
+      <td style="padding:0.55rem 0.7rem;font-family:monospace;color:#fbbf24;">${item.kcalTotal > 0 ? item.kcalTotal.toLocaleString('pt-BR') + ' kcal' : '-'}</td>
+      <td style="padding:0.55rem 0.7rem;">
+        <div style="font-size:11px;font-weight:700;color:${exp.color};">${escapeHtmlSafe(exp.label)}</div>
+        ${item.expiryDate ? `<div style="font-size:10px;font-family:monospace;color:#64748b;">${escapeHtmlSafe(item.expiryDate)}</div>` : ''}
+      </td>
+      <td style="padding:0.55rem 0.7rem;">
+        <div style="display:flex;gap:0.25rem;flex-wrap:wrap;">
+          <button type="button" data-inv-minus class="chip-btn" style="padding:0.15rem 0.45rem;font-size:11px;" title="Consumir 1">-1</button>
+          <button type="button" data-inv-plus class="chip-btn" style="padding:0.15rem 0.45rem;font-size:11px;" title="Adicionar 1">+1</button>
+          <button type="button" data-inv-del class="chip-btn" style="padding:0.15rem 0.45rem;font-size:11px;color:#fca5a5;" title="Remover item">🗑️</button>
+        </div>
+      </td>
+    `;
+    tr.querySelector('[data-inv-minus]')?.addEventListener('click', () => window.adjustSupplyInventoryQty(item.id, -1));
+    tr.querySelector('[data-inv-plus]')?.addEventListener('click', () => window.adjustSupplyInventoryQty(item.id, 1));
+    tr.querySelector('[data-inv-del]')?.addEventListener('click', () => window.deleteSupplyInventoryItem(item.id));
+    tbody.appendChild(tr);
+  });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.initDynamicKiwixLinks === 'function') window.initDynamicKiwixLinks();
   initNightVisionMode();
   window.reloadGpsBreadcrumbFromStorage();
   window.renderTcccCardsList();
+  window.loadSupplyInventory();
   setInterval(() => {
     if (getSavedTcccCards().length > 0) window.renderTcccCardsList();
   }, 60000);

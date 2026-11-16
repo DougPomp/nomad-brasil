@@ -1661,6 +1661,41 @@ function writeCampBoard(entries) {
   fs.writeFileSync(campBoardFile, JSON.stringify(entries, null, 2), 'utf8');
 }
 
+const supplyInventoryFile = path.join(STORAGE_PATH, 'supply_inventory.json');
+const VALID_INVENTORY_CATS = new Set(['water', 'food', 'meds', 'fuel', 'energy', 'other']);
+
+function readSupplyInventory() {
+  if (!fs.existsSync(supplyInventoryFile)) return [];
+  try {
+    const parsed = JSON.parse(fs.readFileSync(supplyInventoryFile, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSupplyInventory(items) {
+  fs.mkdirSync(path.dirname(supplyInventoryFile), { recursive: true });
+  fs.writeFileSync(supplyInventoryFile, JSON.stringify(items, null, 2), 'utf8');
+}
+
+function sanitizeInventoryItem(raw, fallbackId) {
+  const name = String(raw?.name || '').trim().slice(0, 120);
+  if (!name) return null;
+  const catRaw = String(raw?.category || 'food').trim().toLowerCase();
+  return {
+    id: String(raw?.id || fallbackId || `inv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`),
+    name,
+    category: VALID_INVENTORY_CATS.has(catRaw) ? catRaw : 'food',
+    qty: Math.round(Math.max(0, Number(raw?.qty) || 0) * 100) / 100,
+    unit: String(raw?.unit || 'un').trim().slice(0, 20) || 'un',
+    kcalTotal: Math.max(0, Math.round(Number(raw?.kcalTotal) || 0)),
+    expiryDate: String(raw?.expiryDate || '').trim().slice(0, 10),
+    location: String(raw?.location || '').trim().slice(0, 60),
+    updatedAt: new Date().toISOString()
+  };
+}
+
 function decodeHtmlEntities(str) {
   return String(str || '')
     .replace(/&nbsp;/gi, ' ')
@@ -1725,6 +1760,7 @@ const server = http.createServer((req, res) => {
     const detailTilesCachedCount = countFilesRecursive(path.join(STORAGE_PATH, 'maps', 'detail_tiles_cache'), '.pbf');
     const zims = listInstalledZims();
     const campBoardEntries = readCampBoard();
+    const inventoryItems = readSupplyInventory();
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -1745,6 +1781,7 @@ const server = http.createServer((req, res) => {
         detailTilesCachedCount,
         zimFilesCount: zims.length,
         campBoardCount: campBoardEntries.length,
+        supplyInventoryCount: inventoryItems.length,
         primaryZimBook: zims[0]?.book || 'wikipedia_pt_all_maxi_2026-05'
       },
       port: PORT,
@@ -1852,6 +1889,74 @@ const server = http.createServer((req, res) => {
       writeCampBoard(entries);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ ok: true, count: entries.length }));
+      return;
+    }
+  }
+
+  // 1.16 API: Persistent Base Supply Inventory & Expiry (PEPS / FIFO)
+  if (pathname === '/api/inventory') {
+    if (req.method === 'GET') {
+      const items = readSupplyInventory();
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, count: items.length, items }));
+      return;
+    }
+    if (req.method === 'POST') {
+      readJsonRequestBody(req).then((body) => {
+        if (Array.isArray(body)) {
+          const cleaned = body
+            .map((raw, idx) => sanitizeInventoryItem(raw, `inv_${Date.now()}_${idx}`))
+            .filter(Boolean)
+            .slice(0, 300);
+          writeSupplyInventory(cleaned);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true, count: cleaned.length, items: cleaned }));
+          return;
+        }
+
+        const items = readSupplyInventory();
+        const existingIdx = body?.id ? items.findIndex(it => it.id === String(body.id)) : -1;
+        if (existingIdx >= 0 && Number(body?.qty) <= 0) {
+          items.splice(existingIdx, 1);
+          writeSupplyInventory(items);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true, item: null, count: items.length, items }));
+          return;
+        }
+
+        const sanitized = sanitizeInventoryItem(body);
+        if (!sanitized) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, error: 'Nome do item obrigatório' }));
+          return;
+        }
+
+        if (existingIdx >= 0) {
+          items[existingIdx] = { ...sanitized, id: items[existingIdx].id };
+        } else {
+          items.unshift(sanitized);
+        }
+        const trimmed = items.slice(0, 300);
+        writeSupplyInventory(trimmed);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, item: existingIdx >= 0 ? items[existingIdx] : sanitized, count: trimmed.length, items: trimmed }));
+      }).catch(() => {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: false, error: 'JSON inválido' }));
+      });
+      return;
+    }
+    if (req.method === 'DELETE') {
+      const targetId = (urlObj.searchParams.get('id') || '').trim();
+      let items = readSupplyInventory();
+      if (targetId === 'all') {
+        items = [];
+      } else if (targetId) {
+        items = items.filter(it => it.id !== targetId);
+      }
+      writeSupplyInventory(items);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, count: items.length, items }));
       return;
     }
   }

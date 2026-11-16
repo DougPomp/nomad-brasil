@@ -64,7 +64,7 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 25. **Satélites Meteorológicos & Ciclo Lunar:** Previsão de passagens de satélites NOAA/GOES e tábua de luminosidade lunar.
 
 ### 4. 🌾 Resiliência Alimentar, Água & Agrofloresta
-26. **Calculadora Tática de Racionamento:** Dimensionamento exato de água (3 L/dia/pessoa), calorias totais e cesta padrão nacional (arroz, feijão, aveia, sardinha, sal).
+26. **Calculadora Tática de Racionamento & Inventário Real PEPS:** Dimensionamento exato de água (3 L/dia/pessoa), calorias totais e cesta padrão nacional, integrado ao **Controle de Estoque Real da Base** (`/api/inventory` em `storage/supply_inventory.json`) com alertas de validade ($\le$ 60 dias), comparação em barra de Água/Calorias Reais vs. Meta e inclusão automática no backup `.JSON`.
 27. **Captação, Filtração & Cloração de Água:** Construção de biofiltros de areia/brita e tabela de dosagem de hipoclorito de sódio a 2,5%.
 28. **Poço Caipira Manual & Carneiro Hidráulico:** Perfuração manual de poços rasos e montagem de bomba de carneiro sem energia elétrica.
 29. **Plantas Alimentícias Não Convencionais (PANC):** Guia botânico de identificação e preparo de Ora-pro-nóbis, Taioba, Beldroega, Dente-de-leão e Caruru.
@@ -172,16 +172,16 @@ nomad-brasil/
 │   │   ├── survival.json       # Manuais técnicos de resiliência e campo
 │   │   └── routes_cache/       # Cache permanente em disco de todas as rotas traçadas
 │   └── public/
-│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, Mural LAN, TCCC e Visão Noturna
+│       ├── index.html          # Interface tática em dark mode com os 56 módulos, estante Multi-ZIM, Mural LAN, Estoque PEPS, TCCC e Visão Noturna
 │       ├── styles.css          # Design system com sidebar tática, controles escuros e filtro de visão noturna
-│       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, Multi-ZIM search, QR SVG, TCCC e A4
-│       ├── sw.js               # Service Worker PWA (v12) para operação offline e Network-First nas APIs
+│       ├── app.js              # Mapas, reversa, prefetch z=14, rotas + Via, GPX/KML, anéis, breadcrumb, Multi-ZIM, estoque PEPS, QR SVG, TCCC e A4
+│       ├── sw.js               # Service Worker PWA (v13) para operação offline e Network-First nas APIs
 │       ├── banner.svg          # Banner vetorizado da marca
 │       ├── logo.svg            # Logotipo oficial
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
-│   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v14)
+│   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Estoque PEPS + TCCC + Dossiê A4
+│   ├── sw.js                   # Service Worker do GitHub Pages (v15)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -193,6 +193,7 @@ nomad-brasil/
 │   │   └── basemaps-assets/fonts/      # Glyphs Noto Sans locais
 │   ├── user_waypoints.json             # Marcadores pessoais sincronizados automaticamente no servidor
 │   ├── camp_board.json                 # Mural de operações compartilhado na rede local (Camp Board LAN)
+│   ├── supply_inventory.json           # Inventário real de suprimentos e farmácia da base com controle de validade (PEPS)
 │   └── zim/                            # Biblioteca Multi-ZIM (Wikipédia, Wikivoyage, Wikibooks, Medicina, NHS, CDC, FAS)
 │       ├── *.zim                       # 11+ acervos enciclopédicos e médicos offline
 │       └── kiwix-library.xml           # Catálogo XML gerado
@@ -255,7 +256,7 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 
 | Método & Rota | Descrição Operacional |
 | :--- | :--- |
-| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`), avisos no Mural LAN (`campBoardCount`), `primaryZimBook`, porta ativa (`port`) e interfaces locais (`lanIps`). |
+| `GET /api/status` | Diagnóstico ao vivo: contagem de municípios IBGE, logradouros SQLite FTS5 (`streetsCount`), tiles `z=14` em cache (`detailTilesCachedCount`), rotas salvas (`routesCachedCount`), arquivos ZIM (`zimFilesCount`), avisos no Mural LAN (`campBoardCount`), itens em estoque (`supplyInventoryCount`), `primaryZimBook`, porta ativa (`port`) e interfaces locais (`lanIps`). |
 | `GET /api/cities` | Lista e filtra os 5.571 municípios brasileiros por nome, UF, região, código IBGE e prefixo DDD. |
 | `GET /api/streets` | Busca híbrida de ruas, avenidas, rodovias (`ref`) e POIs em SQLite FTS5 com sinônimos brasileiros, prioridade por proximidade e auto-aprendizado online opcional (`Photon`/`Nominatim`). |
 | `GET /api/streets/reverse` | Geocodificação reversa offline (`?lat=...&lng=...`) sobre tiles MVT locais (`z=13`/`z=14`) retornando a via mais próxima, distância em metros, município e POIs próximos. |
@@ -263,6 +264,7 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 | `GET / POST /api/maps/prefetch-city` | Pré-carrega em lote os tiles vetoriais `z=14` ao redor de uma cidade e indexa automaticamente todas as vias residenciais no `brazil-streets.sqlite`. |
 | `GET / POST /api/waypoints` | Lê e persiste em disco (`storage/user_waypoints.json`) os marcadores táticos pessoais do mapa. |
 | `GET / POST / DELETE /api/camp-board` | Mural de operações compartilhado na LAN (`storage/camp_board.json`) para alertas, QTH, suprimentos, rádio QAP e log de turno entre dispositivos conectados. |
+| `GET / POST / DELETE /api/inventory` | Controle de estoque real da dispensa, farmácia e combustível da base (`storage/supply_inventory.json`) com alertas de validade PEPS ($\le$ 60 dias). |
 | `GET /api/route` | Calcula rotas veiculares, 4x4 ou a pé com suporte a parada intermediária (`viaLat`/`viaLng`/`viaLabel`), quádruplo fallback (OSRM -> cache -> A\* MVT `forceOfflineGraph=1` -> corredor tático) e lista `corridorSupport` (POIs dentro de 5 km). |
 | `GET /api/route/gpx` | Exporta qualquer rota calculada (incluindo waypoint `<wpt>` de parada intermediária `viaLat`/`viaLng`) em arquivo `.gpx` padrão para Garmin e OsmAnd. |
 | `GET /api/kiwix/books` | Catálogo estruturado dos livros `.zim` instalados em `storage/zim/` com metadados de tamanho, idioma, categoria (`wikipedia`, `travel`, `medicine`, `books`) e ícone. |
