@@ -103,9 +103,13 @@ O sistema integra em uma interface tática ultra-rápida em *dark mode*:
 56. **Química Prática & Sabão de Cinzas:** Saponificação tradicional utilizando lixívia de cinzas de madeira e gordura animal.
 - **Cartão Tático de Bolso Imprimível (A4 Dobrável):** Folha única ultra-compacta contendo todas as frequências vitais, ficha médica, nós e protocolos de choque.
 - **Pacote Portátil Offline:** Exportação compacta em arquivo único para armazenamento seguro em pen-drives criptografados.
-- **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Checklist da Mochila 72h (BOB) e Plano de Comunicação PACE.
+- **Backup & Restauração Tática (.JSON):** Exportação e restauração portável de marcadores pessoais (Waypoints sincronizados no servidor), Plano de Emergência Familiar (PEF), Checklist da Mochila 72h (BOB), Plano de Comunicação PACE, Fichas TCCC e Rastro GPS (*Breadcrumb*).
 - **Dossiê Tático de Movimento Imprimível (A4):** Ordem de Movimento gerada em 1 clique a partir da rota traçada com coordenadas Decimal/DMS/UTM de Origem, Parada (`Via`) e Destino, POIs de apoio até 5 km no corredor, passo a passo, estimativa de combustível/água/calorias, janela de luz solar no destino, PEF e plano PACE.
 - **Modo Acampamento / Rede Local (LAN QR Code SVG):** Modal de compartilhamento local (`:8000` e `:8090`) com gerador nativo de QR Code SVG 100% offline (ISO-18004) para celulares e tablets na mesma rede Wi-Fi/hotspot.
+- **Mural de Operações na Rede Local (`Camp Board LAN`):** Quadro compartilhado em disco (`storage/camp_board.json` via `/api/camp-board`) para postagem de alertas, QTH com salto direto no mapa, suprimentos, rádio QAP e logs de turno entre todos os dispositivos conectados no Wi-Fi/hotspot.
+- **Importador Visual de Trilhas e Waypoints (`.GPX` / `.KML` / `.JSON`):** Carregamento direto de trilhas externas no mapa vetorial offline com cálculo de extensão total, marcadores de início/fim e importação automática de `<wpt>` e `<Placemark>`.
+- **Anéis de Raio Tático (`2 / 5 / 10 / 25 km`), Rastro GPS (*Breadcrumb*) & Modo Visão Noturna:** Círculos geodésicos de perímetro com contagem de municípios e POIs de socorro, gravação contínua de trilha GPS exportável em `.gpx` e filtro monocromático vermelho (`🔴 Visão Noturna`) para preservar a adaptação visual no escuro.
+- **Ficha de Atendimento de Campo & Cartão de Triagem TCCC (A4):** Registro persistente de vítimas com cronômetro de alerta de torniquete, escala AVPU, sinais vitais, lesões, condutas e impressão em folha A4 para entrega ao resgate.
 
 ---
 
@@ -177,7 +181,7 @@ nomad-brasil/
 │       └── vendor/             # MapLibre GL e PMTiles 100% offline (zero CDNs)
 ├── docs/                       # Demonstração Web PWA no GitHub Pages
 │   ├── index.html              # Showcase completo das ferramentas táticas + DMS/UTM + Multi-ZIM + QR LAN + Dossiê A4
-│   ├── sw.js                   # Service Worker do GitHub Pages (v13)
+│   ├── sw.js                   # Service Worker do GitHub Pages (v14)
 │   ├── manifest.json           # Manifesto PWA instalável em smartphones e tablets
 │   ├── banner.svg              # Imagem Open Graph / Twitter Card
 │   └── logo.svg                # Favicon e ícones
@@ -211,6 +215,7 @@ A pesquisa e inspeção de logradouros opera em 5 camadas integradas:
 4. **Tiles Vetoriais de Detalhe sob Demanda (`z=14`):** Ao navegar por bairros no mapa, os tiles visitados também são persistidos e indexados em segundo plano.
 5. **Descoberta Online Sob Demanda (`Photon` / `Nominatim`) com Persistência Offline:** Quando há conexão e uma rua residencial ainda não consta localmente, o backend consulta `Photon`/`Nominatim` e grava a via descoberta permanentemente no `brazil-streets.sqlite`.
 6. **Efemérides Astronômicas Offline & Régua Tática (`📐 Medir`):** Cálculo matemático local de alvorada/crepúsculo civil, nascer/pôr do sol, duração do dia e fase/iluminação lunar por coordenada, além de medição multiponto no mapa com distância geodésica, azimute verdadeiro, azimute magnético (declinação média `-21°`), tempo de marcha e horizonte de linha de visada VHF/UHF.
+7. **Anéis Geodésicos de Perímetro (`⭕ Raios`) & Rastro GPS (`🛰️ Rastro`):** Traçado de anéis concêntricos de `2`, `5`, `10` e `25 km` (ou raio customizado) com contagem automática de municípios e pontos de socorro no perímetro, somado ao gravador de trilha GPS em tempo real (*Breadcrumb*) com exportação `.gpx`.
 
 ---
 
@@ -224,6 +229,7 @@ O sistema possui quádrupla camada de resiliência para cálculo de deslocamento
 5. **Parada Intermediária (`Via` — `viaLat`/`viaLng`/`viaLabel`):** Suporte a ponto intermediário tanto no motor OSRM quanto no grafo A\* 100% offline em 2 trechos sobre tiles MVT locais, com exportação de waypoint `<wpt>` no arquivo `.gpx`.
 6. **Corredor de Segurança de 5 km (`corridorSupport`):** Escaneamento automático ao longo da geometria da rota identificando hospitais, bombeiros, polícia, postos de combustível e fontes de água até 5 km do eixo, com distância lateral e quilômetro da rota.
 7. **Dossiê Tático da Rota Imprimível em A4 (`printCurrentRouteDossier`):** Geração de Ordem de Movimento em folha A4 pronta para impressão ou salvamento offline em HTML.
+8. **Importador de Trilhas e Rotas Externas (`.GPX` / `.KML`):** Leitura 100% local de arquivos `.gpx` e `.kml` de aparelhos Garmin, OsmAnd ou equipes de campo, desenhando a geometria da trilha sobre o mapa vetorial e importando seus waypoints.
 
 ---
 

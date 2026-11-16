@@ -7,8 +7,8 @@
   <!-- Primary Meta Tags & SEO -->
   <title>NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline</title>
   <meta name="title" content="NOMAD Brasil — Central de Sobrevivência, Mapas & Conhecimento Offline">
-  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), estante Multi-ZIM (Wikivoyage, NHS, CDC, FAS), rotas A* + parada Via + corredor 5 km, régua de azimute/rádio, efemérides solar/lunar, LAN QR Code, dossiê A4 e 56 módulos táticos.">
-  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, parada via corredor 5km, estante multi zim wikivoyage nhs cdc, efemerides solar lunar, lan qr code offline, dossie tatico a4, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
+  <meta name="description" content="Central tática de sobrevivência e conhecimento 100% offline. Mapas vetoriais do Brasil (5.571 municípios e 416 mil+ ruas FTS5), estante Multi-ZIM (busca simultânea em Wikivoyage, NHS, CDC, FAS), rotas A* + parada Via + corredor 5 km, importador GPX/KML, anéis de raio 2/5/10/25 km, rastro GPS Breadcrumb, visão noturna vermelha, Mural LAN, dossiê A4, ficha TCCC e 56 módulos táticos.">
+  <meta name="keywords" content="nomad brasil, sobrevivência offline, preparação, mapas offline brasil, 416 mil ruas sqlite fts5, geocodificação reversa utm dms, roteamento offline a*, parada via corredor 5km, importador gpx kml, aneis de raio perimetro, rastro gps breadcrumb, visao noturna vermelha, mural camp board lan, busca multi zim, ficha triagem tccc, efemerides solar lunar, lan qr code offline, dossie tatico a4, radar de socorro, kiwix wikipedia brasil, primeiros socorros offline, telecomunicações emergência, pmtiles brasil, radio px canal 9, defesa civil brasil, kit 72h">
   <meta name="author" content="DougPomp">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#090d10">
@@ -340,6 +340,15 @@
       background: var(--bg-card);
       border: 1px solid var(--border-light);
       color: var(--text-main);
+    }
+
+    html.night-vision-mode {
+      filter: sepia(100%) saturate(450%) hue-rotate(315deg) brightness(0.78) contrast(1.12);
+    }
+    .btn-night-vision-active {
+      background: rgba(239, 68, 68, 0.24) !important;
+      border-color: rgba(239, 68, 68, 0.7) !important;
+      color: #fca5a5 !important;
     }
 
     .sidebar-backdrop {
@@ -1257,6 +1266,9 @@
       </nav>
 
       <div class="sidebar-footer">
+        <button type="button" id="btn-on-night-vision" onclick="toggleOnlineNightVision()" class="btn-sidebar-action secondary" style="cursor:pointer;">
+          <span>🔴</span> Modo Visão Noturna (Luz Vermelha)
+        </button>
         <a href="https://github.com/DougPomp/nomad-brasil/archive/refs/heads/main.zip" class="btn-sidebar-action primary">
           <span>📥</span> Baixar Projeto (.ZIP)
         </a>
@@ -1368,6 +1380,10 @@
                 <div class="intel-card">
                   <span class="intel-label">FASE &amp; ILUMINAÇÃO LUNAR</span>
                   <div class="intel-val font-mono" style="font-size: 0.85rem; color: #c084fc;" id="intel-city-moon">-</div>
+                </div>
+                <div class="intel-card">
+                  <span class="intel-label">PERÍMETRO TÁTICO (10 / 25 KM)</span>
+                  <div class="intel-val font-mono" style="font-size: 0.82rem; color: #fbbf24;" id="intel-city-rings">-</div>
                 </div>
               </div>
             </div>
@@ -1587,7 +1603,91 @@
         <section class="tab-pane" id="tab-emergencies">
           <div class="card">
             <h2 class="card-title">🚑 Protocolos de Primeiros Socorros &amp; Triagem</h2>
-            <p class="card-subtitle">Procedimentos imediatos para preservação da vida em situações críticas.</p>
+            <p class="card-subtitle">Procedimentos imediatos para preservação da vida em situações críticas e Cartão de Triagem TCCC (MARCHE).</p>
+
+            <div class="metric-card" style="margin-bottom: 1.25rem; border-left: 3px solid var(--accent-red); gap: 0.7rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <h3 style="color: #fff; font-size: 0.96rem; margin: 0;">🩸 Ficha de Atendimento de Campo &amp; Cartão de Triagem TCCC (MARCHE)</h3>
+                  <div style="font-size: 0.78rem; color: var(--text-muted);">Registre horário de torniquete, sinais vitais e condutas com salvamento local e impressão A4 para entregar ao resgate.</div>
+                </div>
+                <button type="button" class="chip-btn chip-highlight" onclick="printOnlineTcccCard()">🖨️ Imprimir Cartão TCCC (A4)</button>
+              </div>
+
+              <div class="grid-2" style="gap: 0.65rem;">
+                <div>
+                  <span class="stat-label">IDENTIFICAÇÃO / INDICATIVO / TIPO SANG.</span>
+                  <input type="text" id="on-tccc-name" class="route-input" placeholder="Ex: Operador Bravo (O+), Morador 02...">
+                </div>
+                <div>
+                  <span class="stat-label">NÍVEL DE CONSCIÊNCIA (AVPU)</span>
+                  <select id="on-tccc-avpu" class="route-input">
+                    <option value="A - Alerta">A — Alerta</option>
+                    <option value="V - Responde à Voz">V — Responde à Voz</option>
+                    <option value="P - Responde à Dor">P — Responde à Dor</option>
+                    <option value="U - Inconsciente">U — Inconsciente</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid-2" style="gap: 0.65rem;">
+                <div>
+                  <span class="stat-label">TORNIQUETE (LOCAL)</span>
+                  <select id="on-tccc-tq-site" class="route-input">
+                    <option value="Não aplicado">Não aplicado</option>
+                    <option value="Membro Sup. Dir.">Membro Sup. Dir.</option>
+                    <option value="Membro Sup. Esq.">Membro Sup. Esq.</option>
+                    <option value="Membro Inf. Dir.">Membro Inf. Dir.</option>
+                    <option value="Membro Inf. Esq.">Membro Inf. Esq.</option>
+                  </select>
+                </div>
+                <div>
+                  <span class="stat-label">HORÁRIO DE APLICAÇÃO DO TORNIQUETE</span>
+                  <div style="display: flex; gap: 0.4rem;">
+                    <input type="time" id="on-tccc-tq-time" class="route-input font-mono" style="flex: 1;">
+                    <button type="button" class="chip-btn" onclick="setOnlineTcccTqNow()">⏱️ Agora</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem;">
+                <div>
+                  <span class="stat-label">PULSO (bpm)</span>
+                  <input type="text" id="on-tccc-pulse" class="route-input font-mono" placeholder="Ex: 112">
+                </div>
+                <div>
+                  <span class="stat-label">PA (mmHg)</span>
+                  <input type="text" id="on-tccc-bp" class="route-input font-mono" placeholder="Ex: 110x70">
+                </div>
+                <div>
+                  <span class="stat-label">FR (irpm)</span>
+                  <input type="text" id="on-tccc-rr" class="route-input font-mono" placeholder="Ex: 22">
+                </div>
+                <div>
+                  <span class="stat-label">SpO2 (%)</span>
+                  <input type="text" id="on-tccc-spo2" class="route-input font-mono" placeholder="Ex: 95">
+                </div>
+              </div>
+
+              <div class="grid-2" style="gap: 0.65rem;">
+                <div>
+                  <span class="stat-label">LESÕES / MECANISMO DO TRAUMA</span>
+                  <input type="text" id="on-tccc-injuries" class="route-input" placeholder="Ex: Laceração coxa direita, trauma fechado...">
+                </div>
+                <div>
+                  <span class="stat-label">CONDUTAS / MEDICAÇÕES / ALERGIAS</span>
+                  <input type="text" id="on-tccc-treatments" class="route-input" placeholder="Ex: Bandagem compressiva, manta térmica...">
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="btn-sidebar-action primary" style="width: auto; border: none; cursor: pointer; padding: 0.5rem 0.95rem;" onclick="saveOnlineTcccCard()">💾 Registrar / Atualizar Ficha</button>
+                <button type="button" class="chip-btn" onclick="resetOnlineTcccForm()">🗑️ Limpar Campos</button>
+              </div>
+
+              <div id="on-tccc-list" style="display: flex; flex-direction: column; gap: 0.45rem;"></div>
+            </div>
+
             <div class="protocol-grid" id="emergencies-list">
               <div style="color: var(--text-muted); font-size: 0.9rem;">Carregando protocolos médicos...</div>
             </div>
@@ -3719,15 +3819,34 @@
       const sunEl = document.getElementById('intel-city-sun');
       const twiEl = document.getElementById('intel-city-twilight');
       const moonEl = document.getElementById('intel-city-moon');
+      const ringsEl = document.getElementById('intel-city-rings');
       if (!isNaN(lat) && !isNaN(lng)) {
         const ep = computeOfflineSunMoon(lat, lng);
         if (sunEl) sunEl.textContent = `🌅 ${ep.sunrise} • 🌇 ${ep.sunset}`;
         if (twiEl) twiEl.textContent = `${ep.dawn}–${ep.dusk} (${ep.daylightStr})`;
         if (moonEl) moonEl.textContent = `${ep.moonIcon} ${ep.moonPhaseName} (${ep.moonIllum}%)`;
+        if (ringsEl) {
+          let c10 = 0;
+          let c25 = 0;
+          const rad = Math.PI / 180;
+          for (const other of allCities) {
+            const olat = Number(other.lat);
+            const olng = Number(other.lng);
+            if (isNaN(olat) || isNaN(olng)) continue;
+            const dLat = (olat - lat) * rad;
+            const dLon = (olng - lng) * rad;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat * rad) * Math.cos(olat * rad) * (Math.sin(dLon / 2) ** 2);
+            const dk = 2 * 6371 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            if (dk <= 10) c10++;
+            if (dk <= 25) c25++;
+          }
+          ringsEl.textContent = `${c10} mun. ≤10km • ${c25} mun. ≤25km`;
+        }
       } else {
         if (sunEl) sunEl.textContent = 'N/A';
         if (twiEl) twiEl.textContent = 'N/A';
         if (moonEl) moonEl.textContent = 'N/A';
+        if (ringsEl) ringsEl.textContent = 'N/A';
       }
     }
 
@@ -5073,6 +5192,121 @@
         : (distKm <= losBaseKm ? `⚠️ Base 15m (${losBaseKm.toFixed(1)} km)` : `❌ >${losBaseKm.toFixed(0)} km (HF/Relé)`);
     }
 
+    function escapeOnlineHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function applyOnlineNightVision(enabled) {
+      document.documentElement.classList.toggle('night-vision-mode', enabled);
+      const btn = document.getElementById('btn-on-night-vision');
+      if (btn) btn.classList.toggle('btn-night-vision-active', enabled);
+    }
+
+    function toggleOnlineNightVision() {
+      const next = !document.documentElement.classList.contains('night-vision-mode');
+      applyOnlineNightVision(next);
+      try { localStorage.setItem('nomad_night_vision_v1', next ? '1' : '0'); } catch (e) {}
+    }
+
+    function initOnlineNightVision() {
+      try {
+        applyOnlineNightVision(localStorage.getItem('nomad_night_vision_v1') === '1');
+      } catch (e) {}
+    }
+
+    function getOnlineTcccCards() {
+      try {
+        const arr = JSON.parse(localStorage.getItem('nomad_tccc_cards_v1') || '[]');
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) { return []; }
+    }
+
+    function setOnlineTcccTqNow() {
+      const el = document.getElementById('on-tccc-tq-time');
+      if (!el) return;
+      const now = new Date();
+      el.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function resetOnlineTcccForm() {
+      ['on-tccc-name', 'on-tccc-tq-time', 'on-tccc-pulse', 'on-tccc-bp', 'on-tccc-rr', 'on-tccc-spo2', 'on-tccc-injuries', 'on-tccc-treatments'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const site = document.getElementById('on-tccc-tq-site');
+      if (site) site.value = 'Não aplicado';
+      const avpu = document.getElementById('on-tccc-avpu');
+      if (avpu) avpu.value = 'A - Alerta';
+    }
+
+    function readOnlineTcccForm() {
+      return {
+        id: `tccc_${Date.now()}`,
+        patientName: (document.getElementById('on-tccc-name')?.value || '').trim() || 'Paciente sem identificação',
+        avpu: document.getElementById('on-tccc-avpu')?.value || 'A - Alerta',
+        tourniquetSite: document.getElementById('on-tccc-tq-site')?.value || 'Não aplicado',
+        tourniquetTime: (document.getElementById('on-tccc-tq-time')?.value || '').trim(),
+        pulse: (document.getElementById('on-tccc-pulse')?.value || '').trim(),
+        bp: (document.getElementById('on-tccc-bp')?.value || '').trim(),
+        rr: (document.getElementById('on-tccc-rr')?.value || '').trim(),
+        spo2: (document.getElementById('on-tccc-spo2')?.value || '').trim(),
+        injuries: (document.getElementById('on-tccc-injuries')?.value || '').trim(),
+        treatments: (document.getElementById('on-tccc-treatments')?.value || '').trim(),
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    function saveOnlineTcccCard() {
+      const card = readOnlineTcccForm();
+      const cards = getOnlineTcccCards();
+      cards.unshift(card);
+      try { localStorage.setItem('nomad_tccc_cards_v1', JSON.stringify(cards.slice(0, 30))); } catch (e) {}
+      renderOnlineTcccList();
+    }
+
+    function printOnlineTcccCardObj(c) {
+      const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Cartão TCCC — NOMAD Brasil</title><style>@page{size:A4;margin:14mm;}body{font-family:Arial,sans-serif;color:#0f172a;font-size:12px;padding:16px;}h1{font-size:18px;border-bottom:3px solid #dc2626;padding-bottom:4px;}table{width:100%;border-collapse:collapse;margin:10px 0;}th,td{border:1px solid #94a3b8;padding:6px 8px;text-align:left;}th{background:#fee2e2;width:28%;}@media print{.no-print{display:none;}body{padding:0;}}</style></head><body><div class="no-print" style="margin-bottom:10px;"><button onclick="window.print()" style="padding:8px 14px;background:#dc2626;color:#fff;border:none;border-radius:4px;font-weight:bold;cursor:pointer;">🖨️ Imprimir Ficha TCCC</button></div><h1>CARTÃO DE ATENDIMENTO DE CAMPO &amp; TRIAGEM TCCC — NOMAD BRASIL</h1><div><strong>Registro:</strong> ${escapeOnlineHtml(new Date(c.createdAt || Date.now()).toLocaleString('pt-BR'))}</div><table><tr><th>Identificação</th><td>${escapeOnlineHtml(c.patientName)}</td></tr><tr><th>Consciência (AVPU)</th><td>${escapeOnlineHtml(c.avpu)}</td></tr><tr><th>Torniquete</th><td>${escapeOnlineHtml(c.tourniquetSite)} ${c.tourniquetTime ? 'às ' + escapeOnlineHtml(c.tourniquetTime) : ''}</td></tr><tr><th>Sinais Vitais</th><td>Pulso: ${escapeOnlineHtml(c.pulse || '-')} bpm &bull; PA: ${escapeOnlineHtml(c.bp || '-')} mmHg &bull; FR: ${escapeOnlineHtml(c.rr || '-')} irpm &bull; SpO2: ${escapeOnlineHtml(c.spo2 || '-')}%</td></tr><tr><th>Lesões</th><td>${escapeOnlineHtml(c.injuries || '-')}</td></tr><tr><th>Condutas / Medicações</th><td>${escapeOnlineHtml(c.treatments || '-')}</td></tr></table></body></html>`;
+      const win = window.open('', '_blank', 'width=850,height=700');
+      if (win) { win.document.open(); win.document.write(html); win.document.close(); }
+      else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+        a.download = `ficha_tccc_${Date.now()}.html`;
+        a.click();
+      }
+    }
+
+    function printOnlineTcccCard() {
+      const nameVal = (document.getElementById('on-tccc-name')?.value || '').trim();
+      const cards = getOnlineTcccCards();
+      printOnlineTcccCardObj(nameVal ? readOnlineTcccForm() : (cards[0] || readOnlineTcccForm()));
+    }
+
+    function renderOnlineTcccList() {
+      const box = document.getElementById('on-tccc-list');
+      if (!box) return;
+      const cards = getOnlineTcccCards();
+      if (cards.length === 0) {
+        box.innerHTML = '<div style="font-size:0.75rem;color:var(--text-muted);">Nenhuma ficha TCCC registrada neste navegador ainda.</div>';
+        return;
+      }
+      box.innerHTML = '';
+      cards.forEach(c => {
+        const div = document.createElement('div');
+        div.style.cssText = 'background:rgba(0,0,0,0.28);border:1px solid var(--border);border-left:4px solid #ef4444;border-radius:6px;padding:0.55rem 0.75rem;font-size:0.76rem;';
+        div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;"><div><strong style="color:#fff;">${escapeOnlineHtml(c.patientName)}</strong> &bull; <span class="font-mono" style="color:#38bdf8;">${escapeOnlineHtml(c.avpu)}</span></div><div style="display:flex;gap:0.35rem;"><button type="button" data-otc-print class="chip-btn" style="font-size:0.68rem;padding:0.15rem 0.45rem;">🖨️ Imprimir</button><button type="button" data-otc-del class="chip-btn" style="font-size:0.68rem;padding:0.15rem 0.45rem;color:#fca5a5;">🗑️</button></div></div>${c.tourniquetSite && c.tourniquetSite !== 'Não aplicado' ? `<div style="color:#fbbf24;font-weight:700;margin-top:2px;">⚠️ Torniquete: ${escapeOnlineHtml(c.tourniquetSite)} ${escapeOnlineHtml(c.tourniquetTime)}</div>` : ''}<div class="font-mono" style="color:var(--text-secondary);margin-top:2px;">Pulso: ${escapeOnlineHtml(c.pulse || '-')} | PA: ${escapeOnlineHtml(c.bp || '-')} | FR: ${escapeOnlineHtml(c.rr || '-')} | SpO2: ${escapeOnlineHtml(c.spo2 || '-')}%</div>`;
+        div.querySelector('[data-otc-print]')?.addEventListener('click', () => printOnlineTcccCardObj(c));
+        div.querySelector('[data-otc-del]')?.addEventListener('click', () => {
+          const rest = getOnlineTcccCards().filter(x => x.id !== c.id);
+          try { localStorage.setItem('nomad_tccc_cards_v1', JSON.stringify(rest)); } catch (e) {}
+          renderOnlineTcccList();
+        });
+        box.appendChild(div);
+      });
+    }
+
     function exportOnlineFullBackup() {
       const safeParse = (key) => {
         try {
@@ -5089,12 +5323,13 @@
 
       const payload = {
         app: 'nomad-brasil',
-        version: 2,
+        version: 3,
         exportedAt: new Date().toISOString(),
         waypoints: Array.isArray(wptData) ? wptData : [],
         pef: pefData,
         bob: storedBobState || safeParse('nomad_bob_checked_state_v1') || {},
-        pace: paceData
+        pace: paceData,
+        tccc: getOnlineTcccCards()
       };
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -5110,7 +5345,7 @@
       const msgEl = document.getElementById('on-backup-msg');
       if (msgEl) {
         msgEl.style.color = '#34d399';
-        msgEl.textContent = `✅ Backup exportado (${payload.waypoints.length} waypoints, PEF, BOB e PACE).`;
+        msgEl.textContent = `✅ Backup exportado (${payload.waypoints.length} waypoints, PEF, BOB, PACE e ${payload.tccc.length} fichas TCCC).`;
       }
     }
 
@@ -5147,6 +5382,11 @@
             localStorage.setItem('nomad_pace_plan_v1', JSON.stringify(parsed.pace));
             loadOnlinePace();
             restored.push('PACE');
+          }
+          if (Array.isArray(parsed.tccc)) {
+            localStorage.setItem('nomad_tccc_cards_v1', JSON.stringify(parsed.tccc));
+            renderOnlineTcccList();
+            restored.push(`TCCC (${parsed.tccc.length})`);
           }
 
           if (restored.length === 0) throw new Error('Nenhum dado compatível encontrado neste JSON.');
@@ -5195,6 +5435,8 @@
     calcOnlineBlacksmith();
     calcOnlineCharcoal();
     calcOnlineTacticalMeasure();
+    initOnlineNightVision();
+    renderOnlineTcccList();
   </script>
 </body>
 </html>
