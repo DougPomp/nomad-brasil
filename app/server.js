@@ -1820,7 +1820,7 @@ const AI_STOPWORDS = new Set([
 async function detectActiveOllama() {
   const probes = await Promise.all(OLLAMA_INTERNAL_BASES.map(async (baseUrl) => {
     try {
-      const r = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(900) });
+      const r = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(3000) });
       if (!r.ok) return null;
       const json = await r.json();
       const models = Array.isArray(json?.models)
@@ -1856,10 +1856,19 @@ function buildKnowledgeDocuments(includeInventory = true) {
   }
 
   for (const man of survivalManuals) {
-    const secs = Array.isArray(man.sections)
-      ? man.sections.map(s => `${s.heading || ''}: ${s.content || ''}`).join('\n')
-      : '';
-    docs.push({ tab: 'survival', module: 'Manuais de Campo', title: man.title || man.id, text: `${man.category || ''}\n${secs}` });
+    const secs = Array.isArray(man.sections) ? man.sections : [];
+    if (secs.length === 0) {
+      docs.push({ tab: 'survival', module: 'Manuais de Campo', title: man.title || man.id, text: man.category || '' });
+      continue;
+    }
+    for (const s of secs) {
+      docs.push({
+        tab: 'survival',
+        module: 'Manuais de Campo',
+        title: `${man.title || man.id} — ${s.heading || man.category || ''}`,
+        text: `${man.category || ''}\n${s.heading || ''}: ${s.content || ''}`
+      });
+    }
   }
 
   for (const band of (radioData.bands || [])) {
@@ -1870,8 +1879,16 @@ function buildKnowledgeDocuments(includeInventory = true) {
   }
 
   if (Array.isArray(radioData.q_code) && radioData.q_code.length > 0) {
-    const qText = radioData.q_code.map(q => `${q.code}: ${q.meaning} (Ex: ${q.example})`).join('\n');
-    docs.push({ tab: 'comms', module: 'Código Q & ICAO', title: 'Códigos Q Oficiais de Rádio', text: qText });
+    for (let i = 0; i < radioData.q_code.length; i += 6) {
+      const slice = radioData.q_code.slice(i, i + 6);
+      const qText = slice.map(q => `${q.code}: ${q.meaning} (Ex: ${q.example})`).join('\n');
+      docs.push({
+        tab: 'comms',
+        module: 'Código Q & ICAO',
+        title: `Códigos Q (${slice[0].code}–${slice[slice.length - 1].code})`,
+        text: qText
+      });
+    }
   }
 
   for (const ant of (radioData.antennas || [])) {
@@ -1973,10 +1990,15 @@ function findInstalledOllamaModel(requestedModel, installedModels) {
   return prefix || null;
 }
 
-function buildFallbackRagAnswer(query, docs, aiOnline, requestedModel) {
-  const intro = aiOnline
-    ? `⚠️ O servidor Ollama local está ativo, mas o modelo **${requestedModel}** ainda não foi baixado. Clique em "Baixar Modelo" ou rode \`ollama pull ${requestedModel}\`. Enquanto isso, veja os dados verificados na base offline do NOMAD Brasil:`
-    : `📚 **Modo RAG Local (Sem LLM conectado):** O container de IA (\`nomad_brasil_ollama\`) está desligado, mas localizei estes protocolos verificados na base 100% offline do NOMAD Brasil:`;
+function buildFallbackRagAnswer(query, docs, aiOnline, requestedModel, installedName = null, llmErrorReason = '') {
+  let intro;
+  if (!aiOnline) {
+    intro = `📚 **Modo RAG Local (Sem LLM conectado):** O container de IA (\`nomad_brasil_ollama\`) não respondeu agora, mas localizei estes protocolos verificados na base 100% offline do NOMAD Brasil:`;
+  } else if (!installedName) {
+    intro = `⚠️ O servidor Ollama local está ativo, mas o modelo **${requestedModel}** ainda não foi baixado. Clique em "Baixar Modelo" ou rode \`ollama pull ${requestedModel}\`. Enquanto isso, veja os dados verificados na base offline do NOMAD Brasil:`;
+  } else {
+    intro = `⚠️ O modelo **${installedName}** falhou ou excedeu o tempo nesta consulta (${llmErrorReason || 'erro de execução no Ollama'}). Exibindo os dados verificados diretamente do RAG Local:`;
+  }
 
   if (!docs || docs.length === 0) {
     return `${intro}\n\nNão encontrei referência exata para "${query}" nos guias JSON compactos. Tente buscar termos mais diretos (ex.: "hipoclorito", "jararaca", "PX canal 9", "rcp", "estoque") ou consulte a aba **Wikipédia Offline**.`;
@@ -2495,27 +2517,29 @@ const server = http.createServer((req, res) => {
 
       const info = await detectActiveOllama();
       const installedName = info.online ? findInstalledOllamaModel(requestedModel, info.models) : null;
+      let llmErrorReason = '';
 
       if (info.online && info.baseUrl && installedName) {
-        const ragContext = sources.length > 0
-          ? sources.map((s, i) => `[Fonte ${i + 1} - ${s.module}: ${s.title}]\n${s.text}`).join('\n\n')
+        const promptSources = sources.slice(0, 3);
+        const ragContext = promptSources.length > 0
+          ? promptSources.map((s, i) => `[Fonte ${i + 1} - ${s.module}: ${s.title}]\n${String(s.text || '').slice(0, 520)}`).join('\n\n')
           : 'Nenhum protocolo exato encontrado nos JSONs locais para este termo.';
 
         const systemPrompt = [
           'Você é o Assistente Tático Offline do NOMAD Brasil.',
-          'Responda SEMPRE em português do Brasil claro, objetivo, estruturado em passos curtos e práticos.',
-          'Priorize estritamente os fatos, frequências, dosagens e protocolos presentes no CONTEXTO LOCAL VERIFICADO abaixo.',
-          'Nunca invente doses médicas, soros antiveneno ou frequências. Se o contexto não trouxer o dado exato, diga o que falta com honestidade e recomende abrir a aba correspondente no portal.',
+          'Responda SEMPRE em português do Brasil claro, direto e prático.',
+          'Use estritamente os fatos, frequências e dosagens do CONTEXTO LOCAL VERIFICADO abaixo.',
+          'Nunca invente doses médicas ou frequências; se faltar algo no contexto, informe com clareza.',
           '',
-          'CONTEXTO LOCAL VERIFICADO DO NOMAD BRASIL:',
+          'CONTEXTO LOCAL VERIFICADO:',
           ragContext
         ].join('\n');
 
         const safeHistory = Array.isArray(body?.history)
           ? body.history
               .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-              .slice(-6)
-              .map(m => ({ role: m.role, content: String(m.content).slice(0, 1200) }))
+              .slice(-4)
+              .map(m => ({ role: m.role, content: String(m.content).slice(0, 500) }))
           : [];
 
         const messages = [
@@ -2532,10 +2556,10 @@ const server = http.createServer((req, res) => {
               model: installedName,
               messages,
               stream: false,
-              keep_alive: '10m',
-              options: { temperature: 0.2, num_ctx: 4096 }
+              keep_alive: '30m',
+              options: { temperature: 0.2, num_ctx: 2048, num_predict: 420 }
             }),
-            signal: AbortSignal.timeout(45000)
+            signal: AbortSignal.timeout(150000)
           });
           if (llmRes.ok) {
             const llmJson = await llmRes.json();
@@ -2552,17 +2576,26 @@ const server = http.createServer((req, res) => {
               }));
               return;
             }
+            llmErrorReason = 'Resposta vazia do modelo';
+          } else {
+            const errTxt = await llmRes.text().catch(() => '');
+            llmErrorReason = `Ollama HTTP ${llmRes.status}${errTxt ? `: ${errTxt.slice(0, 120)}` : ''}`;
           }
-        } catch {}
+        } catch (llmErr) {
+          llmErrorReason = llmErr?.name === 'TimeoutError'
+            ? 'Tempo limite excedido (modelo carregando ou CPU lenta)'
+            : (llmErr?.message || 'Falha na conexão com /api/chat');
+        }
       }
 
-      const fallbackAnswer = buildFallbackRagAnswer(message, sources, info.online, requestedModel);
+      const fallbackAnswer = buildFallbackRagAnswer(message, sources, info.online, requestedModel, installedName, llmErrorReason);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         ok: true,
         engine: 'rag_fallback',
         aiOnline: info.online,
         modelMissing: Boolean(info.online && !installedName),
+        errorReason: llmErrorReason || undefined,
         model: requestedModel,
         answer: fallbackAnswer,
         sources: sources.map(({ tab, module, title, snippet }) => ({ tab, module, title, snippet }))
