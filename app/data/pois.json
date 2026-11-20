@@ -34,14 +34,14 @@
   },
   {
     "id": "upa-louveira",
-    "name": "Pronto Atendimento Municipal de Louveira",
+    "name": "Pronto Atendimento (P.A.) — Hospital Santo Antônio",
     "category": "hospital",
-    "lat": -23.0847,
-    "lng": -46.9535,
+    "lat": -23.08923,
+    "lng": -46.97776,
     "city": "Louveira",
     "uf": "SP",
-    "phone": "(19) 3878-1444",
-    "details": "Atendimento médico 24 horas para urgência, emergência e estabilização de traumas."
+    "phone": "(19) 3848-1661",
+    "details": "Rua Luís Martins Cruz, 63, Jardim Lago Azul. Entrada adulta pela Rua Luís Martins Cruz; entrada infantil pela Rua das Rosas. O pino indica o local aproximado do hospital, não a entrada."
   },
   {
     "id": "hosp-vinhedo",
